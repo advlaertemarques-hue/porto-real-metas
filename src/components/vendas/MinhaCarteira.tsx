@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { VendasCliente, VendasCorretor, VendasEquipe, User, VendasClienteNota, VendasClienteChecklist } from '@/lib/types'
 import {
   getVendasClienteNotas,
@@ -91,6 +91,7 @@ export default function MinhaCarteira({
   const [fichaOpen, setFichaOpen] = useState(false)
   const [novaNotaTxt, setNovaNotaTxt] = useState('')
   const [checklistExpanded, setChecklistExpanded] = useState(true)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const activeClient = clientes.find(c => c.id === activeId)
 
@@ -132,13 +133,26 @@ export default function MinhaCarteira({
   const moveClientEtapa = async (clientId: string, newEtapa: number) => {
     const client = clientes.find(c => c.id === clientId)
     if (!client) return
+    const originalEtapa = client.etapa
+    const originalStatusFin = client.status_finalizacao
+    
+    // 1. Optimistic Update (Immediate)
+    setClientes(prev => prev.map(c => c.id === clientId ? { ...c, etapa: newEtapa, status_finalizacao: c.status_finalizacao === 'interessado' ? null : c.status_finalizacao } : c))
+    
+    // 2. Background API Call
     const params: Partial<VendasCliente> = { etapa: newEtapa }
     if (client.status_finalizacao === 'interessado') {
       params.status_finalizacao = null
     }
-    const updated = await updateVendasCliente(clientId, params)
-    if (updated) {
-      setClientes(prev => prev.map(c => c.id === clientId ? updated : c))
+    try {
+      const updated = await updateVendasCliente(clientId, params)
+      if (!updated) {
+        setClientes(prev => prev.map(c => c.id === clientId ? { ...c, etapa: originalEtapa, status_finalizacao: originalStatusFin } : c))
+      } else {
+        setClientes(prev => prev.map(c => c.id === clientId ? updated : c))
+      }
+    } catch (err) {
+      setClientes(prev => prev.map(c => c.id === clientId ? { ...c, etapa: originalEtapa, status_finalizacao: originalStatusFin } : c))
     }
   }
 
@@ -249,9 +263,37 @@ export default function MinhaCarteira({
 
   const setCrmField = async (field: string, value: any) => {
     if (!activeId) return
-    const updated = await updateVendasCliente(activeId, { [field]: value })
-    if (updated) {
-      setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+    const client = clientes.find(c => c.id === activeId)
+    if (!client) return
+    const originalValue = client[field as keyof VendasCliente]
+    
+    // 1. Optimistic Update
+    setClientes(prev => prev.map(c => c.id === activeId ? { ...c, [field]: value } : c))
+    
+    // 2. Background API Call
+    try {
+      const updated = await updateVendasCliente(activeId, { [field]: value })
+      if (!updated) {
+        setClientes(prev => prev.map(c => c.id === activeId ? { ...c, [field]: originalValue } : c))
+      }
+    } catch (err) {
+      setClientes(prev => prev.map(c => c.id === activeId ? { ...c, [field]: originalValue } : c))
+    }
+  }
+
+  const handleDragOverContainer = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!scrollContainerRef.current) return
+    const container = scrollContainerRef.current
+    const rect = container.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    
+    const scrollSpeed = 16
+    const edgeThreshold = 90
+    
+    if (x > rect.width - edgeThreshold) {
+      container.scrollLeft += scrollSpeed
+    } else if (x < edgeThreshold) {
+      container.scrollLeft -= scrollSpeed
     }
   }
 
@@ -536,7 +578,7 @@ export default function MinhaCarteira({
       <div className="w-full">
         {sidebarView === 'ativos' ? (
           /* KANBAN BOARD E1 - E6 */
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+          <div ref={scrollContainerRef} onDragOver={handleDragOverContainer} className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
             {ETAPAS.slice(0, 6).map((etapa, etapaIdx) => {
               const columnClients = myClientsFiltered.filter(c => c.etapa === etapaIdx)
               

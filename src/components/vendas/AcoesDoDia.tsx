@@ -27,11 +27,13 @@ export default function AcoesDoDia({
   const brokerClients = clientes.filter(c => {
     // Filtro por corretor logado ou admin enxerga tudo
     const isMyClient = user.role === 'superadmin' || c.corretor_id === myCorretor?.id
-    return isMyClient && c.proxima_acao && c.proxima_acao_data
+    return isMyClient && c.proxima_acao
   })
 
   const sortedClients = [...brokerClients].sort((a, b) => {
-    return new Date(a.proxima_acao_data!).getTime() - new Date(b.proxima_acao_data!).getTime()
+    if (!a.proxima_acao_data) return 1
+    if (!b.proxima_acao_data) return -1
+    return new Date(a.proxima_acao_data).getTime() - new Date(b.proxima_acao_data).getTime()
   })
 
   return (
@@ -59,13 +61,16 @@ export default function AcoesDoDia({
           </div>
         ) : (
           sortedClients.map(c => {
-            const actDate = new Date(c.proxima_acao_data!)
-            const isOverdue = actDate.getTime() < Date.now()
-            const isToday = actDate.toDateString() === new Date().toDateString()
+            const actDate = c.proxima_acao_data ? new Date(c.proxima_acao_data) : null
+            const isOverdue = actDate ? actDate.getTime() < Date.now() : false
+            const isToday = actDate ? actDate.toDateString() === new Date().toDateString() : false
 
             let badgeColor = "bg-slate-100 text-slate-700 border-slate-200"
             let badgeText = "Futura"
-            if (isOverdue) {
+            if (!actDate) {
+              badgeColor = "bg-slate-100 text-slate-500 border-slate-200"
+              badgeText = "Sem data"
+            } else if (isOverdue) {
               badgeColor = "bg-rose-50 text-rose-700 border-rose-100 animate-pulse"
               badgeText = "Atrasada"
             } else if (isToday) {
@@ -98,7 +103,7 @@ export default function AcoesDoDia({
                     👉 {c.proxima_acao}
                   </p>
                   <div className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                    📅 Agendado para: {actDate.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                    📅 Agendado para: {actDate ? actDate.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Sem data de vencimento'}
                   </div>
                 </div>
 
@@ -107,7 +112,7 @@ export default function AcoesDoDia({
                     setActiveId(c.id)
                     setActiveView('funil')
                   }}
-                  className="bg-[#1F4E79] hover:bg-[#123658] text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-all whitespace-nowrap self-stretch md:self-auto text-center"
+                  className="bg-[#1F4E79] hover:bg-[#123658] text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-all whitespace-nowrap self-stretch md:self-auto text-center cursor-pointer"
                 >
                   Abrir no Funil
                 </button>
