@@ -132,6 +132,7 @@ export const useAuth = () => useContext(AuthContext)
 
 // Helper: verifica se o role tem acesso ao módulo
 export function canAccessModule(role: UserRole, modulo: SystemModule): boolean {
+  if (modulo === 'aluguel') return false
   if (modulo === 'institucional') return true
   if (role === 'superadmin') return true
   return role === modulo
