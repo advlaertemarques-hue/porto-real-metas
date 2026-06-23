@@ -316,7 +316,7 @@ export default function MinhaCarteira({
 
     const newNota = await createVendasClienteNota({
       cliente_id: activeId,
-      etapa: ETAPAS[activeClient.etapa].nome,
+      etapa: ETAPAS[activeClient.etapa]?.nome || 'Triagem',
       texto: novaNotaTxt.trim(),
       data: dataFormatted
     })
