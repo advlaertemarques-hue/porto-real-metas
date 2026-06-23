@@ -370,3 +370,41 @@ input[type='number'] {
 .ccnv{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9}
 .nvl{font-size:7px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8}
 .nvv{font-size:14px;font-weight:700;color:#3b82f6}
+
+/* ============================================================
+   PORTO REAL REDESIGN — CUSTOM UI UTILITIES
+   ============================================================ */
+
+/* Canvas e layouts com transparência para revelar blobs de fundo */
+.app {
+  background: transparent !important;
+}
+.main {
+  background: transparent !important;
+}
+
+/* Estilo premium de cartões elevados */
+.premium-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.02);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03), 0 12px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Hairline border */
+.border-hairline {
+  border-width: 1px;
+  border-color: rgba(226, 232, 240, 0.7);
+}
+
+/* Sombra leve de títulos contra o fundo texturizado */
+.heading-premium {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
