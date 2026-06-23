@@ -132,13 +132,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Brand Header */}
       <div className="h-16 px-5 border-b border-slate-800/60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 bg-gradient-to-tr from-[#eb3238] to-[#f43f5e] rounded-lg flex items-center justify-center shadow-md">
-            <Crown className="h-4 w-4 text-white" />
+          <div className="h-8 w-8 rounded-full bg-[#eb3238] flex items-center justify-center shadow-md flex-shrink-0">
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 text-white fill-white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3L2 12h3v8h14v-8h3L12 3z" />
+            </svg>
           </div>
           <div>
-            <div className="font-extrabold text-[13px] text-white tracking-wide leading-none uppercase">Porto Real</div>
-            <div className="text-[9px] text-[#eb3238] font-black uppercase tracking-wider mt-0.5">
-              {activeModule === 'vendas' ? 'Vendas' : activeModule === 'aluguel' ? 'Aluguel' : 'Corporativo'}
+            <div className="font-extrabold text-[15px] text-white tracking-tight leading-none">
+              Porto<span className="font-medium text-slate-300">Real</span>
+            </div>
+            <div className="text-[9px] text-[#eb3238] font-black uppercase tracking-wider mt-1">
+              CRM Imobiliário
             </div>
           </div>
         </div>

@@ -474,33 +474,33 @@ export default function MinhaCarteira({
       {/* 2. Controls row (Filtros, corretores e novo cliente) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Toggle between Kanban and grids */}
-        <div className="flex bg-slate-200/50 p-1 rounded-xl gap-0.5 self-start">
+        <div className="flex bg-slate-200/50 p-1.5 rounded-2xl gap-1 self-start border border-slate-350/20 shadow-xs">
           <button
             onClick={() => { setSidebarView('ativos'); setActiveId(null); }}
-            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+            className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'ativos'
-                ? 'bg-white text-slate-800 shadow-xs'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-[#eb3238] text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-white/80'
             }`}
           >
             💼 Funil Ativo
           </button>
           <button
             onClick={() => { setSidebarView('interessados'); setActiveId(null); }}
-            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+            className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'interessados'
-                ? 'bg-white text-slate-800 shadow-xs'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-[#eb3238] text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-white/80'
             }`}
           >
             ⭐ Interessados
           </button>
           <button
             onClick={() => { setSidebarView('finalizados'); setActiveId(null); }}
-            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+            className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'finalizados'
-                ? 'bg-white text-slate-800 shadow-xs'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-[#eb3238] text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-white/80'
             }`}
           >
             🏁 Arquivados
@@ -513,7 +513,7 @@ export default function MinhaCarteira({
             <select
               value={funilCorretorFiltro}
               onChange={(e) => setFunilCorretorFiltro(e.target.value)}
-              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#eb3238] bg-white cursor-pointer text-slate-700"
+              className="border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-black outline-none focus:border-[#eb3238] bg-white cursor-pointer text-slate-800 shadow-xs"
             >
               <option value="todos">Todos os corretores</option>
               <option value="sem_atribuicao">Sem corretor</option>
@@ -525,9 +525,9 @@ export default function MinhaCarteira({
 
           <button
             onClick={() => setModalNovoOpen(true)}
-            className="flex items-center justify-center gap-2 bg-[#eb3238] hover:bg-[#eb3238]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors w-full sm:w-auto flex-shrink-0"
+            className="flex items-center justify-center gap-2 bg-[#eb3238] hover:bg-[#eb3238]/90 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 w-full sm:w-auto flex-shrink-0 cursor-pointer"
           >
-            <Plus size={14} /> Novo Cliente
+            <Plus size={15} /> Novo Cliente
           </button>
         </div>
       </div>
@@ -548,7 +548,7 @@ export default function MinhaCarteira({
                     const clientId = e.dataTransfer.getData('clientId')
                     if (clientId) moveClientEtapa(clientId, etapaIdx)
                   }}
-                  className="w-72 flex-shrink-0 flex flex-col bg-slate-100/40 border border-slate-200/50 rounded-2xl p-3 min-h-[500px]"
+                  className="w-72 flex-shrink-0 flex flex-col bg-slate-200/50 border border-slate-300/40 rounded-2xl p-3.5 min-h-[520px] shadow-xs"
                 >
                   {/* Column Header */}
                   <div className={`p-2.5 rounded-xl border border-hairline font-bold flex items-center justify-between mb-3 shadow-xs ${COLUMN_TINTS[etapaIdx]}`}>
@@ -559,7 +559,7 @@ export default function MinhaCarteira({
                   {/* Cards container */}
                   <div className="flex-1 overflow-y-auto space-y-2.5 pb-8 min-h-[400px]">
                     {columnClients.length === 0 ? (
-                      <div className="border border-dashed border-slate-200 rounded-xl p-4 text-center text-[10px] text-slate-400 font-semibold py-8">
+                       <div className="border border-dashed border-slate-300 rounded-xl p-4 text-center text-[10px] text-slate-400 font-semibold py-8 bg-white/30">
                         Nenhum lead aqui
                       </div>
                     ) : (
@@ -574,14 +574,14 @@ export default function MinhaCarteira({
                             draggable={true}
                             onDragStart={(e) => e.dataTransfer.setData('clientId', c.id)}
                             onClick={() => selectClient(c.id)}
-                            className={`p-3.5 border rounded-xl bg-white shadow-xs cursor-grab active:cursor-grabbing hover:border-slate-300 transition-all ${
+                            className={`p-3.5 border rounded-xl bg-white shadow-xs hover:shadow-md cursor-grab active:cursor-grabbing hover:border-slate-400 transition-all duration-200 hover:-translate-y-0.5 ${
                               isSelected 
                                 ? 'ring-2 ring-[#eb3238] border-transparent' 
-                                : 'border-slate-200/80'
+                                : 'border-slate-250'
                             }`}
                           >
                             <div className="flex justify-between items-start gap-2 mb-1.5">
-                              <span className="font-extrabold text-[12px] text-slate-800 line-clamp-1 heading-premium">
+                              <span className="font-black text-[13px] text-slate-900 line-clamp-1 leading-snug">
                                 {c.nome}
                               </span>
                               {c.expressa && (
