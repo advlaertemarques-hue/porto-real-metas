@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Rescisão – Porto Real</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2d3e50;
+    --gold: #e02020;
+    --gold-light: #f08080;
+    --cream: #faf9f8;
+    --cream-dark: #f2f0ed;
+    --muted: #6b6b7a;
+    --accent: #2d3e50;
+    --danger: #c0392b;
+    --success: #2e6b4f;
+    --border: #ddd8d0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--ink);
+    overflow-y: auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+  }
+
+  .sidebar-brand {
+    padding: 2.4rem 1.8rem 1.6rem;
+    border-bottom: 1px solid rgba(201,168,76,.25);
+  }
+
+  .sidebar-brand .logo-img {
+    display: block;
+    width: 160px;
+    filter: brightness(0) invert(1);
+    margin-bottom: .8rem;
+  }
+
+  .sidebar-brand .logo-sub {
+    font-size: .72rem;
+    color: rgba(255,255,255,.4);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-top: .2rem;
+    display: block;
+  }
+
+  .sidebar nav { padding: 1.2rem 0; flex: 1; }
+
+  .nav-section {
+    padding: .5rem 1.8rem .2rem;
+    font-size: .65rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.28);
+  }
+
+  .sidebar nav a {
+    display: block;
+    padding: .5rem 1.8rem;
+    color: rgba(255,255,255,.65);
+    text-decoration: none;
+    font-size: .82rem;
+    line-height: 1.4;
+    transition: all .2s;
+    border-left: 2px solid transparent;
+  }
+
+  .sidebar nav a:hover,
+  .sidebar nav a.active {
+    color: var(--gold-light);
+    border-left-color: var(--gold);
+    background: rgba(255,255,255,.04);
+  }
+
+  .sidebar nav a .num {
+    font-size: .68rem;
+    opacity: .45;
+    margin-right: .3rem;
+  }
+
+  /* ─── MAIN ─── */
+  .main {
+    margin-left: 280px;
+    min-height: 100vh;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--ink);
+    padding: 5rem 5rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%);
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+  }
+
+  .hero-logo {
+    display: block;
+    height: 42px;
+    width: auto;
+    margin-bottom: 2rem;
+    filter: brightness(0) invert(1);
+    opacity: .9;
+  }
+
+  .hero-tag {
+    font-size: .7rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.2rem;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 1.2rem;
+  }
+
+  .hero h1 em {
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  .hero p {
+    color: rgba(255,255,255,.55);
+    font-size: .9rem;
+    max-width: 540px;
+    font-weight: 300;
+  }
+
+  /* CONTENT WRAPPER */
+  .content {
+    padding: 4rem 5rem;
+    max-width: 900px;
+  }
+
+  /* SECTIONS */
+  .section { margin-bottom: 5rem; }
+
+  .section-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chapter-label {
+    font-size: .68rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: .5rem;
+    display: block;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 2.5rem 0 .8rem;
+  }
+
+  h4 {
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin: 2rem 0 .6rem;
+  }
+
+  p { margin-bottom: 1rem; color: #3a3a4a; }
+
+  /* INTRO CARDS */
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.8rem 0;
+  }
+
+  .intro-card {
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.4rem;
+  }
+
+  .intro-card .icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    margin-bottom: .9rem;
+  }
+
+  .intro-card strong {
+    display: block;
+    font-size: .88rem;
+    color: var(--ink);
+    margin-bottom: .3rem;
+  }
+
+  .intro-card p {
+    font-size: .8rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* CALLOUTS */
+  .callout {
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: .8rem;
+  }
+
+  .callout-info {
+    background: rgba(46,92,138,.07);
+    border-left: 3px solid var(--accent);
+  }
+
+  .callout-warn {
+    background: rgba(138,46,46,.06);
+    border-left: 3px solid var(--danger);
+  }
+
+  .callout-success {
+    background: rgba(46,107,79,.07);
+    border-left: 3px solid var(--success);
+  }
+
+  .callout-gold {
+    background: rgba(45,62,80,.06);
+    border-left: 3px solid var(--ink);
+  }
+
+  .callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
+
+  .callout-body { font-size: .85rem; color: #3a3a4a; line-height: 1.6; }
+  .callout-body strong { display: block; margin-bottom: .3rem; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+
+  /* MESSAGE TEMPLATE */
+  .message-template {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .message-header {
+    background: var(--ink);
+    color: var(--gold-light);
+    padding: .7rem 1.2rem;
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+
+  .message-body {
+    padding: 1.4rem;
+    font-size: .85rem;
+    line-height: 1.8;
+    color: #3a3a4a;
+    border-left: 4px solid var(--gold);
+  }
+
+  .field {
+    background: rgba(201,168,76,.15);
+    border-radius: 4px;
+    padding: .05rem .35rem;
+    font-family: monospace;
+    font-size: .8rem;
+    color: #7a6020;
+  }
+
+  /* LISTS */
+  ul.styled {
+    list-style: none;
+    margin: .8rem 0 1rem;
+    padding: 0;
+  }
+
+  ul.styled li {
+    padding: .35rem 0 .35rem 1.4rem;
+    font-size: .88rem;
+    color: #3a3a4a;
+    position: relative;
+    border-bottom: 1px solid rgba(0,0,0,.04);
+  }
+
+  ul.styled li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  ul.check li::before { content: '✓'; color: var(--success); }
+  ul.cross li::before { content: '✗'; color: var(--danger); }
+
+  /* DAMAGE TABLE */
+  .damage-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .damage-card {
+    border-radius: 10px;
+    padding: 1.4rem;
+    border: 1px solid;
+  }
+
+  .damage-leve {
+    background: rgba(46,107,79,.05);
+    border-color: rgba(46,107,79,.3);
+  }
+
+  .damage-medio {
+    background: rgba(230,126,34,.06);
+    border-color: rgba(230,126,34,.35);
+  }
+
+  .damage-grave {
+    background: rgba(138,46,46,.06);
+    border-color: rgba(138,46,46,.3);
+  }
+
+  .damage-card .badge {
+    display: inline-block;
+    font-size: .65rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    padding: .25rem .7rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: .9rem;
+  }
+
+  .damage-leve .badge { background: rgba(46,107,79,.15); color: var(--success); }
+  .damage-medio .badge { background: rgba(230,126,34,.15); color: #a04000; }
+  .damage-grave .badge { background: rgba(138,46,46,.12); color: var(--danger); }
+
+  .damage-card h4 {
+    margin: 0 0 .6rem;
+    font-size: .92rem;
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .damage-card p { font-size: .8rem; margin: 0; }
+
+  /* FLOW / TIMELINE */
+  .flow { margin: 2rem 0; }
+
+  .flow-step {
+    display: flex;
+    gap: 1.2rem;
+    margin-bottom: .6rem;
+    position: relative;
+  }
+
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 38px;
+    bottom: -8px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .step-content {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    flex: 1;
+  }
+
+  .step-content strong {
+    display: block;
+    font-size: .88rem;
+    color: var(--ink);
+    margin-bottom: .4rem;
+  }
+
+  .step-content p { font-size: .8rem; margin: 0; color: var(--muted); }
+
+  /* GUARANTEE TABS */
+  .guarantee-section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .guarantee-row {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .guarantee-row:last-child { border-bottom: none; }
+
+  .guarantee-label {
+    background: var(--ink);
+    color: var(--gold-light);
+    padding: .9rem 1.2rem;
+    width: 120px;
+    flex-shrink: 0;
+    font-size: .72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+
+  .guarantee-desc {
+    padding: .9rem 1.2rem;
+    font-size: .83rem;
+    color: #3a3a4a;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  /* RULE BOX */
+  .rule-box {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 12px;
+    padding: 1.8rem 2rem;
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  .rule-box p {
+    color: rgba(255,255,255,.8);
+    font-size: .92rem;
+    margin: 0;
+  }
+
+  .rule-box strong {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--gold);
+    margin-bottom: .6rem;
+  }
+
+  /* CHECKLIST */
+  .checklist {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .checklist-title {
+    background: var(--cream-dark);
+    padding: .7rem 1.2rem;
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .7rem 1.2rem;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    font-size: .85rem;
+    color: #3a3a4a;
+  }
+
+  .checklist-item:last-child { border-bottom: none; }
+
+  .checklist-item .dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* CONCLUSION */
+  .conclusion {
+    background: var(--ink);
+    padding: 4rem 5rem;
+    margin-top: 4rem;
+  }
+
+  .conclusion h2 {
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+    font-size: 1.8rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .conclusion h2 em { color: var(--gold); font-style: normal; }
+
+  .conclusion p { color: rgba(255,255,255,.65); font-size: .9rem; max-width: 640px; }
+
+  .conclusion .final-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: rgba(255,255,255,.85);
+    margin-top: 2rem;
+    border-left: 3px solid var(--gold);
+    padding-left: 1.2rem;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* SCROLL PROGRESS */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--gold);
+    z-index: 1000;
+    transition: width .1s;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero, .content { padding: 2.5rem 1.8rem; }
+    .intro-grid, .damage-grid { grid-template-columns: 1fr; }
+    .conclusion { padding: 3rem 1.8rem; }
+  }
+
+  @media print {
+    .sidebar, .progress-bar { display: none; }
+    .main { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <img src="logo-with-icon.jpg" alt="Porto Real" class="logo-img">
+    <span class="logo-sub">Manual de Rescisão</span>
+  </div>
+  <nav>
+    <span class="nav-section">Introdução</span>
+    <a href="#intro">Introdução Geral</a>
+    <a href="#papel">Papel do Funcionário</a>
+    <a href="#expectativas">Alinhamento de Expectativas</a>
+
+    <span class="nav-section">Cap. 1 – Abertura</span>
+    <a href="#aviso"><span class="num">1.1</span> Recebimento do Aviso</a>
+    <a href="#registro"><span class="num">1.2</span> Registro Interno</a>
+    <a href="#com-inquilino"><span class="num">1.3</span> Comunicação ao Inquilino</a>
+    <a href="#com-proprietario"><span class="num">1.4</span> Comunicação ao Proprietário</a>
+    <a href="#analise-prelim"><span class="num">1.5</span> Análise Preliminar</a>
+    <a href="#agendamento"><span class="num">1.6</span> Agendamento da Vistoria</a>
+
+    <span class="nav-section">Cap. 2 – Vistoria</span>
+    <a href="#dia-vistoria"><span class="num">2.1</span> Dia da Vistoria Final</a>
+    <a href="#retorno-vistoria"><span class="num">2.2</span> Retorno ao Setor</a>
+    <a href="#classificacao"><span class="num">2.3</span> Classificação de Danos</a>
+    <a href="#ausencia"><span class="num">2.4</span> Inquilino Ausente</a>
+    <a href="#encaminhamento"><span class="num">2.5</span> Encaminhamento</a>
+
+    <span class="nav-section">Cap. 3 – Negociação</span>
+    <a href="#formalizacao"><span class="num">3.1</span> Formalização</a>
+    <a href="#notificacao"><span class="num">3.2</span> Notificação Formal</a>
+    <a href="#prep-negociacao"><span class="num">3.3</span> Preparação</a>
+    <a href="#conducao"><span class="num">3.4</span> Condução</a>
+    <a href="#impasse"><span class="num">3.5</span> Impasse / Diretoria</a>
+
+    <span class="nav-section">Cap. 4 – Garantias</span>
+    <a href="#caucao"><span class="num">4.1</span> Caução</a>
+    <a href="#fiador"><span class="num">4.2</span> Fiador</a>
+    <a href="#abandono"><span class="num">4.3</span> Abandono</a>
+    <a href="#substituicao"><span class="num">4.4</span> Substituição</a>
+
+    <span class="nav-section">Cap. 5 – Encerramento</span>
+    <a href="#chaves"><span class="num">5.1</span> Entrega das Chaves</a>
+    <a href="#transferencia"><span class="num">5.2</span> Água e Energia</a>
+    <a href="#quitacao"><span class="num">5.3</span> Termo de Quitação</a>
+
+    <span class="nav-section">Fluxo</span>
+    <a href="#fluxo">Fluxo Completo (15 etapas)</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <img src="logo-with-icon.jpg" alt="Porto Real" class="hero-logo">
+    <div class="hero-tag">Uso Interno · Gestão de Rescisões</div>
+    <h1>Manual de<br><em>Rescisão</em></h1>
+    <p>Guia operacional completo para condução de processos de encerramento de contratos de locação, do aviso de saída ao contrato encerrado.</p>
+  </div>
+
+  <div class="content">
+
+    <!-- ── INTRODUÇÃO ── -->
+    <section class="section" id="intro">
+      <div class="section-header">
+        <span class="chapter-label">Introdução</span>
+        <h2>O que é a Rescisão</h2>
+      </div>
+
+      <p>Rescisão é o processo de encerramento de um contrato de locação e a devolução do imóvel ao proprietário. Ela não começa na vistoria final — ela começa no momento em que o inquilino comunica a intenção de sair.</p>
+      <p>Na prática, a rescisão é uma operação técnica com forte carga emocional. Envolve prazos, documentos, vistoria, possíveis ajustes no imóvel, cálculo de valores e encerramento formal do vínculo contratual.</p>
+      <p>Por isso, na Porto Real, a rescisão não é apenas resolver problemas do imóvel — é <strong>administração de relacionamento</strong>. Nosso papel é atuar como mediadores técnicos, aplicando o contrato e conduzindo o processo com clareza e imparcialidade.</p>
+
+      <div class="intro-grid">
+        <div class="intro-card">
+          <div class="icon">📋</div>
+          <strong>Previsibilidade</strong>
+          <p>Todos precisam saber o que vai acontecer, em qual etapa estão e quais são os próximos passos.</p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">📁</div>
+          <strong>Registro Formal</strong>
+          <p>Nenhuma decisão importante acontece sem documentação. Tudo deve estar registrado.</p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">⚖️</div>
+          <strong>Neutralidade Técnica</strong>
+          <p>A Porto Real não toma partido. Aplicamos contrato, vistoria e procedimento.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAPEL DO FUNCIONÁRIO -->
+    <section class="section" id="papel">
+      <div class="section-header">
+        <span class="chapter-label">Introdução</span>
+        <h2>O Papel do Funcionário</h2>
+      </div>
+
+      <p>Durante a rescisão, o funcionário da Porto Real representa a empresa e atua como <strong>mediador técnico</strong> entre proprietário e inquilino. Isso significa que seu papel não é "defender" nenhuma das partes, e sim conduzir o processo com clareza, organizar etapas e aplicar os procedimentos estabelecidos.</p>
+
+      <h3>Postura esperada da equipe</h3>
+      <ul class="styled check">
+        <li>Utilize linguagem técnica e respeitosa</li>
+        <li>Mantenha comunicação clara e registrada</li>
+        <li>Evite promessas antes da vistoria final</li>
+        <li>Siga os fluxos definidos neste manual</li>
+        <li>Encaminhe conflitos para o nível correto</li>
+        <li>Nunca personalize reclamações</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">💬</div>
+        <div class="callout-body">
+          <strong>Frases padrão de atendimento</strong>
+          "Vou verificar conforme o procedimento da empresa." · "Preciso encaminhar para análise." · "Retorno após conferência técnica."
+        </div>
+      </div>
+
+      <div class="rule-box">
+        <strong>Regra central do operador</strong>
+        <p>O funcionário executa o procedimento — não decide sozinho. Decisões envolvendo valores, responsabilidades ou exceções devem ser encaminhadas ao nível de negociação definido pela empresa.</p>
+      </div>
+    </section>
+
+    <!-- EXPECTATIVAS -->
+    <section class="section" id="expectativas">
+      <div class="section-header">
+        <span class="chapter-label">Introdução</span>
+        <h2>Alinhamento de Expectativas</h2>
+      </div>
+
+      <p>A maior parte dos conflitos em rescisões não nasce na vistoria final. Eles surgem da diferença entre o que as pessoas esperam e o que realmente acontece. Por isso, o alinhamento faz parte do processo desde o primeiro contato.</p>
+      <p>Assim que o inquilino comunica a saída, já são enviados: a vistoria inicial, as orientações de devolução e os prazos do processo. Da mesma forma, o proprietário é imediatamente informado sobre o início da rescisão, as etapas técnicas e a possibilidade de desgaste natural do imóvel.</p>
+    </section>
+
+    <!-- ── CAPÍTULO 1 ── -->
+    <section class="section" id="aviso">
+      <div class="section-header">
+        <span class="chapter-label">Capítulo 1 · Abertura da Rescisão</span>
+        <h2>1.1 Recebimento do Aviso de Saída</h2>
+      </div>
+
+      <p>A rescisão começa oficialmente quando o inquilino comunica sua intenção de sair. Porém, nem toda comunicação vale como aviso formal.</p>
+
+      <h3>O que é aviso formal válido</h3>
+      <p>Para que o processo seja iniciado oficialmente, a comunicação deve conter: nome completo, endereço do imóvel, declaração clara de rescisão e data prevista de desocupação — preferencialmente por e-mail ou WhatsApp institucional com registro salvo.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1.5rem 0">
+        <div class="callout callout-warn" style="margin:0">
+          <div class="callout-icon">✗</div>
+          <div class="callout-body">
+            <strong>NÃO é aviso formal</strong>
+            "Estou pensando em sair." · "Talvez mês que vem." · Ligação sem registro escrito · Conversa informal em visita.
+          </div>
+        </div>
+        <div class="callout callout-success" style="margin:0">
+          <div class="callout-icon">✓</div>
+          <div class="callout-body">
+            <strong>É aviso formal</strong>
+            Mensagem escrita com data prevista de saída, via WhatsApp ou e-mail. A data de envio é o marco inicial do processo.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-gold">
+        <div class="callout-icon">📌</div>
+        <div class="callout-body">
+          <strong>Resposta padrão ao aviso verbal</strong>
+          "Perfeito, para darmos início ao processo, preciso que nos envie uma formalização por escrito com a data prevista de saída. Assim que recebermos, iniciamos oficialmente a rescisão."
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="registro">
+      <h3 style="margin-top:0">1.2 Registro Interno e Abertura no Sistema</h3>
+      <p>Após o recebimento do aviso formal, o próximo passo é a organização interna — <em>antes</em> de qualquer nova comunicação com o inquilino ou proprietário.</p>
+
+      <div class="checklist">
+        <div class="checklist-title">O que deve ser registrado</div>
+        <div class="checklist-item"><div class="dot"></div> Nome do inquilino e endereço do imóvel</div>
+        <div class="checklist-item"><div class="dot"></div> Data da formalização e data prevista de saída</div>
+        <div class="checklist-item"><div class="dot"></div> Tipo de garantia (caução, fiador, seguro fiança)</div>
+        <div class="checklist-item"><div class="dot"></div> Prazo contratual e existência de multa</div>
+        <div class="checklist-item"><div class="dot"></div> Valor da caução (se houver)</div>
+        <div class="checklist-item"><div class="dot"></div> Data prevista da vistoria final</div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Regra inviolável</strong>
+          Nenhuma promessa deve ser feita ao inquilino ou ao proprietário antes do registro interno completo. Primeiro se entende o contrato — depois se comunica.
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="com-inquilino">
+      <h3 style="margin-top:0">1.3 Comunicação Oficial ao Inquilino</h3>
+      <p>Após o registro interno, o próximo passo é comunicar oficialmente o inquilino. Essa mensagem define o tom da rescisão e prepara tecnicamente o inquilino para a vistoria final.</p>
+
+      <div class="message-template">
+        <div class="message-header">Modelo oficial — Comunicação ao Inquilino</div>
+        <div class="message-body">
+          <p>Olá, tudo bem?</p>
+          <p>Confirmamos o recebimento da sua formalização de saída do imóvel localizado em <span class="field">[endereço do imóvel]</span>, com data prevista de desocupação em <span class="field">[data informada pelo inquilino]</span>.</p>
+          <p>A partir desta data, iniciamos oficialmente o processo de rescisão contratual.</p>
+          <p>Em anexo, encaminhamos a vistoria inicial do imóvel. Solicitamos que o imóvel seja devolvido conforme descrito neste documento.</p>
+          <p>A vistoria final está agendada para o dia <span class="field">[data]</span>, às <span class="field">[horário]</span>. O imóvel deverá estar vazio e limpo nessa data.</p>
+          <p>Caso deseje, podemos auxiliá-lo na análise da vistoria inicial para identificar previamente eventuais ajustes necessários antes da vistoria final.</p>
+          <p>Informamos que eventuais valores (multa contratual, débitos ou devolução de caução) serão definidos somente após a realização da vistoria final e análise técnica. Em caso de devolução de caução, o prazo é de até 30 dias após o encerramento completo do processo.</p>
+          <p>Permanecemos à disposição para esclarecimentos.</p>
+        </div>
+      </div>
+
+      <h4>Pontos que não podem faltar</h4>
+      <ul class="styled check">
+        <li>Envio da vistoria inicial</li>
+        <li>Data da vistoria final</li>
+        <li>Informação de que valores só são definidos após análise</li>
+        <li>Prazo de até 30 dias para caução</li>
+        <li>Oferta de apoio preventivo</li>
+      </ul>
+    </section>
+
+    <section class="section" id="com-proprietario">
+      <h3 style="margin-top:0">1.4 Comunicação Oficial ao Proprietário</h3>
+      <p>No mesmo dia em que a saída é formalizada, o proprietário também deve ser orientado. Essa mensagem tem um papel estratégico: explicar que a rescisão é um processo técnico com etapas e que nem todo desgaste é automaticamente responsabilidade do inquilino.</p>
+
+      <div class="message-template">
+        <div class="message-header">Modelo oficial — Comunicação ao Proprietário</div>
+        <div class="message-body">
+          <p>Olá, tudo bem?</p>
+          <p>Informamos que o inquilino comunicou oficialmente a saída do imóvel localizado em <span class="field">[endereço do imóvel]</span>, com data prevista de desocupação em <span class="field">[data]</span>.</p>
+          <p>Iniciamos agora o processo de rescisão contratual, que ocorre em etapas técnicas, incluindo vistoria final, comparação com a vistoria inicial e análise de eventuais ajustes necessários no imóvel.</p>
+          <p>A vistoria final está agendada para o dia <span class="field">[data]</span>, às <span class="field">[horário]</span>. Após essa vistoria, nossa equipe fará a análise técnica e retornaremos com um relatório detalhado.</p>
+          <p>Ressaltamos que o imóvel pode apresentar desgaste natural de uso, e que nem todos os apontamentos são automaticamente de responsabilidade do inquilino. Cada situação é avaliada conforme contrato e vistoria inicial.</p>
+          <p>Assim que concluirmos a vistoria e a análise, entraremos em contato com as informações completas e próximos passos.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="analise-prelim">
+      <h3 style="margin-top:0">1.5 Análise Preliminar do Contrato</h3>
+      <p>Após as comunicações iniciais, a equipe realiza análise interna do contrato. O objetivo é preparar a empresa para os próximos passos, identificando: se o aviso foi dado dentro do prazo, se existe multa, qual é o tipo de garantia e, quando houver caução, o valor depositado.</p>
+      <p>Quando o inquilino perguntar sobre devolução de caução ou multa, a resposta padrão deve ser:</p>
+      <div class="callout callout-gold">
+        <div class="callout-icon">💬</div>
+        <div class="callout-body">"Essas informações só podem ser confirmadas após a vistoria final e análise completa do processo."</div>
+      </div>
+    </section>
+
+    <section class="section" id="agendamento">
+      <h3 style="margin-top:0">1.6 Agendamento da Vistoria Final</h3>
+      <p>Após a abertura da rescisão, deve ser informada ao inquilino a data e o horário exatos da vistoria final, sempre por escrito, com confirmação de recebimento.</p>
+
+      <div class="message-template">
+        <div class="message-header">Modelo — Orientação ao Inquilino sobre Vistoria</div>
+        <div class="message-body">
+          <p>Sua vistoria final está agendada para o dia <span class="field">[data]</span>, às <span class="field">[horário]</span>. Pedimos, por gentileza, que confirme o recebimento desta informação.</p>
+          <p>Informamos que, na data da vistoria, o imóvel deverá estar completamente vazio, livre de bens e pessoas, e adequado conforme a vistoria inicial, que já foi encaminhada.</p>
+          <p>É imprescindível a presença do inquilino ou de um representante no momento da vistoria, para acompanhamento dos apontamentos técnicos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CAPÍTULO 2 ── -->
+    <section class="section" id="dia-vistoria">
+      <div class="section-header">
+        <span class="chapter-label">Capítulo 2 · Vistoria Final e Base Técnica</span>
+        <h2>2.1 O Dia da Vistoria Final</h2>
+      </div>
+
+      <p>No dia da vistoria final, a equipe deve atuar com postura técnica, calma e objetiva. A vistoria é realizada com base exclusiva na vistoria inicial — cada ambiente e cada item são comparados com o que foi registrado no início da locação.</p>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ️</div>
+        <div class="callout-body">
+          <strong>Papel do vistoriador</strong>
+          Ele observa, registra, fotografa e descreve as condições do imóvel. Ele não discute valores, não negocia responsabilidades e não entra em debate com o inquilino. Se surgirem questionamentos: <em>"Tudo será analisado pela equipe responsável após a vistoria."</em>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="retorno-vistoria">
+      <h3 style="margin-top:0">2.2 Retorno ao Setor de Rescisão</h3>
+      <p>Após a vistoria, o relatório com fotos e observações retorna ao setor de rescisão. O setor compara vistoria inicial × vistoria final, item por item, identificando o que permaneceu conforme, o que sofreu desgaste natural e o que representa dano a ser avaliado. Toda conclusão deve estar respaldada pela documentação.</p>
+    </section>
+
+    <section class="section" id="classificacao">
+      <h3 style="margin-top:0">2.3 Classificação Técnica dos Danos</h3>
+      <p>Após a comparação, os apontamentos são classificados em três níveis. Essa classificação cria um caminho claro, evita decisões emocionais e garante que situações semelhantes sejam tratadas da mesma forma.</p>
+
+      <div class="damage-grid">
+        <div class="damage-card damage-leve">
+          <span class="badge">Leve</span>
+          <h4>Baixo Impacto</h4>
+          <p>Lâmpadas queimadas, pequenos furos, trincos, limpeza pontual. A imobiliária executa direto e pode descontar da caução. Sem prazo adicional.</p>
+        </div>
+        <div class="damage-card damage-medio">
+          <span class="badge">Médio</span>
+          <h4>Requer Correção</h4>
+          <p>Pintura, troca de portas, vidros. O inquilino recebe prazo para corrigir. Chaves permanecem com ele. Contrato ativo. Nova vistoria após reparos.</p>
+        </div>
+        <div class="damage-card damage-grave">
+          <span class="badge">Grave</span>
+          <h4>Negociação Formal</h4>
+          <p>Alterações estruturais, infiltrações, modificações não autorizadas. Encaminhar para responsável por negociação ou diretoria. Possível acionamento de garantia.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Dano médio — ponto de atenção</strong>
+          A devolução do imóvel com pendências de dano médio caracteriza indício de quebra contratual. O contrato permanece ativo e os dias proporcionais continuam sendo cobrados até a entrega efetiva em conformidade.
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ausencia">
+      <h3 style="margin-top:0">2.4 Inquilino Ausente na Vistoria Final</h3>
+      <p>Se o inquilino não comparecer na data agendada, a vistoria <strong>não deve ser realizada</strong> nesse primeiro momento. O procedimento é:</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Registrar a ausência</strong>
+            <p>Documentar que a equipe compareceu e não houve acompanhamento.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Enviar notificação formal</strong>
+            <p>No mesmo dia, comunicar por escrito a ausência e o reagendamento.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Reagendar (normalmente 48h)</strong>
+            <p>Informar que na nova data, caso não haja presença, a vistoria será realizada pelo time e valerá como base do processo.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Segunda ausência → vistoria realizada</strong>
+            <p>O laudo técnico passa a valer. A ausência voluntária não impede a continuidade.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="message-template">
+        <div class="message-header">Modelo — Ausência na Vistoria Final</div>
+        <div class="message-body">
+          <p>Olá, tudo bem? Informamos que comparecemos hoje ao imóvel localizado em <span class="field">[endereço]</span>, conforme vistoria agendada para <span class="field">[data]</span> às <span class="field">[horário]</span>, porém não houve acompanhamento do inquilino ou representante.</p>
+          <p>Reagendamos a vistoria final para o dia <span class="field">[nova data]</span>, às <span class="field">[horário]</span>. Caso não haja acompanhamento nesta nova data, a vistoria será realizada normalmente pela equipe e o relatório técnico será utilizado para dar continuidade ao processo de rescisão.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="encaminhamento">
+      <h3 style="margin-top:0">2.5 Encaminhamento após Classificação</h3>
+      <p>Sem danos ou dano leve → rescisão segue para encerramento. Dano médio → prazo ao inquilino para correção + nova vistoria. Dano grave ou divergência relevante → negociação estruturada (Capítulo 3). O encerramento só ocorre quando o imóvel está em conformidade, os valores foram apurados e as responsabilidades formalizadas.</p>
+    </section>
+
+    <!-- ── CAPÍTULO 3 ── -->
+    <section class="section" id="formalizacao">
+      <div class="section-header">
+        <span class="chapter-label">Capítulo 3 · Negociação Técnica</span>
+        <h2>3.1 A Formalização como Ponto de Virada</h2>
+      </div>
+
+      <p>A partir do momento em que surgem pendências, toda situação que envolva execução de reparos, cobrança de valores, retenção de caução, acionamento de fiador ou discussão sobre responsabilidade deve ser formalizada por <strong>ferramenta de assinatura eletrônica</strong> (DocuSign ou equivalente).</p>
+
+      <h4>O documento formal tem três funções</h4>
+      <ul class="styled">
+        <li>Registrar objetivamente os apontamentos e a base contratual utilizada</li>
+        <li>Estabelecer prazos claros para manifestação ou correção</li>
+        <li>Deixar explícitas as consequências do não cumprimento</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">📄</div>
+        <div class="callout-body">A comunicação pode continuar acontecendo por WhatsApp ou telefone, mas o posicionamento oficial da empresa deve estar sempre registrado em documento formal.</div>
+      </div>
+    </section>
+
+    <section class="section" id="notificacao">
+      <h3 style="margin-top:0">3.2 Estrutura da Notificação Formal</h3>
+      <p>A notificação deve explicar o que foi constatado, com referência à vistoria inicial e ao contrato, informar o prazo definido para manifestação ou correção, deixar explícito o que acontece se não houver resposta, e manter tom técnico e impessoal.</p>
+    </section>
+
+    <section class="section" id="prep-negociacao">
+      <h3 style="margin-top:0">3.3 Preparação da Negociação</h3>
+      <p>A negociação só deve começar quando o processo estiver fechado tecnicamente. O responsável deve ter em mãos:</p>
+      <ul class="styled check">
+        <li>Relatório completo da vistoria e comparação com a inicial</li>
+        <li>Orçamentos necessários</li>
+        <li>Cálculo atualizado de dias proporcionais</li>
+        <li>Multa, débitos e garantia</li>
+        <li>Proposta clara de encerramento com alternativas</li>
+      </ul>
+      <div class="callout callout-warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">Nunca iniciar negociação dizendo que ainda vai verificar valores. O cliente deve receber, de uma só vez, o cenário completo com números, alternativas e prazo para decisão.</div>
+      </div>
+    </section>
+
+    <section class="section" id="conducao">
+      <h3 style="margin-top:0">3.4 Condução da Negociação</h3>
+      <p>A Porto Real deve ser <strong>firme no processo e clara nas regras, mas nunca agressiva ou inflexível de maneira desnecessária</strong>. Ser empático não significa abrir mão do procedimento. Significa compreender o contexto, ouvir, explicar com clareza e manter diálogo respeitoso sem perder objetividade.</p>
+      <div class="rule-box">
+        <strong>Equilíbrio fundamental</strong>
+        <p>Rigor no processo · Empatia na postura</p>
+      </div>
+      <p>Contrapropostas devem ser analisadas internamente antes de qualquer resposta definitiva. O operador não negocia valores no impulso.</p>
+    </section>
+
+    <section class="section" id="impasse">
+      <h3 style="margin-top:0">3.5 Impasse e Encaminhamento à Diretoria</h3>
+      <p>Quando houver discordância relevante, questionamento técnico ou variação de valores, o caso deve ser encaminhado para a diretoria. O operador não carrega esse peso sozinho. Ao encaminhar, o processo já deve estar completamente organizado para que a decisão superior seja tomada com rapidez.</p>
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ️</div>
+        <div class="callout-body">Durante o período de análise interna, o cliente deve ser informado de que o caso está em análise, com prazo estimado para retorno. Isso mantém transparência e evita sensação de abandono.</div>
+      </div>
+    </section>
+
+    <!-- ── CAPÍTULO 4 ── -->
+    <section class="section" id="caucao">
+      <div class="section-header">
+        <span class="chapter-label">Capítulo 4 · Garantias e Situações Especiais</span>
+        <h2>4.1 Rescisão com Caução</h2>
+      </div>
+
+      <p>A devolução, total ou parcial, só pode ser definida após: conclusão da vistoria, apuração de dias proporcionais, cálculo de multa (se houver) e definição de eventuais reparos. O prazo de devolução é de até 30 dias após o encerramento completo.</p>
+
+      <div class="checklist">
+        <div class="checklist-title">Antes de definir devolução da caução</div>
+        <div class="checklist-item"><div class="dot"></div> Vistoria final concluída</div>
+        <div class="checklist-item"><div class="dot"></div> Dias proporcionais apurados</div>
+        <div class="checklist-item"><div class="dot"></div> Multa calculada (se houver)</div>
+        <div class="checklist-item"><div class="dot"></div> Reparos definidos</div>
+        <div class="checklist-item"><div class="dot"></div> Todos os valores consolidados</div>
+      </div>
+
+      <p>Quando houver desconto, o valor deve estar acompanhado de memória de cálculo clara. Se os valores superarem a caução, o saldo é cobrado formalmente do inquilino. Mesmo com desconto automático, a decisão deve ser registrada em documento.</p>
+    </section>
+
+    <section class="section" id="fiador">
+      <h3 style="margin-top:0">4.2 Rescisão com Fiador</h3>
+      <p>O fiador deve ser notificado simultaneamente ao inquilino sempre que houver pendências financeiras, por meio de ferramenta de assinatura eletrônica. A responsabilidade é solidária — a cobrança pode ser direcionada a ambos.</p>
+
+      <div class="guarantee-section">
+        <div class="guarantee-row">
+          <div class="guarantee-label">Identificação</div>
+          <div class="guarantee-desc">Desde a abertura, manter dados do fiador atualizados no processo.</div>
+        </div>
+        <div class="guarantee-row">
+          <div class="guarantee-label">Notificação</div>
+          <div class="guarantee-desc">Simultânea ao inquilino, sempre formal, com relatório de vistoria, valores e prazo.</div>
+        </div>
+        <div class="guarantee-row">
+          <div class="guarantee-label">Tom</div>
+          <div class="guarantee-desc">Técnico e respeitoso — o fiador geralmente não acompanha o dia a dia da locação.</div>
+        </div>
+        <div class="guarantee-row">
+          <div class="guarantee-label">Sem retorno</div>
+          <div class="guarantee-desc">Encaminhar para diretoria ou setor jurídico conforme política interna.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="abandono">
+      <h3 style="margin-top:0">4.3 Abandono do Imóvel</h3>
+      <p>Quando o inquilino deixa o imóvel sem cumprir o procedimento, o processo técnico continua. A ausência de formalização não encerra o contrato — o aluguel continua correndo.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content"><strong>Registrar ocorrência internamente</strong><p>Documentar sinais de abandono e comunicar o proprietário por escrito.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content"><strong>Tentar contato com o inquilino</strong><p>Solicitar formalização e prazo para entrega.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content"><strong>Sem resposta → vistoria técnica</strong><p>Registro fotográfico completo e elaboração de relatório como base para apuração.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-content"><strong>Seguir para Capítulo 3</strong><p>Formalização de pendências, apuração de valores e acionamento de garantia.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="substituicao">
+      <h3 style="margin-top:0">4.4 Substituição de Inquilino</h3>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">🚫</div>
+        <div class="callout-body">
+          <strong>Regra da Porto Real: NÃO realiza passagem direta de contrato</strong>
+          Substituição direta só é admitida em situações excepcionais avaliadas pela diretoria. A passagem de contrato é uma das maiores fontes de prejuízo operacional.
+        </div>
+      </div>
+
+      <p>O procedimento padrão sempre é: encerrar tecnicamente o contrato anterior (vistoria completa, comparação, regularização de pendências) e só então iniciar novo contrato com análise cadastral completa, nova garantia e nova vistoria.</p>
+      <p><strong>Nunca se deve permitir herança de vistoria ou troca direta de chaves entre inquilinos sem participação da imobiliária.</strong></p>
+    </section>
+
+    <!-- ── CAPÍTULO 5 ── -->
+    <section class="section" id="chaves">
+      <div class="section-header">
+        <span class="chapter-label">Capítulo 5 · Formalização Final</span>
+        <h2>5.1 Entrega Formal das Chaves</h2>
+      </div>
+
+      <p>A entrega de chaves deve ser documentada por meio de termo próprio assinado pelo inquilino ou representante autorizado, registrando data e confirmação de que não há mais bens no imóvel.</p>
+
+      <div class="checklist">
+        <div class="checklist-title">Antes de receber as chaves</div>
+        <div class="checklist-item"><div class="dot"></div> Todas as pendências técnicas resolvidas ou formalizadas</div>
+        <div class="checklist-item"><div class="dot"></div> Valores apurados ou em processo de cobrança por garantia</div>
+        <div class="checklist-item"><div class="dot"></div> Imóvel considerado apto para devolução</div>
+      </div>
+    </section>
+
+    <section class="section" id="transferencia">
+      <h3 style="margin-top:0">5.2 Transferência de Água e Energia</h3>
+      <p>Após a entrega das chaves, a Porto Real transfere as contas de água e energia para o nome do proprietário. São emitidos relatórios das concessionárias, arquivados no processo. Somente após a confirmação das transferências o imóvel é considerado operacionalmente devolvido.</p>
+    </section>
+
+    <section class="section" id="quitacao">
+      <h3 style="margin-top:0">5.3 Termo de Quitação com o Proprietário</h3>
+      <p>Com chaves entregues e contas transferidas, a Porto Real elabora o <strong>Termo de Quitação</strong> — documento que consolida todo o processo de rescisão. Ao assiná-lo, o proprietário declara que está ciente do resultado e que considera o contrato encerrado, sem pendências adicionais.</p>
+
+      <div class="checklist">
+        <div class="checklist-title">Documentação final arquivada no dossiê</div>
+        <div class="checklist-item"><div class="dot"></div> Termo de entrega de chaves</div>
+        <div class="checklist-item"><div class="dot"></div> Relatórios de transferência de água e energia</div>
+        <div class="checklist-item"><div class="dot"></div> Vistoria final</div>
+        <div class="checklist-item"><div class="dot"></div> Comunicações formais</div>
+        <div class="checklist-item"><div class="dot"></div> Termo de Quitação assinado</div>
+      </div>
+
+      <div class="rule-box">
+        <strong>Somente após o Termo de Quitação assinado</strong>
+        <p>a rescisão é considerada encerrada pela Porto Real e o imóvel está liberado para nova locação.</p>
+      </div>
+    </section>
+
+    <!-- ── FLUXO COMPLETO ── -->
+    <section class="section" id="fluxo">
+      <div class="section-header">
+        <span class="chapter-label">Resumo Operacional</span>
+        <h2>Fluxo Completo da Rescisão</h2>
+      </div>
+      <p style="margin-bottom:2rem">Da intenção de saída ao contrato encerrado — 15 etapas.</p>
+
+      <div class="flow">
+        <div class="flow-step"><div class="step-num">1</div><div class="step-content"><strong>Aviso de saída do inquilino</strong><p>Apenas aviso escrito (WhatsApp / e-mail) inicia oficialmente o processo. Verbal ou informal → solicitar formalização.</p></div></div>
+        <div class="flow-step"><div class="step-num">2</div><div class="step-content"><strong>Registro interno da rescisão</strong><p>Antes de qualquer comunicação: registrar data, imóvel, garantia, multa e caução.</p></div></div>
+        <div class="flow-step"><div class="step-num">3</div><div class="step-content"><strong>Comunicação oficial ao inquilino</strong><p>Confirmar aviso, enviar vistoria inicial, agendar vistoria final, informar sobre caução e valores.</p></div></div>
+        <div class="flow-step"><div class="step-num">4</div><div class="step-content"><strong>Comunicação oficial ao proprietário</strong><p>Informar saída, explicar processo técnico, alinhar expectativas sobre desgaste natural.</p></div></div>
+        <div class="flow-step"><div class="step-num">5</div><div class="step-content"><strong>Agendamento da vistoria final</strong><p>Data e horário definidos, confirmação por escrito, orientação sobre imóvel vazio.</p></div></div>
+        <div class="flow-step"><div class="step-num">6</div><div class="step-content"><strong>Dia da vistoria final</strong><p>Comparar com vistoria inicial, registrar, fotografar. Não negociar, não discutir valores.</p></div></div>
+        <div class="flow-step"><div class="step-num">7</div><div class="step-content"><strong>Ausência do inquilino (se ocorrer)</strong><p>Registrar, notificar, reagendar. Na segunda ausência, realizar a vistoria.</p></div></div>
+        <div class="flow-step"><div class="step-num">8</div><div class="step-content"><strong>Análise técnica e classificação dos danos</strong><p>Leve → executar direto. Médio → prazo ao inquilino. Grave → negociação estruturada.</p></div></div>
+        <div class="flow-step"><div class="step-num">9</div><div class="step-content"><strong>Preparação da negociação</strong><p>Fechar tecnicamente antes de falar com o cliente: vistoria, orçamentos, multa, proposta completa.</p></div></div>
+        <div class="flow-step"><div class="step-num">10</div><div class="step-content"><strong>Negociação formal</strong><p>Empatia + rigor técnico. Tudo relevante vai por DocuSign: apontamentos, valores, prazos, consequências.</p></div></div>
+        <div class="flow-step"><div class="step-num">11</div><div class="step-content"><strong>Garantias conforme tipo</strong><p>Caução: desconto pós-fechamento técnico. Fiador: notificação simultânea. Abandono: processo continua. Substituição: rescisão completa antes de novo contrato.</p></div></div>
+        <div class="flow-step"><div class="step-num">12</div><div class="step-content"><strong>Entrega formal das chaves</strong><p>Somente após pendências resolvidas ou formalizadas. Assinatura do Termo de Entrega.</p></div></div>
+        <div class="flow-step"><div class="step-num">13</div><div class="step-content"><strong>Transferência de água e energia</strong><p>Imobiliária realiza transferência para o proprietário e arquiva relatórios das concessionárias.</p></div></div>
+        <div class="flow-step"><div class="step-num">14</div><div class="step-content"><strong>Termo de Quitação com proprietário</strong><p>Proprietário analisa e assina: "Esse contrato acabou e está tudo certo." Encerramento definitivo.</p></div></div>
+        <div class="flow-step"><div class="step-num">15</div><div class="step-content"><strong>Arquivamento</strong><p>Guardar: vistoria, notificações, termos, relatórios, quitação. Contrato oficialmente encerrado.</p></div></div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+
+  <!-- CONCLUSION -->
+  <div class="conclusion">
+    <h2>A Rescisão como<br><em>Gestão de Relacionamento</em></h2>
+    <p>Este manual existe para garantir que cada rescisão seja conduzida com organização, técnica, empatia e segurança jurídica. Ele transforma situações difíceis em processos claros, reduz improviso, protege a equipe e preserva o relacionamento com clientes.</p>
+    <p style="margin-top:1rem">A empresa deve ser firme no procedimento, mas humana na postura. Ser rígido no processo não significa ser duro com as pessoas — significa criar um caminho claro, transparente e justo para todos os envolvidos.</p>
+    <div class="final-quote">
+      "Imóveis são patrimônio.<br>Mas relações são tudo."
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Scroll progress bar
+  window.addEventListener('scroll', () => {
+    const el = document.getElementById('progress');
+    const total = document.body.scrollHeight - window.innerHeight;
+    el.style.width = (window.scrollY / total * 100) + '%';
+  });
+
+  // Active sidebar link
+  const sections = document.querySelectorAll('section[id], div[id]');
+  const links = document.querySelectorAll('.sidebar nav a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector('.sidebar nav a[href="#' + entry.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

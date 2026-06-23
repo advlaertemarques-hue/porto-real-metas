@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Porto Real — Protótipo UX/UI v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; color: #0f172a; height: 100vh; overflow: hidden; }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  .app { display: flex; height: 100vh; }
+
+  /* ── TOP NAV ───────────────────────────────────────────────── */
+  .topnav {
+    height: 52px; background: #0f172a;
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    flex-shrink: 0;
+  }
+  .tn-brand { display: flex; align-items: center; gap: 9px; margin-right: 24px; flex-shrink: 0; }
+  .tn-logo-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, #e11d48, #be123c);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #fff; font-weight: 800;
+  }
+  .tn-logo-text { font-size: 14px; font-weight: 700; color: #fff; }
+
+  .tn-divider { width: 1px; height: 24px; background: rgba(255,255,255,.1); margin-right: 12px; }
+
+  /* Module tabs in topnav */
+  .mod-btn {
+    padding: 6px 14px; border-radius: 7px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; transition: all .15s;
+    background: transparent; color: #64748b;
+    display: flex; align-items: center; gap: 6px; height: 34px;
+  }
+  .mod-btn:hover { background: rgba(255,255,255,.07); color: #94a3b8; }
+  .mod-btn.active-inst { background: rgba(16,185,129,.15); color: #34d399; }
+  .mod-btn.active-vend { background: rgba(225,29,72,.18); color: #fb7185; }
+  .mod-btn.active-alug { background: rgba(59,130,246,.18); color: #60a5fa; }
+
+  .tn-spacer { flex: 1; }
+  .tn-right { display: flex; align-items: center; gap: 8px; }
+  .tn-online {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.2);
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; color: #34d399;
+  }
+  .tn-online-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+  .tn-notif {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+    cursor: pointer; font-size: 14px; color: #94a3b8;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .tn-notif-dot {
+    position: absolute; top: 5px; right: 5px;
+    width: 7px; height: 7px; background: #e11d48;
+    border-radius: 50%; border: 2px solid #0f172a;
+  }
+  .tn-user {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px; padding: 5px 10px; cursor: pointer;
+  }
+  .tn-av {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tn-uname { font-size: 11px; font-weight: 600; color: #cbd5e1; }
+
+  /* ── SIDEBAR ───────────────────────────────────────────────── */
+  .sidebar {
+    width: 210px; flex-shrink: 0;
+    background: #0f172a;
+    display: flex; flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+
+  /* Nav */
+  .sb-nav { flex: 1; overflow-y: auto; padding: 8px 10px 8px; }
+  .nav-group { margin-bottom: 4px; }
+  .nav-group-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #334155;
+    padding: 10px 8px 4px; display: block;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 7px;
+    color: #64748b; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .12s; border: none;
+    background: none; width: 100%; text-align: left;
+    text-decoration: none;
+  }
+  .nav-item:hover { color: #cbd5e1; background: rgba(255,255,255,.05); }
+  .nav-item.active { background: rgba(99,102,241,.18); color: #a5b4fc; font-weight: 600; }
+  .nav-item.active-em { background: rgba(16,185,129,.15); color: #34d399; font-weight: 600; }
+  .nav-item.active-rd { background: rgba(225,29,72,.14); color: #fb7185; font-weight: 600; }
+  .nav-item.active-bl { background: rgba(59,130,246,.15); color: #60a5fa; font-weight: 600; }
+  .nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: rgba(225,29,72,.2); color: #fb7185;
+    padding: 1px 6px; border-radius: 10px;
+  }
+
+  /* User */
+  .sb-user {
+    margin-top: auto; padding: 12px 12px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    display: flex; align-items: center; gap: 9px;
+  }
+  .user-av {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .user-name { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+  .user-role { font-size: 10px; color: #475569; margin-top: 1px; }
+  .logout-btn {
+    margin-left: auto; width: 28px; height: 28px; border-radius: 6px;
+    background: none; border: none; color: #475569; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: all .15s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,.06); color: #94a3b8; }
+
+  /* ── MAIN ───────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Topbar (page context, white) */
+  .topbar {
+    height: 50px; background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 12px; flex-shrink: 0;
+  }
+  .topbar-breadcrumb { flex: 1; }
+  .topbar-page { font-size: 14px; font-weight: 700; color: #0f172a; }
+  .topbar-sub { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+  .topbar-search {
+    display: flex; align-items: center; gap: 8px;
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 5px 12px; width: 200px;
+  }
+  .topbar-search input {
+    border: none; background: none; outline: none;
+    font-size: 13px; color: #1e293b; width: 100%;
+  }
+  .topbar-search input::placeholder { color: #94a3b8; }
+
+  /* Content */
+  .content { flex: 1; overflow-y: auto; padding: 20px; }
+
+  /* ── CARDS & COMPONENTS ─────────────────────────────── */
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-size: 20px; font-weight: 800; color: #0f172a; }
+  .page-desc { font-size: 13px; color: #64748b; margin-top: 3px; }
+
+  .card {
+    background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 12px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .card-subtitle { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 16px; position: relative; overflow: hidden;
+  }
+  .kpi-card.accent-red { border-left: 3px solid #e11d48; }
+  .kpi-card.accent-blue { border-left: 3px solid #3b82f6; }
+  .kpi-card.accent-green { border-left: 3px solid #10b981; }
+  .kpi-card.accent-amber { border-left: 3px solid #f59e0b; }
+  .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #94a3b8; }
+  .kpi-val { font-size: 26px; font-weight: 800; color: #0f172a; margin: 4px 0 2px; line-height: 1; }
+  .kpi-delta { font-size: 11px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 3px; }
+  .kpi-icon { position: absolute; right: 14px; top: 14px; font-size: 20px; opacity: .15; }
+
+  /* Table-like rows */
+  .list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid #f8fafc;
+    transition: background .1s;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item:hover { background: #fafafa; }
+  .item-rank { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .rank-1 { background: #fef9c3; color: #a16207; }
+  .rank-2 { background: #f1f5f9; color: #475569; }
+  .rank-3 { background: #ffedd5; color: #c2410c; }
+  .item-name { font-size: 13px; font-weight: 600; color: #1e293b; flex: 1; }
+  .item-sub { font-size: 11px; color: #94a3b8; }
+  .item-bar { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .item-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3b82f6, #6366f1); }
+  .item-val { font-size: 13px; font-weight: 700; color: #475569; min-width: 80px; text-align: right; }
+
+  /* Button */
+  .btn-primary {
+    background: linear-gradient(135deg, #e11d48, #be123c);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all .15s; box-shadow: 0 1px 4px rgba(225,29,72,.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(225,29,72,.4); }
+  .btn-secondary {
+    background: #fff; color: #475569; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .12s;
+  }
+  .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+  /* Avisos */
+  .aviso-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 16px; display: flex; gap: 14px; margin-bottom: 10px;
+    transition: box-shadow .15s;
+  }
+  .aviso-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+  .aviso-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .aviso-blue .aviso-icon { background: #eff6ff; }
+  .aviso-amber .aviso-icon { background: #fffbeb; }
+  .aviso-green .aviso-icon { background: #f0fdf4; }
+  .aviso-tipo { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+  .aviso-blue .aviso-tipo { color: #3b82f6; }
+  .aviso-green .aviso-tipo { color: #10b981; }
+  .aviso-titre { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .aviso-msg { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .aviso-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .aviso-author { font-size: 11px; color: #94a3b8; }
+  .aviso-date { font-size: 11px; color: #cbd5e1; }
+
+  /* Checklist */
+  .checklist-item {
+    background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+    transition: all .15s;
+  }
+  .checklist-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  .check-box { width: 20px; height: 20px; border-radius: 5px; border: 2px solid #d1d5db; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .check-box.done { background: #10b981; border-color: #10b981; color: #fff; font-size: 11px; }
+  .check-name { font-size: 13px; font-weight: 600; color: #1e293b; flex: 1; }
+  .check-done-text { text-decoration: line-through; color: #94a3b8; }
+  .check-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .tag-red { background: #fef2f2; color: #e11d48; }
+  .tag-amber { background: #fffbeb; color: #d97706; }
+  .tag-blue { background: #eff6ff; color: #3b82f6; }
+  .tag-green { background: #f0fdf4; color: #16a34a; }
+
+  /* Screens */
+  .screen { display: none; height: 100%; }
+  .screen.active { display: flex; flex-direction: column; height: 100%; }
+
+  /* ── ANNOTATION BADGE ─────────────────────────────── */
+  .proto-banner {
+    background: linear-gradient(90deg, #1e293b, #334155);
+    color: #94a3b8; font-size: 11px; font-weight: 500;
+    padding: 7px 16px; text-align: center; flex-shrink: 0;
+    letter-spacing: .3px;
+  }
+  .proto-banner span { color: #e11d48; font-weight: 700; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  /* Stat mini cards (institucional) */
+  .stat-mini { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+  .stat-mini-label { font-size: 11px; color: #94a3b8; font-weight: 500; margin-bottom: 4px; }
+  .stat-mini-val { font-size: 22px; font-weight: 800; color: #0f172a; }
+
+  /* Progress bar */
+  .prog-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .prog-fill { height: 100%; border-radius: 4px; }
+  .fill-red { background: linear-gradient(90deg, #e11d48, #f43f5e); }
+  .fill-blue { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+  .fill-green { background: linear-gradient(90deg, #10b981, #059669); }
+
+  /* Tag module */
+  .module-tag {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px;
+    padding: 2px 8px; border-radius: 4px; display: inline-block;
+  }
+  .mtag-inst { background: rgba(16,185,129,.12); color: #059669; }
+  .mtag-vend { background: rgba(225,29,72,.1); color: #e11d48; }
+  .mtag-alug { background: rgba(59,130,246,.1); color: #3b82f6; }
+</style>
+</head>
+<body>
+
+<div class="proto-banner">
+  ⚡ <span>PROTÓTIPO VISUAL</span> · Porto Real Intranet v2 · Clique nos módulos e itens do menu para navegar · Nenhuma funcionalidade real
+</div>
+
+<div style="display:flex;flex-direction:column;height:100vh">
+
+  <!-- TOP NAV -->
+  <div class="topnav">
+    <div class="tn-brand">
+      <div class="tn-logo-icon">P</div>
+      <div class="tn-logo-text">Porto Real</div>
+    </div>
+    <div class="tn-divider"></div>
+
+    <!-- Module tabs -->
+    <div id="modTabs" style="display:flex;gap:3px">
+      <button class="mod-btn active-inst" onclick="switchModule('inst')">🏛️ Institucional</button>
+      <button class="mod-btn" onclick="switchModule('vend')">🏢 Vendas</button>
+      <button class="mod-btn" onclick="switchModule('alug')">🔑 Locação</button>
+    </div>
+
+    <div class="tn-spacer"></div>
+
+    <div class="tn-right">
+      <div class="tn-online"><div class="tn-online-dot"></div>3 online</div>
+      <div class="tn-notif">🔔<div class="tn-notif-dot"></div></div>
+      <div class="tn-user">
+        <div class="tn-av">SA</div>
+        <span class="tn-uname">Superadmin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY (sidebar + content) -->
+  <div class="app">
+
+    <!-- SIDEBAR (nav only) -->
+    <div class="sidebar">
+      <nav class="sb-nav" id="sideNav" style="padding-top:12px">
+        <!-- dynamically set -->
+      </nav>
+      <div class="sb-user">
+        <div class="user-av">SA</div>
+        <div>
+          <div class="user-name">Superadmin</div>
+          <div class="user-role">Administrador</div>
+        </div>
+        <button class="logout-btn" title="Sair">⎋</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- Page topbar (white, context) -->
+      <div class="topbar">
+        <div class="topbar-breadcrumb" id="topTitle">
+          <div class="topbar-page">Quadro de Avisos</div>
+          <div class="topbar-sub">Módulo Institucional</div>
+        </div>
+        <div class="topbar-search">
+          <span style="color:#94a3b8">🔍</span>
+          <input type="text" placeholder="Buscar...">
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content" id="contentArea">
+        <!-- screens rendered by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NAV = {
+  inst: [
+    { group: 'Empresa', items: [
+      { icon: '🏛️', label: 'Sobre a Empresa', screen: 'institucional' },
+      { icon: '📢', label: 'Quadro de Avisos', screen: 'avisos', badge: '2' },
+    ]},
+  ],
+  vend: [
+    { group: 'Principal', items: [
+      { icon: '📊', label: 'Gestão Geral', screen: 'gestao' },
+    ]},
+    { group: 'Gestão', items: [
+      { icon: '👥', label: 'Corretores & Equipes', screen: 'corretores' },
+      { icon: '🎯', label: 'Metas', screen: 'metas' },
+      { icon: '🏢', label: 'Lançamentos', screen: 'lancamentos' },
+    ]},
+    { group: 'Desenvolvimento', items: [
+      { icon: '🎓', label: 'Treinamentos', screen: 'treinamentos' },
+    ]},
+    { group: 'Sistema', items: [
+      { icon: '🛡', label: 'Auditoria', screen: 'auditoria' },
+    ]},
+  ],
+  alug: [
+    { group: 'Menu', items: [
+      { icon: '✅', label: 'Checklist', screen: 'checklist', badge: '5' },
+      { icon: '🔀', label: 'Processos', screen: 'processos' },
+      { icon: '📈', label: 'Meu PDI', screen: 'pdi' },
+      { icon: '📂', label: 'Documentos', screen: 'docs' },
+    ]},
+  ],
+};
+
+const MODULE_TAG = { inst: 'mtag-inst', vend: 'mtag-vend', alug: 'mtag-alug' };
+const MODULE_LABEL = { inst: 'Módulo Institucional', vend: 'Módulo Vendas', alug: 'Módulo Locação' };
+const ACTIVE_CLASS = { inst: 'active-em', vend: 'active-rd', alug: 'active-bl' };
+
+let currentModule = 'inst';
+let currentScreen = 'avisos';
+
+const SCREEN_TITLES = {
+  avisos:      ['Quadro de Avisos', 'Comunicados e mensagens importantes'],
+  institucional:['Sobre a Empresa',  'Missão, visão, valores e plano estratégico'],
+  gestao:      ['Gestão Geral',    'Painel de diretoria — visão consolidada'],
+  corretores:  ['Corretores & Equipes', 'Gerencie sua força de vendas'],
+  metas:       ['Metas',           'Configuração de metas por equipe'],
+  lancamentos: ['Lançamentos',     'Registro de empreendimentos'],
+  treinamentos:['Treinamentos',    'Materiais de capacitação'],
+  auditoria:   ['Auditoria',       'Registros e logs do sistema'],
+  checklist:   ['Checklist',       'Pendências por contrato'],
+  processos:   ['Processos',       'Fluxogramas operacionais'],
+  pdi:         ['Meu PDI',         'Plano de desenvolvimento individual'],
+  docs:        ['Documentos',      'Biblioteca de documentos'],
+};
+
+function renderNav(mod, activeScreen) {
+  const nav = document.getElementById('sideNav');
+  nav.innerHTML = NAV[mod].map(sec => `
+    <div class="nav-group">
+      <span class="nav-group-label">${sec.group}</span>
+      ${sec.items.map(it => `
+        <button class="nav-item ${it.screen === activeScreen ? ACTIVE_CLASS[mod] : ''}"
+          onclick="switchScreen('${it.screen}', '${it.label}')">
+          <span class="nav-icon">${it.icon}</span>
+          ${it.label}
+          ${it.badge ? `<span class="nav-badge">${it.badge}</span>` : ''}
+        </button>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function renderModTabs(mod) {
+  const tabs = document.getElementById('modTabs');
+  tabs.querySelectorAll('.mod-btn').forEach(btn => {
+    btn.className = 'mod-btn';
+  });
+  const btns = tabs.querySelectorAll('.mod-btn');
+  const map = ['inst','vend','alug'];
+  btns[map.indexOf(mod)].classList.add(`active-${mod === 'inst' ? 'inst' : mod === 'vend' ? 'vend' : 'alug'}`);
+}
+
+function updateTopbar(screen) {
+  const [title, sub] = SCREEN_TITLES[screen] || ['Página',''];
+  document.getElementById('topTitle').innerHTML = `
+    <div class="topbar-page">${title}</div>
+    <div class="topbar-sub">${MODULE_LABEL[currentModule]}</div>
+  `;
+}
+
+function switchModule(mod) {
+  currentModule = mod;
+  const firstScreen = NAV[mod][0].items[0].screen;
+  currentScreen = firstScreen;
+  renderNav(mod, firstScreen);
+  renderModTabs(mod);
+  updateTopbar(firstScreen);
+  renderContent(firstScreen);
+}
+
+function switchScreen(screen, label) {
+  currentScreen = screen;
+  renderNav(currentModule, screen);
+  updateTopbar(screen);
+  renderContent(screen);
+}
+
+/* ────────── SCREEN RENDERS ────────── */
+function renderContent(screen) {
+  const area = document.getElementById('contentArea');
+  const renders = {
+    avisos: renderAvisos,
+    institucional: renderInstitucional,
+    gestao: renderGestao,
+    checklist: renderChecklist,
+    corretores: renderCorretores,
+    metas: renderMetas,
+  };
+  area.innerHTML = (renders[screen] || renderPlaceholder)(screen);
+}
+
+function renderAvisos() {
+  return `
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="page-title">📢 Quadro de Avisos</div>
+      <div class="page-desc">Comunicados e mensagens importantes da equipe.</div>
+    </div>
+    <button class="btn-primary">+ Novo Aviso</button>
+  </div>
+
+  <div class="aviso-card aviso-green">
+    <div class="aviso-icon">🎉</div>
+    <div style="flex:1">
+      <div class="aviso-tipo">Celebração</div>
+      <div class="aviso-titre">Meta de VGV de Março batida!</div>
+      <div class="aviso-msg">Parabéns a toda equipe de vendas! Atingimos R$2,4M em VGV no mês de março, superando nossa meta em 12%. Excelente trabalho de todos!</div>
+      <div class="aviso-footer">
+        <span class="aviso-author">Por: Admin (Diretoria)</span>
+        <span class="aviso-date">05/04/2026 às 09:15</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="aviso-card aviso-blue">
+    <div class="aviso-icon">📢</div>
+    <div style="flex:1">
+      <div class="aviso-tipo">Comunicado</div>
+      <div class="aviso-titre">Reunião geral na sexta-feira (11/04)</div>
+      <div class="aviso-msg">Comunicamos que haverá reunião geral de equipe nesta sexta-feira, às 8h30, na sede. Presença obrigatória para todos os corretores e gerentes de locação.</div>
+      <div class="aviso-footer">
+        <span class="aviso-author">Por: Admin (Diretoria)</span>
+        <span class="aviso-date">08/04/2026 às 14:00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="aviso-card" style="border-color:#fde68a; background:#fffdf0;">
+    <div class="aviso-icon" style="background:#fef9c3;">⚠️</div>
+    <div style="flex:1">
+      <div class="aviso-tipo" style="color:#d97706;">Alerta</div>
+      <div class="aviso-titre">Prazo de entrega de relatórios — 10/04</div>
+      <div class="aviso-msg">Lembrete: o prazo para entrega dos relatórios mensais é amanhã, 10 de abril. Enviem para o setor financeiro até as 18h.</div>
+      <div class="aviso-footer">
+        <span class="aviso-author">Por: Admin (Diretoria)</span>
+        <span class="aviso-date">09/04/2026 às 10:30</span>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function renderInstitucional() {
+  return `
+  <div class="page-header">
+    <div class="page-title">🏛️ Porto Real — Institucional</div>
+    <div class="page-desc">Missão, visão, valores e plano estratégico da imobiliária.</div>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:16px">
+    ${[
+      ['🎯','Missão','Construímos relações imobiliárias de confiança, cuidando de pessoas, sonhos e patrimônios.'],
+      ['🔭','Visão 2026','Ser a imobiliária mais inteligente e preparada de Rondônia — referência em confiança e inteligência comercial.'],
+      ['❤️','Propósito','Cuidar de pessoas, patrimônios e relações para que todos construam futuros melhores.'],
+    ].map(([ic,label,desc])=>`
+      <div class="card" style="padding:18px;">
+        <div style="font-size:24px;margin-bottom:8px">${ic}</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:6px">${label}</div>
+        <p style="font-size:13px;color:#475569;line-height:1.6">${desc}</p>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="card" style="padding:20px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px">💎 Nossos 5 Pilares</div>
+    <div class="grid-2">
+      ${[
+        ['Cuidado Genuíno com Pessoas','Não administramos contratos, lidamos com vidas.'],
+        ['Responsabilidade pelo Patrimônio','Cuidamos melhor do que se fosse nosso.'],
+        ['Resolutividade Inteligente','O resultado importa mais que a desculpa.'],
+        ['Excelência Operacional','Prometeu, cumpriu. A qualidade está nos detalhes.'],
+      ].map(([t,f])=>`
+        <div style="background:#f8fafc;border-radius:9px;padding:14px;border-left:3px solid #3b82f6">
+          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${t}</div>
+          <div style="font-size:12px;color:#64748b;font-style:italic">"${f}"</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+  `;
+}
+
+function renderGestao() {
+  return `
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="page-title">📊 Gestão Geral</div>
+      <div class="page-desc">Painel de diretoria — visão consolidada de todos os núcleos.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary">📅 2026</button>
+      <button class="btn-secondary">⬇ Exportar</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card accent-green">
+      <div class="kpi-label">VGV Global (Anual)</div>
+      <div class="kpi-val">R$6,4M</div>
+      <div class="kpi-delta">↑ +14% vs meta</div>
+      <div class="kpi-icon">💰</div>
+    </div>
+    <div class="kpi-card accent-blue">
+      <div class="kpi-label">Contatos (Mês)</div>
+      <div class="kpi-val">284</div>
+      <div class="kpi-delta">↑ +8% vs mês ant.</div>
+      <div class="kpi-icon">📞</div>
+    </div>
+    <div class="kpi-card accent-amber">
+      <div class="kpi-label">Visitas (Mês)</div>
+      <div class="kpi-val">62</div>
+      <div class="kpi-delta">→ Na meta</div>
+      <div class="kpi-icon">🏠</div>
+    </div>
+    <div class="kpi-card accent-red">
+      <div class="kpi-label">Força de Vendas</div>
+      <div class="kpi-val">18</div>
+      <div class="kpi-delta" style="color:#64748b">em 4 equipes</div>
+      <div class="kpi-icon">👥</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top Corretores — VGV Anual</div>
+          <div class="card-subtitle">Ranking acumulado 2026</div>
+        </div>
+      </div>
+      ${[
+        ['1','rank-1','Carlos Mendonça','Equipe Alpha','R$820K',82],
+        ['2','rank-2','Ana Souza','Equipe Beta','R$710K',71],
+        ['3','rank-3','Pedro Lira','Equipe Alpha','R$640K',64],
+        ['4','','Luana Costa','Equipe Gamma','R$590K',59],
+        ['5','','Marcos Vieira','Equipe Beta','R$510K',51],
+      ].map(([pos,rc,nome,eq,val,pct])=>`
+        <div class="list-item">
+          <div class="item-rank ${rc}">${pos}</div>
+          <div style="flex:1">
+            <div class="item-name">${nome}</div>
+            <div class="item-sub">${eq}</div>
+          </div>
+          <div style="width:100px">
+            <div class="item-bar"><div class="item-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="item-val">${val}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Meta Anual por Equipe</div>
+          <div class="card-subtitle">R$ 5M por equipe — Progresso 2026</div>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        ${[
+          ['Equipe Alpha','#10b981',78,'R$3,9M'],
+          ['Equipe Beta', '#3b82f6',64,'R$3,2M'],
+          ['Equipe Gamma','#f59e0b',52,'R$2,6M'],
+          ['Equipe Delta','#e11d48',38,'R$1,9M'],
+        ].map(([nm,cl,pct,val])=>`
+          <div style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:13px;font-weight:600;color:#1e293b">${nm}</span>
+              <span style="font-size:13px;font-weight:700;color:${cl}">${val} <span style="font-size:11px;color:#94a3b8">(${pct}%)</span></span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${cl}"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function renderChecklist() {
+  return `
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="page-title">✅ Checklist de Pendências</div>
+      <div class="page-desc">Acompanhe e resolva pendências por contrato.</div>
+    </div>
+    <button class="btn-primary">+ Novo Contrato</button>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:18px">
+    ${[
+      ['5','Pendências em aberto','#fef2f2','#e11d48'],
+      ['2','Contratos ativos','#eff6ff','#3b82f6'],
+      ['3','Resolvidas hoje','#f0fdf4','#10b981'],
+    ].map(([v,l,bg,cl])=>`
+      <div style="background:${bg};border:1px solid ${cl}22;border-radius:10px;padding:14px 16px">
+        <div style="font-size:26px;font-weight:800;color:${cl}">${v}</div>
+        <div style="font-size:12px;color:${cl}99;font-weight:600;margin-top:2px">${l}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:11px;color:#64748b;font-weight:600;display:flex;align-items:center">Filtrar:</span>
+    ${['Todos','Contratos','Financeiro','Manutenção','Externo'].map((f,i)=>`
+      <button style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid ${i===0?'#6366f1':'#e2e8f0'};background:${i===0?'#6366f1':'#fff'};color:${i===0?'#fff':'#64748b'};cursor:pointer">${f}</button>
+    `).join('')}
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f1f5f9;cursor:pointer">
+      <span style="font-size:12px;color:#94a3b8">▸</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#1e293b">Rua das Flores, 142 — Apto 301</div>
+        <div style="font-size:12px;color:#94a3b8">Inquilino: João da Silva</div>
+      </div>
+      <span style="font-size:12px;color:#94a3b8">📅 02/04</span>
+      <span style="background:#fef9c3;color:#d97706;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">3 pendentes</span>
+      <div style="width:70px">
+        <div class="prog-bar"><div class="prog-fill fill-blue" style="width:40%"></div></div>
+        <div style="font-size:10px;color:#94a3b8;text-align:right;margin-top:2px">2/5</div>
+      </div>
+    </div>
+    <div style="padding:10px 18px 10px 34px">
+      ${[
+        ['Emitir 1º boleto','Financeiro','ALTA',false],
+        ['Vistoria inicial','Contratos','MÉDIA',false],
+        ['Cadastro no sistema','Contratos','BAIXA',true],
+      ].map(([t,s,p,done])=>`
+        <div class="checklist-item" style="background:${done?'#f8fafc':'#fff'};opacity:${done?'.6':'1'}">
+          <div class="check-box ${done?'done':''}">${done?'✓':''}</div>
+          <span class="check-name ${done?'check-done-text':''}">${t}</span>
+          <span class="check-tag tag-blue">${s}</span>
+          <span class="check-tag ${p==='ALTA'?'tag-red':p==='MÉDIA'?'tag-amber':'tag-green'}">${p}</span>
+        </div>
+      `).join('')}
+      <button style="padding:8px 14px;font-size:12px;color:#3b82f6;font-weight:600;background:none;border:1px dashed #bfdbfe;border-radius:8px;cursor:pointer;width:100%;margin-top:4px">+ Adicionar pendência</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer">
+      <span style="font-size:12px;color:#94a3b8">▸</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#1e293b">Av. Marechal Rondon, 800 — Casa</div>
+        <div style="font-size:12px;color:#94a3b8">Inquilino: Maria Luísa</div>
+      </div>
+      <span style="font-size:12px;color:#94a3b8">📅 28/03</span>
+      <span style="background:#fef2f2;color:#e11d48;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">2 pendentes</span>
+      <div style="width:70px">
+        <div class="prog-bar"><div class="prog-fill fill-green" style="width:67%"></div></div>
+        <div style="font-size:10px;color:#94a3b8;text-align:right;margin-top:2px">4/6</div>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function renderCorretores() {
+  return `
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="page-title">👥 Corretores & Equipes</div>
+      <div class="page-desc">Gerencie corretores, equipes e performance.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary">+ Nova Equipe</button>
+      <button class="btn-primary">+ Novo Corretor</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    ${[
+      ['Carlos Mendonça','Equipe Alpha','#3b82f6','CM','Ativo','40%'],
+      ['Ana Souza','Equipe Beta','#8b5cf6','AS','Ativo','40%'],
+      ['Pedro Lira','Equipe Alpha','#10b981','PL','Ativo','30%'],
+      ['Luana Costa','Equipe Gamma','#f59e0b','LC','Inativo','30%'],
+    ].map(([nm,eq,cl,av,st,nv])=>`
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="height:4px;background:${cl}"></div>
+        <div style="padding:14px">
+          <div style="width:36px;height:36px;border-radius:9px;background:${cl};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px">${av}</div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b">${nm}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px">${eq}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9">
+            <span style="font-size:11px;font-weight:600;color:${st==='Ativo'?'#10b981':'#94a3b8'}">${st}</span>
+            <span style="font-size:11px;font-weight:700;color:${cl}">Nível ${nv}</span>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+  `;
+}
+
+function renderMetas() {
+  return `
+  <div class="page-header">
+    <div class="page-title">🎯 Metas por Equipe</div>
+    <div class="page-desc">Configure e acompanhe as metas de desempenho.</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+    ${['Equipe Alpha','Equipe Beta','Equipe Gamma','Equipe Delta'].map(eq=>`
+      <div class="card" style="padding:18px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:700;color:#0f172a">${eq}</div>
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px">Editar</button>
+        </div>
+        ${[
+          ['VGV Anual','R$ 5.000.000','💰'],
+          ['Contatos/Semana','20','📞'],
+          ['Postagens/Semana','5','📸'],
+          ['Visitas/Mês','8','🏠'],
+          ['Captações/Mês','3','🤝'],
+        ].map(([l,v,ic])=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f8fafc">
+            <span style="font-size:12px;color:#64748b">${ic} ${l}</span>
+            <span style="font-size:13px;font-weight:700;color:#0f172a">${v}</span>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+  </div>
+  `;
+}
+
+function renderPlaceholder(screen) {
+  const [title] = SCREEN_TITLES[screen] || ['Página',''];
+  return `
+  <div class="page-header">
+    <div class="page-title">${title}</div>
+    <div class="page-desc">Conteúdo desta seção será mostrado aqui com o mesmo padrão visual.</div>
+  </div>
+  <div style="background:#fff;border:2px dashed #e2e8f0;border-radius:14px;padding:60px;text-align:center;color:#94a3b8">
+    <div style="font-size:40px;margin-bottom:12px">🚧</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px">Tela em protótipo</div>
+    <div style="font-size:13px">Esta seção seguirá o mesmo sistema de design das telas anteriores.<br>Layout, cards, tipografia e cores serão consistentes.</div>
+  </div>
+  `;
+}
+
+// init
+switchModule('inst');
+switchScreen('avisos','Quadro de Avisos');
+</script>
+</body>
+</html>

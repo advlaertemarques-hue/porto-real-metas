@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Porto Real · Apoio à Venda (Mockup)</title>
+<style>
+  :root{
+    --azul:#1F4E79; --azul2:#2E6CA8; --azul-claro:#D6E4F0; --azul-bg:#EEF4FA;
+    --cinza:#F5F7FA; --linha:#E2E8F0; --texto:#1f2933; --muted:#6b7280;
+    --verde:#1f9d6b; --verde-bg:#e6f5ee; --amarelo:#d99a00; --amarelo-bg:#fbf3df;
+    --vermelho:#d6453d; --vermelho-bg:#fdeceb;
+    --quente:#d6453d; --morno:#d99a00; --frio:#4b7bbd;
+    --radius:12px; --sombra:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--texto);background:var(--cinza);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  .topbar{background:var(--azul);color:#fff;padding:0 22px;display:flex;align-items:center;gap:20px;flex-shrink:0;height:58px}
+  .topbar .logo{font-weight:800;font-size:17px;letter-spacing:.3px}
+  .nav{display:flex;gap:4px;margin-left:8px}
+  .nav button{background:transparent;border:none;color:rgba(255,255,255,.78);font-family:inherit;font-size:14px;
+    font-weight:600;padding:8px 15px;border-radius:8px;cursor:pointer;transition:.15s}
+  .nav button:hover{background:rgba(255,255,255,.12);color:#fff}
+  .nav button.on{background:#fff;color:var(--azul);font-weight:700}
+  .badge-mock{margin-left:auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);
+    padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600}
+  #app{flex:1;display:flex;min-height:0}
+  /* ===== FUNIL ===== */
+  .sidebar{width:300px;background:#fff;border-right:1px solid var(--linha);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:16px 18px 8px}
+  .btn-novo{margin:0 18px 10px;padding:9px;border:1px dashed var(--azul2);color:var(--azul);background:var(--azul-bg);
+    border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;transition:.15s}
+  .btn-novo:hover{background:var(--azul-claro)}
+  .lista{overflow-y:auto;flex:1;padding:0 12px 16px}
+  .card-cli{padding:12px 13px;border:1px solid var(--linha);border-radius:11px;margin-bottom:9px;cursor:pointer;background:#fff;transition:.15s}
+  .card-cli:hover{border-color:var(--azul2);box-shadow:var(--sombra)}
+  .card-cli.ativo{border-color:var(--azul);background:var(--azul-bg);box-shadow:var(--sombra)}
+  .card-cli .nome{font-weight:700;font-size:14.5px;margin-bottom:3px}
+  .card-cli .meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .pill-mini{font-size:10.5px;padding:1px 7px;border-radius:10px;font-weight:700}
+  .card-cli .etapa{margin-top:7px;font-size:11.5px;color:var(--azul);font-weight:600}
+  .prog-mini{height:4px;background:var(--linha);border-radius:4px;margin-top:6px;overflow:hidden}
+  .prog-mini > div{height:100%;background:var(--azul2)}
+  .main{flex:1;overflow-y:auto;padding:22px 26px 60px}
+  .cli-head{background:#fff;border:1px solid var(--linha);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--sombra)}
+  .cli-head .top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .cli-head .nome{font-size:22px;font-weight:800}
+  .cli-head .contato{font-size:13px;color:var(--muted);margin-top:3px}
+  .head-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{font-size:12px;padding:5px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+  .pill-perfil{background:var(--azul-claro);color:var(--azul)}
+  .pill-perfil.vazio{background:var(--vermelho-bg);color:var(--vermelho)}
+  select.temp{font-family:inherit;font-weight:700;font-size:12px;border:1px solid var(--linha);border-radius:20px;padding:5px 10px;cursor:pointer;color:var(--texto);background:#fff}
+  .sec{margin-top:22px}
+  .sec-titulo{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--azul);font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:9px}
+  .sec-titulo .num{background:var(--azul);color:#fff;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px}
+  .stepper{background:#fff;border:1px solid var(--linha);border-radius:var(--radius);padding:16px;box-shadow:var(--sombra);display:flex;flex-wrap:wrap;gap:8px}
+  .step{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid var(--linha);cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted);background:#fff;transition:.15s}
+  .step:hover{border-color:var(--azul2)}
+  .step .n{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;background:var(--linha);color:var(--muted);flex-shrink:0}
+  .step.done{color:var(--verde);border-color:var(--verde-bg);background:var(--verde-bg)}
+  .step.done .n{background:var(--verde);color:#fff}
+  .step.atual{color:#fff;background:var(--azul);border-color:var(--azul);box-shadow:0 2px 6px rgba(31,78,121,.3)}
+  .step.atual .n{background:#fff;color:var(--azul)}
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:22px}
+  @media(max-width:1050px){.grid2{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--linha);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--sombra)}
+  .perfis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .perfil{border:1.5px solid var(--linha);border-radius:11px;padding:11px 12px;cursor:pointer;transition:.15s;background:#fff}
+  .perfil:hover{border-color:var(--azul2);background:var(--azul-bg)}
+  .perfil.sel{border-color:var(--azul);background:var(--azul-bg);box-shadow:0 0 0 3px rgba(31,78,121,.12)}
+  .perfil .ph{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+  .perfil .ph .emo{font-size:17px}
+  .perfil .busca{font-size:11px;color:var(--muted);font-weight:600;margin:2px 0 7px;text-transform:uppercase;letter-spacing:.4px}
+  .perfil ul{list-style:none;font-size:11.8px;color:#374151;line-height:1.5}
+  .perfil li{padding-left:13px;position:relative}
+  .perfil li:before{content:"\203A";position:absolute;left:2px;color:var(--azul2);font-weight:800}
+  .playbook{margin-top:13px;border:1px solid var(--azul-claro);background:var(--azul-bg);border-radius:11px;padding:13px 15px}
+  .playbook h4{color:var(--azul);font-size:13px;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+  .playbook ul{list-style:none;font-size:13px;line-height:1.65}
+  .playbook li{padding-left:16px;position:relative}
+  .playbook li:before{content:"\2713";position:absolute;left:0;color:var(--verde);font-weight:800}
+  .playbook .frase{margin-top:9px;font-style:italic;font-size:12.5px;color:#3a4a5a;border-left:3px solid var(--azul2);padding-left:10px}
+  .hint{font-size:12px;color:var(--muted);background:var(--cinza);border-radius:8px;padding:9px 11px;margin-bottom:11px;line-height:1.45}
+  .chk-prog{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .chk-bar{flex:1;height:8px;background:var(--linha);border-radius:6px;overflow:hidden}
+  .chk-bar > div{height:100%;background:var(--verde);transition:.25s;width:0}
+  .chk-pct{font-size:12px;font-weight:800;color:var(--verde);min-width:38px;text-align:right}
+  .chk-item{display:flex;align-items:flex-start;gap:10px;padding:9px 4px;border-bottom:1px solid var(--cinza);cursor:pointer}
+  .chk-item:last-child{border-bottom:none}
+  .chk-box{width:20px;height:20px;border:2px solid var(--linha);border-radius:6px;flex-shrink:0;display:grid;place-items:center;transition:.15s;margin-top:1px;font-size:13px;color:#fff}
+  .chk-item.on .chk-box{background:var(--verde);border-color:var(--verde)}
+  .chk-item .txt{font-size:13.5px;line-height:1.4}
+  .chk-item.on .txt{color:var(--muted);text-decoration:line-through}
+  .nota-form{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .nota-form textarea{font-family:inherit;font-size:13.5px;border:1px solid var(--linha);border-radius:10px;padding:10px 12px;resize:vertical;min-height:62px}
+  .nota-form textarea:focus{outline:none;border-color:var(--azul2)}
+  .nota-form .row{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--azul);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;transition:.15s}
+  .btn:hover{background:var(--azul2)}
+  .timeline{display:flex;flex-direction:column;gap:0}
+  .nota{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--cinza)}
+  .nota:last-child{border-bottom:none}
+  .nota .linha-tempo{display:flex;flex-direction:column;align-items:center}
+  .nota .bolha{width:10px;height:10px;border-radius:50%;background:var(--azul2);margin-top:5px}
+  .nota .fio{flex:1;width:2px;background:var(--linha);margin-top:3px}
+  .nota .corpo{flex:1;padding-bottom:2px}
+  .nota .cab{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+  .nota .data{font-size:11.5px;color:var(--muted);font-weight:600}
+  .nota .tag{font-size:10.5px;background:var(--azul-claro);color:var(--azul);padding:1px 8px;border-radius:10px;font-weight:700}
+  .nota .texto{font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+  .vazio-msg{color:var(--muted);font-size:13px;font-style:italic;padding:8px 0}
+  /* ===== VIEWS GENÉRICAS ===== */
+  .view{flex:1;overflow-y:auto;padding:24px 30px 60px}
+  .view-head{margin-bottom:18px}
+  .view-head h1{font-size:24px;color:var(--azul);font-weight:800}
+  .view-head p{font-size:13.5px;color:var(--muted);margin-top:3px}
+  .seg{display:inline-flex;background:#fff;border:1px solid var(--linha);border-radius:10px;padding:3px;gap:2px;margin-left:auto}
+  .seg button{border:none;background:transparent;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);padding:6px 13px;border-radius:8px;cursor:pointer}
+  .seg button.on{background:var(--azul);color:#fff}
+  /* ===== METAS ===== */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .kpi{background:#fff;border:1px solid var(--linha);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--sombra)}
+  .kpi .lab{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:7px}
+  .kpi .auto{font-size:9.5px;background:var(--verde-bg);color:var(--verde);padding:1px 6px;border-radius:8px;font-weight:800;letter-spacing:0}
+  .kpi .val{font-size:27px;font-weight:800;margin:9px 0 2px}
+  .kpi .alvo{font-size:12px;color:var(--muted)}
+  .kpi .barra{height:8px;background:var(--linha);border-radius:6px;overflow:hidden;margin-top:11px}
+  .kpi .barra > div{height:100%;border-radius:6px;transition:.3s}
+  .kpi .pctlab{font-size:11.5px;font-weight:800;margin-top:6px;text-align:right}
+  .funil-box{margin-top:18px}
+  .fstage{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .fstage .fn{font-size:13px;font-weight:700;width:130px;flex-shrink:0}
+  .fstage .fbar{flex:1;height:30px;background:var(--cinza);border-radius:7px;overflow:hidden;position:relative}
+  .fstage .fbar > div{height:100%;background:linear-gradient(90deg,var(--azul),var(--azul2));display:flex;align-items:center;padding:0 10px;color:#fff;font-weight:700;font-size:12.5px;border-radius:7px}
+  .fstage .fconv{font-size:12px;color:var(--muted);width:74px;text-align:right;flex-shrink:0}
+  .mini{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .mini button{border:1px solid var(--linha);background:#fff;border-radius:8px;width:30px;height:30px;font-size:16px;font-weight:800;cursor:pointer;color:var(--azul)}
+  .mini button:hover{background:var(--azul-bg)}
+  /* ===== PESQUISAS ===== */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:1000px){.cols{grid-template-columns:1fr}}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:#374151;margin-bottom:5px}
+  .field select,.field input{width:100%;font-family:inherit;font-size:13.5px;padding:9px 11px;border:1px solid var(--linha);border-radius:9px;background:#fff}
+  .qlist{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+  .qopt{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--linha);border-radius:9px;font-size:13px;cursor:pointer}
+  .qopt.on{border-color:var(--azul);background:var(--azul-bg)}
+  .qopt .cb{width:18px;height:18px;border:2px solid var(--linha);border-radius:5px;display:grid;place-items:center;color:#fff;font-size:12px}
+  .qopt.on .cb{background:var(--azul);border-color:var(--azul)}
+  .linkbox{margin-top:14px;background:var(--azul-bg);border:1px dashed var(--azul2);border-radius:10px;padding:13px;font-size:12.5px;color:var(--azul);word-break:break-all;display:none}
+  .linkbox.show{display:block}
+  /* phone */
+  .phone{max-width:360px;margin:0 auto;border:9px solid #1c2530;border-radius:32px;background:#fff;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+  .phone-top{background:var(--azul);color:#fff;padding:16px 18px}
+  .phone-top h3{font-size:16px}
+  .phone-top p{font-size:11.5px;opacity:.85;margin-top:2px}
+  .phone-body{padding:16px 16px 20px;max-height:62vh;overflow-y:auto}
+  .ffield{margin-bottom:14px}
+  .ffield .fl{font-size:13px;font-weight:700;margin-bottom:7px;display:block}
+  .opts{display:flex;flex-wrap:wrap;gap:7px}
+  .opt{border:1.5px solid var(--linha);border-radius:9px;padding:8px 12px;font-size:12.5px;cursor:pointer;background:#fff;flex:1;text-align:center;min-width:60px}
+  .opt.on{border-color:var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700}
+  .opt-col{display:flex;flex-direction:column;gap:7px}
+  .opt-col .opt{flex:none;text-align:left}
+  .lgpd{font-size:10.5px;color:var(--muted);background:var(--cinza);border-radius:8px;padding:9px 10px;line-height:1.45;margin-top:6px}
+  .devnote{margin-top:13px;border:1px dashed var(--amarelo);background:var(--amarelo-bg);border-radius:10px;padding:12px 13px;font-size:12.5px;color:#7a5b00;display:none}
+  .devnote.show{display:block}
+  .devnote b{color:var(--azul)}
+  /* banco */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+  .stat{background:#fff;border:1px solid var(--linha);border-radius:11px;padding:14px 15px;box-shadow:var(--sombra)}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
+  .stat .v{font-size:23px;font-weight:800;margin-top:4px}
+  .lead-card{background:#fff;border:1px solid var(--linha);border-radius:11px;padding:13px 15px;margin-bottom:10px;box-shadow:var(--sombra)}
+  .lead-card .lc-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+  .lead-card .lc-nome{font-weight:700;font-size:14.5px}
+  .tipo-tag{font-size:10.5px;padding:2px 9px;border-radius:10px;font-weight:700}
+  .lc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px 14px;font-size:12.5px}
+  .lc-grid b{color:var(--muted);font-weight:700;font-size:11px;display:block;text-transform:uppercase;letter-spacing:.3px}
+  .temas{display:flex;flex-direction:column;gap:8px}
+  .tema{display:flex;align-items:center;gap:10px}
+  .tema .tn{font-size:13px;width:170px;flex-shrink:0}
+  .tema .tb{flex:1;height:20px;background:var(--cinza);border-radius:6px;overflow:hidden}
+  .tema .tb > div{height:100%;background:var(--vermelho);opacity:.8;border-radius:6px}
+  .tema .tv{font-size:12px;color:var(--muted);width:34px;text-align:right}
+  .filtros{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .filtros button{border:1px solid var(--linha);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .filtros button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:14px;padding:22px 24px;width:380px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  .modal h3{font-size:17px;margin-bottom:14px;color:var(--azul)}
+  .modal label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+  .modal input,.modal select{width:100%;font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--linha);border-radius:9px}
+  .modal .acoes{display:flex;gap:9px;margin-top:18px}
+  .btn-sec{background:#fff;color:var(--muted);border:1px solid var(--linha)}
+  .btn-sec:hover{background:var(--cinza)}
+  .owdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:1px}
+  .legend-resp{display:flex;flex-wrap:wrap;gap:13px;margin-top:11px;font-size:11.5px;font-weight:600;color:#374151}
+  .legend-resp span{display:inline-flex;align-items:center;gap:5px}
+  .legend-resp i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .pill-resp{background:#eef4fa;color:#1F4E79;font-size:12px;padding:5px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+  .exp-badge{background:#fbf1e3;color:#c77d2e;font-size:10px;font-weight:800;padding:3px 8px;border-radius:9px;letter-spacing:.3px;vertical-align:middle}
+  .exp-mini{font-size:10px;font-weight:800;color:#c77d2e;background:#fbf1e3;padding:1px 6px;border-radius:8px}
+  .exp-banner{background:#fbf1e3;border:1px solid #ecd3ad;border-left:4px solid #c77d2e;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:13px;color:#7a5b00;line-height:1.5}
+  .exp-banner b{color:#c77d2e}
+  .quiz-result{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:13px;background:var(--azul-bg);border:1px solid var(--azul-claro);border-radius:11px;padding:11px 14px}
+  .quiz-result .qr-lab{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .quiz-result .qr-perfil{font-size:16px;font-weight:800;color:var(--azul)}
+  .quiz-result .qr-meta{font-size:11.5px;color:var(--muted)}
+  .quiz-result .qr-refazer{margin-left:auto;background:#fff;border:1px solid var(--linha);border-radius:8px;padding:5px 11px;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--azul2);cursor:pointer}
+  .resumo p{font-size:13.5px;line-height:1.55;margin-bottom:7px}
+  .resumo p:last-child{margin-bottom:0}
+  .resumo .rz-next{color:var(--azul);font-weight:600}
+  .resumo .rz-exp{color:#7a5b00;background:#fbf1e3;border-radius:7px;padding:6px 10px;font-weight:600}
+  .crm-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media(max-width:760px){.crm-grid{grid-template-columns:1fr 1fr}}
+  .crm-grid .field{margin-bottom:0}
+  .field textarea{width:100%;font-family:inherit;font-size:13.5px;border:1px solid var(--linha);border-radius:9px;padding:9px 11px;resize:vertical;min-height:52px}
+  .field textarea:focus,.field input:focus,.field select:focus{outline:none;border-color:var(--azul2)}
+  .btn-ficha{background:#fff;border:1px solid var(--azul2);color:var(--azul);border-radius:20px;padding:5px 13px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .btn-ficha:hover{background:var(--azul-bg)}
+  .modal-ficha{width:600px;max-width:94vw;max-height:90vh;overflow-y:auto}
+  .mf-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .mf-head h3{flex:1;margin:0;font-size:17px}
+  .mf-close{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1}
+  .mf-sub{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+  .btn-gear{background:#fff;border:1px solid var(--linha);border-radius:9px;width:36px;height:34px;font-size:15px;cursor:pointer;color:var(--azul)}
+  .btn-gear:hover{background:var(--azul-bg)}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Porto Real</div>
+    <div class="nav">
+      <button id="nav-funil" onclick="setView('funil')">Funil</button>
+      <button id="nav-metas" onclick="setView('metas')">Metas</button>
+      <button id="nav-pesquisas" onclick="setView('pesquisas')">Pesquisas &amp; Leads</button>
+      <button id="nav-banco" onclick="setView('banco')">Banco de Dados</button>
+    </div>
+    <div class="badge-mock">MOCKUP demonstrativo</div>
+  </div>
+  <div id="app"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3>Novo cliente</h3>
+      <label>Nome</label><input id="m-nome" placeholder="Ex.: Roberto Lima">
+      <label>Telefone</label><input id="m-contato" placeholder="(69) 9 9999-9999">
+      <label>E-mail</label><input id="m-email" placeholder="email@exemplo.com">
+      <label>Objetivo</label>
+      <select id="m-objetivo"><option>Comprar</option><option>Alugar</option><option>Vender</option><option>Deixar para alugar</option></select>
+      <label>Faixa de valor</label>
+      <select id="m-faixa"><option value="">—</option><option>Até R$ 200 mil</option><option>R$ 200–350 mil</option><option>R$ 350–500 mil</option><option>Acima de R$ 500 mil</option></select>
+      <label>Localização</label><input id="m-local" placeholder="Bairro / cidade">
+      <label>Origem do lead</label>
+      <select id="m-origem">
+        <option>Portal (ZAP / VivaReal / OLX)</option>
+        <option>Instagram / Facebook</option>
+        <option>Indicação</option>
+        <option>Placa / Loja física</option>
+        <option>Site / Google</option>
+      </select>
+      <div class="acoes">
+        <button class="btn btn-sec" style="flex:1" onclick="fecharModal()">Cancelar</button>
+        <button class="btn" style="flex:1" onclick="criarCliente()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================= PROCESSO ================= */
+const ETAPAS = [
+  {nome:"Lead", chk:["Origem do lead registrada","Primeira resposta enviada (< 1h)"]},
+  {nome:"Cadastro no CRM", chk:["Nome e contato salvos","Origem registrada","Etiqueta de status aplicada"]},
+  {nome:"Primeiro Atendimento", chk:["Rapport feito (a pessoa antes do imóvel)","Canal de atendimento definido","Cliente engajado na conversa"]},
+  {nome:"Descoberta do Perfil", chk:["Perguntas SPIN feitas","Necessidade real mapeada","Perfil dominante identificado","Sondagem: orçamento e forma de pagamento"]},
+  {nome:"Estratégia de Atendimento", chk:["Plano por perfil definido","Cadência de contato definida","Roteiro de apresentação ajustado"]},
+  {nome:"Seleção de Imóveis", chk:["Imóveis cruzados com o perfil","Imóveis estudados antes de oferecer","Quantidade certa selecionada"]},
+  {nome:"Apresentação dos Imóveis", chk:["Apresentação adaptada ao perfil","Fotos / vídeo enviados","Interesse despertado"]},
+  {nome:"Visita", chk:["Checklist de preparação feito","Visita conduzida pelos 5 momentos","Pontos de atenção apresentados","Leitura de interesse feita"]},
+  {nome:"Proposta", chk:["As 4 perguntas antes da proposta","Qualificação financeira concluída","Proposta registrada"]},
+  {nome:"Negociação", chk:["Interesses (não posições) mapeados","Ancoragem e concessões planejadas","Objeções tratadas","Acordo entre as partes"]},
+  {nome:"Documentação / Financiamento", chk:["Documentos do comprador","Documentos do vendedor / imóvel","Financiamento encaminhado","Aprovação acompanhada"]},
+  {nome:"Fechamento", chk:["Conferência pré-assinatura","Contrato assinado","Comissão acordada","Chaves entregues"]},
+  {nome:"Pós-venda", chk:["Contato pós-fechamento feito","Satisfação verificada"]},
+  {nome:"Depoimento", chk:["Depoimento solicitado","Depoimento publicado"]},
+  {nome:"Indicação", chk:["Indicação solicitada","Indicação registrada como novo lead"]},
+];
+const I_VISITA=7, I_PROPOSTA=8, I_FECHAMENTO=11;
+const RESP = ["Andressa","Andressa","Andressa","Andressa","Andressa","Andressa","Corretor","Corretor","Corretor","Andressa + Corretor","Andressa + Corretor","Andressa + Corretor","Pós-venda","Pós-venda","Pós-venda"];
+const RESP_COR = {"Andressa":"#1F4E79","Corretor":"#1f9d6b","Andressa + Corretor":"#2E6CA8","Pós-venda":"#c77d2e"};
+const RESP_EMO = {"Andressa":"⭐","Corretor":"🏠","Andressa + Corretor":"⭐🏠","Pós-venda":"💬"};
+function respCor(i){ return RESP_COR[RESP[i]]||"#94a3b8"; }
+const PERFIL_QUIZ = [
+  {q:"O que o cliente reparou ou perguntou primeiro?", opts:[
+    {t:"Metragem, documentação, números", k:"analitico"},
+    {t:"Preço e praticidade", k:"controlador"},
+    {t:"Espaços de convivência (sala, quintal)", k:"apoiador"},
+    {t:"Arquitetura, planta, diferenciais", k:"catalisador"}]},
+  {q:"Como ele fala e decide?", opts:[
+    {t:"Devagar, compara, pensa antes de responder", k:"analitico"},
+    {t:"Direto e objetivo, quer agilidade", k:"controlador"},
+    {t:"Caloroso, fala da família, decide no sentimento", k:"apoiador"},
+    {t:"Animado e curioso, empolga com o diferente", k:"catalisador"}]},
+  {q:"Qual foi a primeira pergunta dele?", opts:[
+    {t:"“Qual a metragem? Está tudo certo na documentação?”", k:"analitico"},
+    {t:"“Quanto fica? Tem margem de negociação?”", k:"controlador"},
+    {t:"“Tem quintal? Cabe a família?”", k:"apoiador"},
+    {t:"“Como é o projeto? Tem algo diferente?”", k:"catalisador"}]},
+  {q:"O que mais importa para ele?", opts:[
+    {t:"Segurança e certeza de que é um bom negócio", k:"analitico"},
+    {t:"Resolver rápido com bom custo-benefício", k:"controlador"},
+    {t:"Pertencimento, conforto, a família junta", k:"apoiador"},
+    {t:"Novidade, exclusividade, sair do comum", k:"catalisador"}]},
+  {q:"Como ele reage quando você mostra entusiasmo?", opts:[
+    {t:"Desconfia e quer provas", k:"analitico"},
+    {t:"Corta e vai direto ao ponto", k:"controlador"},
+    {t:"Embarca junto, gosta da energia", k:"apoiador"},
+    {t:"Se empolga ainda mais", k:"catalisador"}]},
+  {q:"O que costuma fazer ele travar?", opts:[
+    {t:"Medo de errar ou falta de dados", k:"analitico"},
+    {t:"Achar que está pagando caro", k:"controlador"},
+    {t:"Não sentir que é a casa certa", k:"apoiador"},
+    {t:"Achar o imóvel comum demais", k:"catalisador"}]},
+  {q:"Como ele prefere receber as informações?", opts:[
+    {t:"Planilha, comparativo, documentos", k:"analitico"},
+    {t:"Resumo rápido e direto", k:"controlador"},
+    {t:"Conversa, história, exemplos", k:"apoiador"},
+    {t:"Fotos, vídeo e o que tem de único", k:"catalisador"}]},
+];
+
+const PERFIS = {
+  analitico:{nome:"Analítico", emo:"🧠", busca:"Busca segurança",
+    sinais:["Pergunta metragem, documentação, histórico","Compara imóveis antes de decidir","Fala devagar, pensa antes de responder","Desconfia de entusiasmo excessivo"],
+    estrategia:["Leve dados reais e precisos","Se não souber, não invente — credibilidade vale mais que simpatia","Nunca pressione para decidir rápido","Deixe espaço para ele processar"],
+    frase:"“Região que valorizou de forma consistente. Metragem acima da média para a faixa, documentação em ordem.”"},
+  controlador:{nome:"Controlador", emo:"⚡", busca:"Busca resultado",
+    sinais:["Pergunta o preço logo no início","Vai direto ao ponto, sem rodeios","Anda rápido na visita","Quer saber a margem de negociação"],
+    estrategia:["Seja direto e objetivo","Apresente o resumo antes dos detalhes","Mostre o custo-benefício claramente","Tenha as informações de negociação na ponta"],
+    frase:"“Resolve tudo num lugar só: garagem, suíte, área gourmet. Pronto, entra morando. Entrega mais por esse preço.”"},
+  apoiador:{nome:"Apoiador", emo:"❤️", busca:"Busca pertencimento",
+    sinais:["Olha quartos, quintal, sala — convivência","Comenta sobre filhos, cônjuge, rotina","Fala “a gente” com frequência","Decide devagar — precisa sentir que é certo"],
+    estrategia:["Comece pelos espaços de convivência","Use linguagem que cria cena e imagem","Deixe explorar no ritmo dele","Os números vêm depois que ele se viu morando"],
+    frase:"“Esse quintal é perfeito pra criança brincar. A sala integrada com a cozinha deixa todo mundo junto.”"},
+  catalisador:{nome:"Catalisador", emo:"🚀", busca:"Busca novidade",
+    sinais:["Comenta arquitetura, layout, design","Anima-se com detalhes fora do comum","Pergunta sobre o projeto, a história","Entedia com imóveis genéricos"],
+    estrategia:["Encontre o diferencial — todo imóvel tem um","Use linguagem de exclusividade","Deixe-o descobrir detalhes por conta própria","Mostre o que é raro, o que poucos percebem"],
+    frase:"“Esse layout é raro nessa faixa de preço. Esse detalhe aqui quase ninguém percebe — mas faz diferença.”"},
+};
+const fmtBRL = n => "R$ " + n.toLocaleString('pt-BR');
+
+/* ================= DADOS EXEMPLO ================= */
+let clientes = [
+  {id:1, nome:"Maria e João Pereira", contato:"(69) 9 8123-4567", origem:"Instagram / Facebook", valor:380000,
+   etapa:7, perfil:"apoiador", temp:"morno",
+   feitos:{0:[0,1],1:[0,1,2],2:[0,1,2],3:[0,1,2,3],4:[0,1,2],5:[0,1,2],6:[0,1],7:[0]},
+   notas:[
+     {data:"10/06 · 14:20", etapa:"Descoberta do Perfil", texto:"Casal, 1ª casa. Falam muito dos filhos e de churrasco no fim de semana. Apoiador — decidem no sentimento."},
+     {data:"12/06 · 16:40", etapa:"Visita", texto:"Visita sábado 10h. Começar pela área de convivência."},
+   ]},
+  {id:2, nome:"Carlos Mendes", contato:"(69) 9 9988-7766", origem:"Portal (ZAP / VivaReal / OLX)", valor:320000,
+   etapa:9, perfil:"controlador", temp:"quente",
+   feitos:{0:[0,1],1:[0,1,2],2:[0,1,2],3:[0,1,2,3],4:[0,1,2],5:[0,1,2],6:[0,1,2],7:[0,1,2,3],8:[0,1,2],9:[0]},
+   notas:[
+     {data:"08/06 · 11:10", etapa:"Primeiro Atendimento", texto:"Foi direto: 'quanto fica o do Catalão?'. Controlador, sem paciência para rodeio."},
+     {data:"11/06 · 18:30", etapa:"Proposta", texto:"Proposta R$ 295 mil (imóvel R$ 320 mil). Paga parte à vista e financia. Pré-aprovação OK."},
+   ]},
+  {id:3, nome:"Ana Beatriz Souza", contato:"(69) 9 9111-2233", origem:"Indicação", valor:0,
+   etapa:3, perfil:null, temp:"quente",
+   feitos:{0:[0,1],1:[0,1,2],2:[0,1,2],3:[0]},
+   notas:[{data:"12/06 · 10:15", etapa:"Descoberta do Perfil", texto:"Indicada pela Maria Pereira. Perguntou bastante sobre documentação — talvez Analítico."}]},
+  {id:4, nome:"Família Nogueira", contato:"(69) 9 8800-1122", origem:"Indicação", valor:420000,
+   etapa:11, perfil:"apoiador", temp:"quente",
+   feitos:{0:[0,1],1:[0,1,2],2:[0,1,2],3:[0,1,2,3],4:[0,1,2],5:[0,1,2],6:[0,1,2],7:[0,1,2,3],8:[0,1,2],9:[0,1,2,3],10:[0,1,2,3],11:[0,1,2,3]},
+   notas:[{data:"05/06 · 09:00", etapa:"Fechamento", texto:"Venda fechada! Casa do Jardim das Acácias. Chaves entregues."}]},
+  {id:5, nome:"Pedro Antunes", contato:"(69) 9 9777-3344", origem:"Site / Google", valor:295000,
+   etapa:11, perfil:"controlador", temp:"quente",
+   feitos:{0:[0,1],1:[0,1,2],2:[0,1,2],3:[0,1,2,3],4:[0,1,2],5:[0,1,2],6:[0,1,2],7:[0,1,2,3],8:[0,1,2],9:[0,1,2,3],10:[0,1,2,3],11:[0,1,2,3]},
+   notas:[{data:"03/06 · 15:30", etapa:"Fechamento", texto:"Fechado. Apartamento Centro. Cliente objetivo do início ao fim."}]},
+];
+let ativoId = 1, novoId = 7;
+clientes.push({id:6, nome:"Visitante do site", contato:"(69) 9 9555-0102", origem:"Site / Google", valor:0,
+  etapa:7, perfil:null, temp:"quente", expressa:true,
+  feitos:{7:[]},
+  notas:[{data:"15/06 · 08:40", etapa:"Visita", texto:"Marcou visita direto pelo site ao sobrado do Jardim das Acácias. Não respondeu nada à Lais. Qualificar e descobrir o perfil na visita — começar pelo imóvel que ele escolheu."}]});
+
+/* metas (período mensal de referência) */
+const CRM_SEED={
+ 1:{email:"maria.joao@email.com",objetivo:"Comprar",faixa:"R$ 350–500 mil",local:"Dom Bosco, Ji-Paraná",preferencia:"Casa com quintal, 3 quartos, perto de escola."},
+ 2:{email:"carlos.mendes@email.com",objetivo:"Comprar",faixa:"R$ 200–350 mil",local:"Catalão, Ji-Paraná",preferencia:"Imóvel pronto, garagem, bom custo-benefício."},
+ 3:{email:"ana.souza@email.com",objetivo:"Comprar",faixa:"R$ 350–500 mil",local:"Centro, Ji-Paraná",preferencia:"Documentação em ordem; ainda pesquisando."},
+ 4:{email:"fam.nogueira@email.com",objetivo:"Comprar",faixa:"R$ 350–500 mil",local:"Jardim das Acácias",preferencia:"Espaço para a família."},
+ 5:{email:"pedro.antunes@email.com",objetivo:"Comprar",faixa:"R$ 200–350 mil",local:"Centro, Ji-Paraná",preferencia:"Apartamento, objetivo e rápido."},
+ 6:{email:"",objetivo:"Comprar",faixa:"",local:"Jardim das Acácias",preferencia:"Marcou visita ao sobrado — não informou mais nada."},
+};
+clientes.forEach(c=>{ const s=CRM_SEED[c.id]||{}; ["email","objetivo","faixa","local","preferencia"].forEach(k=>{ if(c[k]===undefined) c[k]=s[k]||""; }); });
+let metas = {
+  captadoMeta:1, captadoReal:1,          // 1 captacao com exclusividade / mes (contrato)
+  vgvMeta:{mes:417000, tri:1250000, sem:2500000, ano:5000000}, // VGV R$ 5 mi/ano (contrato)
+  vgvRealExtra:{mes:0, tri:380000, sem:1100000, ano:2900000},
+  cadastroMeta:90,
+  visitaMeta:10, visitaBase:5,           // 10 visitas / mes (contrato)
+  convMeta:15,
+  tempoMeta:15, tempoReal:12,
+  satisfMeta:8.5,
+  // Indicadores do metodo consultivo (SPIN) - v2.0
+  npMeta:5, npReal:4,                    // perguntas de Necessidade de Solucao por visita
+  avancosReal:7, continuacoesReal:3,     // Avancos vs Continuacoes
+  necessMeta:60, necessReal:55,          // % leads com necessidade implicita -> explicita
+};
+let metaPeriodo = "mes";
+
+/* respostas de pesquisa / leads mapeados */
+let respostas = [
+  {nome:"Roberto Lima", tipo:"comprou", data:"06/06", notaImovel:9, notaCorretor:10, notaAtend:10, notaImob:9, notaSite:7, motivo:null, perfil:"controlador",
+   interesse:{op:"Comprar", tipoImovel:"Apartamento", quartos:"2", local:"Centro", valor:"R$ 250–350 mil"}},
+  {nome:"Juliana Castro", tipo:"naocomprou", data:"07/06", notaImovel:6, notaCorretor:8, notaAtend:7, notaImob:7, notaSite:5, motivo:"Preço acima do orçamento", perfil:"analitico",
+   interesse:{op:"Comprar", tipoImovel:"Casa", quartos:"3", local:"Dom Bosco", valor:"R$ 350–450 mil"}},
+  {nome:"Marcos Vinícius", tipo:"naocomprou", data:"08/06", notaImovel:7, notaCorretor:6, notaAtend:6, notaImob:6, notaSite:6, motivo:"Demora no retorno do corretor", perfil:"controlador",
+   interesse:{op:"Comprar", tipoImovel:"Casa", quartos:"3", local:"Jardim das Acácias", valor:"R$ 300–400 mil"}},
+  {nome:"Sandra Pereira", tipo:"proprietario", data:"09/06", notaImovel:null, notaCorretor:9, notaAtend:9, notaImob:8, notaSite:7, motivo:null, perfil:"apoiador",
+   interesse:{op:"Anunciar p/ venda", tipoImovel:"Casa", quartos:"4", local:"Nova Brasília", valor:"R$ 500 mil"}},
+  {nome:"Eduardo Ramos", tipo:"naocomprou", data:"10/06", notaImovel:5, notaCorretor:7, notaAtend:6, notaImob:6, notaSite:4, motivo:"Faltou opção no bairro desejado", perfil:"catalisador",
+   interesse:{op:"Comprar", tipoImovel:"Apartamento", quartos:"2", local:"Centro", valor:"R$ 200–300 mil"}},
+  {nome:"Cláudia Tavares", tipo:"comprou", data:"11/06", notaImovel:10, notaCorretor:10, notaAtend:9, notaImob:9, notaSite:8, motivo:null, perfil:"apoiador",
+   interesse:{op:"Comprar", tipoImovel:"Casa", quartos:"3", local:"Jardim das Acácias", valor:"R$ 350–450 mil"}},
+];
+
+/* ================= ESTADO DE VIEW ================= */
+let view = "funil";
+let pesqTab = "gerar";
+let pesqPublico = "";
+let pesqQs = {};
+let linkGerado = false;
+let formInteresse = {op:null, tipoImovel:null, quartos:null, local:"", valor:null, prazo:null, pgto:null, p1:null, p2:null, p3:null};
+let formEnviado = null;
+let bancoFiltro = "todos";
+let fichaOpen=false;
+let metasAtivas=["captados","vgv","conversao","satisfacao"];
+let metasSettings=false;
+
+/* ================= HELPERS ================= */
+function getCli(){ return clientes.find(c=>c.id===ativoId); }
+function totalChk(c){ let t=0,d=0; ETAPAS.forEach((e,i)=>{t+=e.chk.length; d+=(c.feitos[i]||[]).length;}); return {t,d}; }
+const tempCfg = {quente:{rotulo:"Quente",cor:"var(--quente)"}, morno:{rotulo:"Morno",cor:"var(--morno)"}, frio:{rotulo:"Frio",cor:"var(--frio)"}};
+const tipoCfg = {comprou:{l:"Comprou",bg:"var(--verde-bg)",c:"var(--verde)"}, naocomprou:{l:"Não comprou",bg:"var(--vermelho-bg)",c:"var(--vermelho)"}, proprietario:{l:"Proprietário",bg:"var(--azul-claro)",c:"var(--azul)"}};
+function esc(s){return (s||'').replace(/</g,'&lt;');}
+
+/* ================= ROTEAMENTO ================= */
+function setView(v){ view=v; render(); }
+function render(){
+  ["funil","metas","pesquisas","banco"].forEach(v=>{const b=document.getElementById("nav-"+v); if(b)b.classList.toggle("on",v===view);});
+  const app=document.getElementById("app");
+  if(view==="funil"){ app.style.display="flex"; app.innerHTML=renderFunil(); }
+  else if(view==="metas"){ app.style.display="block"; app.innerHTML='<div class="view">'+renderMetas()+'</div>'; }
+  else if(view==="banco"){ app.style.display="block"; app.innerHTML='<div class="view">'+renderBancoView()+'</div>'; }
+  else { app.style.display="block"; app.innerHTML='<div class="view">'+renderPesquisas()+'</div>'; }
+}
+
+/* ================= FUNIL ================= */
+function renderFunil(){
+  let cards='';
+  clientes.forEach(c=>{
+    const tc=tempCfg[c.temp]; const p=c.perfil?PERFIS[c.perfil]:null;
+    const prog=Math.round((c.etapa/(ETAPAS.length-1))*100);
+    cards+='<div class="card-cli'+(c.id===ativoId?' ativo':'')+'" onclick="selCli('+c.id+')">'
+      +'<div class="nome">'+c.nome+(c.expressa?' <span class="exp-mini">expressa</span>':'')+'</div><div class="meta">'
+      +'<span class="dot" style="background:'+tc.cor+'"></span>'+tc.rotulo
+      +(p?'<span class="pill-mini" style="background:var(--azul-claro);color:var(--azul)">'+p.emo+' '+p.nome+'</span>'
+          :'<span class="pill-mini" style="background:var(--vermelho-bg);color:var(--vermelho)">perfil?</span>')
+      +'</div><div class="etapa">Etapa '+(c.etapa+1)+' · '+ETAPAS[c.etapa].nome+'</div>'
+      +'<div class="prog-mini"><div style="width:'+prog+'%"></div></div></div>';
+  });
+  const sidebar='<aside class="sidebar"><h2>Meus clientes</h2>'
+    +'<button class="btn-novo" onclick="abrirModal()">+ Novo cliente</button>'
+    +'<div class="lista">'+cards+'</div></aside>';
+
+  const c=getCli(); const p=c.perfil?PERFIS[c.perfil]:null; const tt=totalChk(c); const t=tt.t, d=tt.d;
+  let steps='';
+  ETAPAS.forEach((e,i)=>{
+    const cls=i<c.etapa?'done':(i===c.etapa?'atual':'');
+    steps+='<div class="step '+cls+'" onclick="setEtapa('+i+')"><span class="owdot" style="background:'+respCor(i)+'"></span><span class="n">'+(i<c.etapa?'✓':i+1)+'</span>'+e.nome+'</div>';
+  });
+  if(!c.perfilQuiz) c.perfilQuiz={};
+  let quizHTML='';
+  PERFIL_QUIZ.forEach((pq,qi)=>{const sel=c.perfilQuiz[qi];
+    quizHTML+='<div class="ffield"><span class="fl">'+(qi+1)+'. '+pq.q+'</span><div class="opt-col">'
+      +pq.opts.map(o=>'<div class="opt'+(sel===o.k?' on':'')+'" onclick="setQuiz('+qi+',\''+o.k+'\')">'+o.t+'</div>').join('')
+      +'</div></div>';});
+  const respondidas=Object.keys(c.perfilQuiz).length;
+  const tallyD={}; Object.values(c.perfilQuiz).forEach(k=>{tallyD[k]=(tallyD[k]||0)+1;});
+  const domN=p?(tallyD[c.perfil]||0):0;
+  let resultHTML='';
+  if(p && respondidas>0){
+    resultHTML='<div class="quiz-result"><div><span class="qr-lab">Perfil mais compatível</span><span class="qr-perfil">'+p.emo+' '+p.nome+'</span></div>'
+      +'<span class="qr-meta">'+domN+' de '+respondidas+' respostas · '+p.busca.toLowerCase()+'</span>'
+      +'<button class="qr-refazer" onclick="refazerQuiz()">refazer</button></div>';
+  }
+  let playbook;
+  if(p){playbook='<div class="playbook"><h4>'+p.emo+' Playbook — como atender o '+p.nome+' <span style="font-weight:600;color:var(--muted);font-size:11px">(do treinamento)</span></h4>'
+      +'<ul>'+p.estrategia.map(s=>'<li>'+s+'</li>').join('')+'</ul><div class="frase">'+p.frase+'</div></div>';}
+  else{playbook='<div class="hint" style="margin-top:13px">Responda as perguntas observando o cliente. Ao final, aparece o perfil mais compatível e o playbook de atendimento.</div>';}
+  const proximo = c.etapa<ETAPAS.length-1?ETAPAS[c.etapa+1].nome:null;
+  const pctTot = Math.round(d/t*100);
+  const perfilTxt = p ? ('perfil <b>'+p.nome+'</b> identificado') : 'perfil ainda não identificado';
+  let resumoHTML='<p class="rz-pos"><b>'+c.nome+'</b> está na <b>etapa '+(c.etapa+1)+' de '+ETAPAS.length+'</b> — '+ETAPAS[c.etapa].nome+', sob responsabilidade de <b>'+RESP[c.etapa]+'</b>.</p>'
+    +'<p>Lead <b>'+tempCfg[c.temp].rotulo.toLowerCase()+'</b>, '+perfilTxt+'. Já concluiu <b>'+pctTot+'%</b> do processo ('+d+' de '+t+' itens).</p>'
+    +(c.expressa?'<p class="rz-exp">⚡ Entrou pela via expressa — qualificação pendente, a fazer na visita.</p>':'')
+    +'<p class="rz-next">'+(proximo?'Próximo passo: <b>'+proximo+'</b>.':'Processo concluído. 🎉')+'</p>';
+  const ea=ETAPAS[c.etapa]; const feitos=c.feitos[c.etapa]||[];
+  const pct=Math.round((feitos.length/ea.chk.length)*100);
+  let chk='';
+  ea.chk.forEach((item,i)=>{const on=feitos.includes(i);
+    chk+='<div class="chk-item '+(on?'on':'')+'" onclick="toggleChk('+i+')"><div class="chk-box">'+(on?'✓':'')+'</div><div class="txt">'+item+'</div></div>';});
+  let notas = c.notas.length ? c.notas.slice().reverse().map((n,idx,arr)=>
+    '<div class="nota"><div class="linha-tempo"><div class="bolha"></div>'+(idx<arr.length-1?'<div class="fio"></div>':'')+'</div>'
+    +'<div class="corpo"><div class="cab"><span class="data">'+n.data+'</span><span class="tag">'+n.etapa+'</span></div>'
+    +'<div class="texto">'+esc(n.texto)+'</div></div></div>').join('')
+    : '<div class="vazio-msg">Nenhuma anotação ainda.</div>';
+
+  const OBJ=["Comprar","Alugar","Vender","Deixar para alugar"];
+  const FAIXAS=["Até R$ 200 mil","R$ 200–350 mil","R$ 350–500 mil","Acima de R$ 500 mil"];
+  const crmInput=(lab,campo,val)=>'<div class="field"><label>'+lab+'</label><input value="'+esc(val||'').replace(/"/g,"&quot;")+'" onchange="setCrm(\''+campo+'\',this.value)"></div>';
+  const crmSelect=(lab,campo,val,ops)=>'<div class="field"><label>'+lab+'</label><select onchange="setCrm(\''+campo+'\',this.value)"><option value="">—</option>'+ops.map(o=>'<option '+(val===o?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';
+  let crmHTML='<div class="crm-grid">'
+    +crmInput('Nome','nome',c.nome)
+    +crmInput('Telefone','contato',c.contato)
+    +crmInput('E-mail','email',c.email)
+    +crmSelect('Objetivo','objetivo',c.objetivo,OBJ)
+    +crmSelect('Faixa de valor','faixa',c.faixa,FAIXAS)
+    +crmInput('Localização','local',c.local)
+    +'</div>'
+    +'<div class="field" style="margin-top:13px"><label>Preferência</label><textarea onchange="setCrm(\'preferencia\',this.value)" placeholder="Características desejadas (quartos, garagem, etc.)">'+esc(c.preferencia||'')+'</textarea></div>';
+  const main='<main class="main">'
+    +'<div class="cli-head"><div class="top"><div><div class="nome">'+c.nome+(c.expressa?' <span class="exp-badge">VIA EXPRESSA</span>':'')+'</div>'
+    +'<div class="contato">'+c.contato+' · origem: '+c.origem+(c.valor?' · imóvel-alvo '+fmtBRL(c.valor):'')+'</div></div>'
+    +'<div class="head-right"><button class="btn-ficha" onclick="abrirFicha()">📇 Ficha</button><span class="pill-resp" title="Responsável pela etapa atual">'+(RESP_EMO[RESP[c.etapa]]||'')+' '+RESP[c.etapa]+'</span><span class="pill '+(p?'pill-perfil':'pill-perfil vazio')+'">'+(p?p.emo+' '+p.nome:'⚠ Perfil não identificado')+'</span>'
+    +'<select class="temp" onchange="setTemp(this.value)">'+Object.keys(tempCfg).map(k=>'<option value="'+k+'" '+(c.temp===k?'selected':'')+'>'+tempCfg[k].rotulo+'</option>').join('')+'</select></div></div>'
+    +'<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><div class="chk-bar" style="max-width:240px"><div style="width:'+Math.round(d/t*100)+'%"></div></div>'
+    +'<span style="font-size:12px;color:var(--muted)">'+d+' de '+t+' itens do processo concluídos</span></div>'
+    +(c.expressa?'<div class="exp-banner">⚡ <b>Via expressa — qualificação pendente.</b> Marcou visita direto pelo site, sem passar pela qualificação. Qualifique e descubra o perfil na visita — e <b>comece pelo imóvel que ele escolheu</b>, só oferecendo alternativas se não der certo.</div>':'')
+    +'</div>'
+    +'<div class="sec"><div class="sec-titulo"><span class="num">1</span> Onde o cliente está no processo</div><div class="stepper">'+steps+'</div>'
+    +'<div class="legend-resp"><span><i style="background:#1F4E79"></i>Andressa (1–6)</span><span><i style="background:#1f9d6b"></i>Corretor (7–9)</span><span><i style="background:#2E6CA8"></i>Andressa + Corretor (10–12)</span><span><i style="background:#c77d2e"></i>Pós-venda (13–15)</span><span style="color:#6b4fbb">🤖 Lais (IA) apoia o 1º contato e a via expressa</span></div></div>'
+    +'<div class="grid2"><div><div class="sec-titulo"><span class="num">2</span> Identificar o perfil do comprador</div>'
+    +'<div class="panel"><div class="hint">Responda observando o cliente — cada resposta aponta para um estilo. Ao final, o sistema indica o perfil mais compatível.</div>'
+    +quizHTML+resultHTML+playbook+'</div></div>'
+    +'<div><div class="sec-titulo"><span class="num">3</span> Checklist — '+ea.nome+'</div>'
+    +'<div class="panel"><div class="chk-prog"><div class="chk-bar"><div style="width:'+pct+'%"></div></div><span class="chk-pct">'+pct+'%</span></div>'+chk+'</div></div></div>'
+    +'<div class="sec"><div class="sec-titulo"><span class="num">4</span> Resumo</div>'
+    +'<div class="panel resumo">'+resumoHTML+'</div></div>'
+    +'<div class="sec"><div class="sec-titulo"><span class="num">5</span> Anotações da conversa</div>'
+    +'<div class="panel"><div class="nota-form"><textarea id="nova-nota" placeholder="O que o cliente falou? O que ficou combinado?"></textarea>'
+    +'<div class="row"><button class="btn" onclick="addNota()">+ Adicionar anotação</button>'
+    +'<span style="font-size:11.5px;color:var(--muted)">Marcada com a etapa atual: <b>'+ea.nome+'</b></span></div></div>'
+    +'<div class="timeline">'+notas+'</div></div></div></main>';
+  const ficha = fichaOpen ? ('<div class="overlay show" id="fichaOv"><div class="modal modal-ficha"><div class="mf-head"><h3>📇 Ficha do cliente — '+c.nome+'</h3><button class="mf-close" onclick="fecharFicha()">✕</button></div>'
+    +'<p class="mf-sub">Preencha aqui você mesmo ou envie o formulário para o cliente. O cadastro alimenta o Banco de Dados automaticamente.</p>'
+    +crmHTML
+    +'<div class="acoes"><button class="btn btn-sec" style="flex:1" onclick="fecharFicha()">Fechar</button><button class="btn" style="flex:1" onclick="enviarFormCliente()">Enviar p/ cliente preencher</button></div>'
+    +'</div></div>') : '';
+  return sidebar+main+ficha;
+}
+function selCli(id){ ativoId=id; render(); }
+function setEtapa(i){ getCli().etapa=i; render(); }
+function setPerfil(k){ const c=getCli(); c.perfil=(c.perfil===k?null:k); render(); }
+function setQuiz(qi,k){ const c=getCli(); if(!c.perfilQuiz)c.perfilQuiz={}; c.perfilQuiz[qi]=k;
+  const t={}; Object.values(c.perfilQuiz).forEach(x=>{t[x]=(t[x]||0)+1;});
+  let dom=null,dn=0; for(const s in t){ if(t[s]>dn){dn=t[s];dom=s;} }
+  c.perfil=dom; render(); }
+function refazerQuiz(){ const c=getCli(); c.perfilQuiz={}; c.perfil=null; render(); }
+function setTemp(v){ getCli().temp=v; render(); }
+function setCrm(campo,val){ getCli()[campo]=val; render(); }
+function abrirFicha(){ fichaOpen=true; render(); }
+function fecharFicha(){ fichaOpen=false; render(); }
+function enviarFormCliente(){ alert("Formulário de interesse enviado ao cliente (mock). Ele preenche e os dados voltam para o Banco de Dados."); }
+function toggleChk(i){ const c=getCli(); if(!c.feitos[c.etapa])c.feitos[c.etapa]=[]; const a=c.feitos[c.etapa]; const p=a.indexOf(i); if(p>=0)a.splice(p,1); else a.push(i); render(); }
+function addNota(){ const ta=document.getElementById('nova-nota'); const txt=(ta.value||'').trim(); if(!txt)return;
+  const c=getCli(); const dt=new Date();
+  const data=String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+' · '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+  c.notas.push({data, etapa:ETAPAS[c.etapa].nome, texto:txt}); render(); }
+function abrirModal(){ document.getElementById('overlay').classList.add('show'); }
+function fecharModal(){ document.getElementById('overlay').classList.remove('show'); }
+function criarCliente(){
+  const nome=(document.getElementById('m-nome').value||'').trim()||'Novo cliente';
+  const contato=(document.getElementById('m-contato').value||'').trim()||'—';
+  const email=(document.getElementById('m-email').value||'').trim();
+  const objetivo=document.getElementById('m-objetivo').value;
+  const faixa=document.getElementById('m-faixa').value;
+  const local=(document.getElementById('m-local').value||'').trim();
+  const origem=document.getElementById('m-origem').value;
+  clientes.push({id:novoId, nome, contato, email, objetivo, faixa, local, preferencia:"", origem, valor:0, etapa:0, perfil:null, temp:'quente', feitos:{}, notas:[]});
+  ativoId=novoId; novoId++;
+  document.getElementById('m-nome').value=''; document.getElementById('m-contato').value=''; document.getElementById('m-email').value=''; document.getElementById('m-local').value='';
+  fecharModal(); render();
+}
+
+/* ================= METAS ================= */
+function calcMetas(){
+  const fechados=clientes.filter(c=>c.etapa>=I_FECHAMENTO);
+  const vgvFunil=fechados.reduce((s,c)=>s+(c.valor||0),0);
+  const visitasFunil=clientes.filter(c=>c.etapa>=I_VISITA).length;
+  let somaPct=0;
+  clientes.forEach(c=>{ somaPct += (c.feitos[1]||[]).length/ETAPAS[1].chk.length; });
+  const cadastroPct=Math.round(somaPct/clientes.length*100);
+  const nVis=clientes.filter(c=>c.etapa>=I_VISITA).length;
+  const nProp=clientes.filter(c=>c.etapa>=I_PROPOSTA).length;
+  const nFech=fechados.length;
+  const conv=nVis?Math.round(nFech/nVis*100):0;
+  const nt=respostas.filter(r=>r.notaAtend!=null);
+  const satisf=nt.length?(nt.reduce((s,r)=>s+r.notaAtend,0)/nt.length):0;
+  return {vgvFunil, visitasFunil, cadastroPct, nVis, nProp, nFech, conv, satisf};
+}
+function kpiCard(lab, auto, val, alvo, pct, cor){
+  const c = pct>=100?'var(--verde)':(pct>=60?'var(--azul2)':'var(--amarelo)');
+  return '<div class="kpi"><div class="lab">'+lab+(auto?' <span class="auto">AUTO</span>':'')+'</div>'
+    +'<div class="val">'+val+'</div><div class="alvo">'+alvo+'</div>'
+    +'<div class="barra"><div style="width:'+Math.min(pct,100)+'%;background:'+(cor||c)+'"></div></div>'
+    +'<div class="pctlab" style="color:'+(cor||c)+'">'+pct+'% da meta</div></div>';
+}
+function renderMetas(){
+  const m=calcMetas();
+  const per=metaPeriodo;
+  const vgvMeta=metas.vgvMeta[per];
+  const vgvReal=metas.vgvRealExtra[per]+m.vgvFunil;
+  const vgvPct=Math.round(vgvReal/vgvMeta*100);
+  const capPct=Math.round(metas.captadoReal/metas.captadoMeta*100);
+  const visReal=metas.visitaBase+m.visitasFunil;
+  const visPct=Math.round(visReal/metas.visitaMeta*100);
+  const cadPct=Math.round(m.cadastroPct/metas.cadastroMeta*100);
+  const convPct=Math.round(m.conv/metas.convMeta*100);
+  const tempPct=Math.round(metas.tempoMeta/metas.tempoReal*100);
+  const satPct=Math.round(m.satisf/metas.satisfMeta*100);
+  const perLabel={mes:"no mês",tri:"no trimestre",sem:"no semestre",ano:"no ano"}[per];
+
+  const REG={
+    captados:{lab:"Imóveis captados", auto:false, val:metas.captadoReal, alvo:"Meta: "+metas.captadoMeta+" no mês", pct:capPct},
+    vgv:{lab:"VGV de venda", auto:true, val:fmtBRL(vgvReal), alvo:"Meta: "+fmtBRL(vgvMeta)+" "+perLabel, pct:vgvPct},
+    conversao:{lab:"Conversão visita→venda", auto:true, val:m.conv+"%", alvo:"Meta: "+metas.convMeta+"%", pct:convPct},
+    satisfacao:{lab:"Satisfação do cliente", auto:true, val:m.satisf.toFixed(1)+"/10", alvo:"Meta: "+metas.satisfMeta+"/10", pct:satPct},
+    visitas:{lab:"Visitas realizadas", auto:true, val:visReal, alvo:"Meta: "+metas.visitaMeta+" no mês", pct:visPct},
+    cadastro:{lab:"% cadastro completo", auto:true, val:m.cadastroPct+"%", alvo:"Meta: "+metas.cadastroMeta+"%", pct:cadPct},
+  };
+  let kpis='';
+  metasAtivas.forEach(k=>{ const r=REG[k]; if(r) kpis+=kpiCard(r.lab, r.auto, r.val, r.alvo, r.pct); });
+  let settings='';
+  if(metasSettings){
+    settings='<div class="panel" style="margin-bottom:18px"><div class="sec-titulo" style="margin-bottom:6px">⚙ Escolher metas exibidas</div>'
+      +'<div class="hint" style="margin-bottom:10px">Marque quais indicadores aparecem. Só constam métricas que o sistema mede sozinho (funil e pesquisas).</div>'
+      +'<div class="qlist">'+Object.keys(REG).map(k=>{const on=metasAtivas.includes(k);
+        return '<div class="qopt '+(on?'on':'')+'" onclick="toggleMeta(\''+k+'\')"><div class="cb">'+(on?'✓':'')+'</div>'+REG[k].lab+(REG[k].auto?' <span class="auto" style="margin-left:6px">AUTO</span>':'')+'</div>';}).join('')
+      +'</div></div>';
+  }
+
+  const maxN=Math.max(m.nVis,1);
+  const frow=(nome,n,conv)=>'<div class="fstage"><div class="fn">'+nome+'</div><div class="fbar"><div style="width:'+Math.max(n/maxN*100,8)+'%">'+n+'</div></div><div class="fconv">'+conv+'</div></div>';
+  const funil='<div class="panel funil-box"><div class="sec-titulo" style="margin-bottom:14px">Funil de conversão (clientes do processo)</div>'
+    +frow("Visitaram", m.nVis, "100%")
+    +frow("Propostas", m.nProp, (m.nVis?Math.round(m.nProp/m.nVis*100):0)+"%")
+    +frow("Fecharam", m.nFech, (m.nVis?Math.round(m.nFech/m.nVis*100):0)+"%")
+    +'<div class="hint" style="margin-top:12px">Estes números saem direto do Funil — conforme você move clientes pelas etapas, a conversão e o VGV se atualizam aqui.</div></div>';
+
+  return '<div class="view-head" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px">'
+    +'<div><h1>Metas</h1><p>Indicadores que o sistema mede sozinho a partir do funil e das pesquisas. Use a engrenagem para escolher quais aparecem.</p></div>'
+    +'<div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">'
+    +'<div class="seg">'+['mes','tri','sem','ano'].map(pp=>'<button class="'+(per===pp?'on':'')+'" onclick="setPeriodo(\''+pp+'\')">'+({mes:"Mês",tri:"Trimestre",sem:"Semestre",ano:"Ano"})[pp]+'</button>').join('')+'</div>'
+    +'<button class="btn-gear" title="Escolher metas" onclick="toggleMetaSettings()">⚙</button></div></div>'
+    +settings
+    +'<div class="kpis">'+kpis+'</div>'
+    +(metasAtivas.includes('captados')?'<div style="margin-top:6px"><div class="mini" style="margin:14px 0 0"><span style="font-size:12.5px;color:var(--muted)">Simular captação de imóvel:</span><button onclick="capMinus()">−</button><button onclick="capPlus()">+</button></div></div>':'')
+    +'<div class="panel" style="margin-top:18px"><div class="sec-titulo" style="margin-bottom:10px">Modelo de atuação</div>'
+    +'<div class="hint" style="margin:0">A Andressa é responsável pelas etapas 1 a 6 (apoiada pela Lais no primeiro contato), o corretor pelas 7 a 9, e a negociação e o fechamento (10 a 12) são conjuntos; o pós-venda cuida das 13 a 15.</div></div>'
+    +funil;
+}
+function setPeriodo(p){ metaPeriodo=p; render(); }
+function capPlus(){ metas.captadoReal++; render(); }
+function capMinus(){ if(metas.captadoReal>0)metas.captadoReal--; render(); }
+function toggleMeta(k){ const i=metasAtivas.indexOf(k); if(i>=0){ if(metasAtivas.length>1) metasAtivas.splice(i,1); } else metasAtivas.push(k); render(); }
+function toggleMetaSettings(){ metasSettings=!metasSettings; render(); }
+
+/* ================= PESQUISAS ================= */
+const QS_PUBLICO = {
+  comprador:["Sua opinião sobre o imóvel que viu","Sobre o corretor que te atendeu","Sobre o atendimento (rapidez, clareza, respeito)","Sobre a experiência geral com a Porto Real","Sobre o nosso site / anúncios","O que faltou para você fechar a compra?","Por que decidiu não comprar conosco?"],
+  proprietario:["Sobre o corretor responsável pelo seu imóvel","Sobre a comunicação e os retornos que recebeu","Sobre a experiência geral com a Porto Real","Sobre a divulgação do seu imóvel (fotos, anúncios, site)","O que poderíamos melhorar no atendimento ao proprietário?"],
+  visitante:["Como você nos encontrou?","Sobre a facilidade de navegar no nosso site","Encontrou o tipo de imóvel que procurava?","O que faltou para você entrar em contato?"],
+};
+const PUB_LABEL={comprador:"Comprador interessado",proprietario:"Proprietário",visitante:"Visitante do site"};
+
+function renderPesquisas(){
+  const tabs='<div class="seg" style="margin:0">'
+    +['gerar','formulario'].map(tb=>'<button class="'+(pesqTab===tb?'on':'')+'" onclick="setPesqTab(\''+tb+'\')">'+({gerar:"Gerar Pesquisa",formulario:"Formulário de Interesse"})[tb]+'</button>').join('')+'</div>';
+  const head='<div class="view-head" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap"><div><h1>Pesquisas &amp; Leads</h1>'
+    +'<p>Mapeie proprietários e compradores, colha opiniões e identifique o perfil — alimentando o Funil e as Metas.</p></div>'+tabs+'</div>';
+  let body='';
+  if(pesqTab==='formulario') body=renderFormulario();
+  else body=renderGerar();
+  return head+body;
+}
+function setPesqTab(t){ pesqTab=t; render(); }
+function renderBancoView(){ return '<div class="view-head"><h1>Banco de Dados</h1><p>Todos os leads cadastrados no funil e as opiniões coletadas. Cadastrou no funil, caiu aqui.</p></div>'+renderBanco(); }
+
+function renderGerar(){
+  let pubSel='<div class="field"><label>1 · Quem vai responder?</label><select onchange="setPublico(this.value)">'
+    +'<option value="">Selecione o público…</option>'
+    +Object.keys(QS_PUBLICO).map(k=>'<option value="'+k+'" '+(pesqPublico===k?'selected':'')+'>'+PUB_LABEL[k]+'</option>').join('')+'</select></div>';
+  let qbox='';
+  if(pesqPublico){
+    const qs=QS_PUBLICO[pesqPublico];
+    qbox='<div class="field"><label>2 · Perguntas da pesquisa</label><div class="qlist">'
+      +qs.map((q,i)=>{const on=pesqQs[pesqPublico] && pesqQs[pesqPublico].includes(i);
+        return '<div class="qopt '+(on?'on':'')+'" onclick="toggleQ('+i+')"><div class="cb">'+(on?'✓':'')+'</div>'+q+'</div>';}).join('')
+      +'</div></div>';
+  }
+  const link='<div class="linkbox'+(linkGerado?' show':'')+'">https://portoreal.com.br/pesquisa/'+(pesqPublico||'')+'-7f3a92 &nbsp;·&nbsp; <b>link pronto para enviar no WhatsApp do cliente</b></div>';
+  const left='<div class="panel">'+pubSel+qbox
+    +(pesqPublico?'<button class="btn" style="margin-top:6px" onclick="gerarLink()">Gerar link da pesquisa</button>':'')
+    +link+'</div>';
+  const right='<div class="panel"><div class="sec-titulo" style="margin-bottom:12px">Como funciona</div>'
+    +'<div class="hint">A pesquisa de opinião é enviada <b>depois</b> do contato — para quem comprou, para quem não comprou e para proprietários. As respostas caem no <b>Banco de Dados</b> e a nota de atendimento vira a meta de <b>Satisfação</b>.</div>'
+    +'<p style="font-size:13px;line-height:1.6;color:#374151">Já o <b>Formulário de Interesse</b> (aba ao lado) é enviado <b>no início</b>, para mapear o que o cliente procura — e, de forma transparente para você e neutra para ele, identificar o perfil dominante.</p></div>';
+  return '<div class="cols"><div>'+left+'</div><div>'+right+'</div></div>';
+}
+function setPublico(v){ pesqPublico=v; if(v&&!pesqQs[v]) pesqQs[v]=QS_PUBLICO[v].map((_,i)=>i); linkGerado=false; render(); }
+function toggleQ(i){ const a=pesqQs[pesqPublico]; const p=a.indexOf(i); if(p>=0)a.splice(p,1); else a.push(i); render(); }
+function gerarLink(){ linkGerado=true; render(); }
+
+const PERFIL_QS = [
+  {q:"O que mais pesa na sua decisão?", opts:[
+    {t:"Ter todos os dados e a documentação em ordem", k:"analitico"},
+    {t:"Resolver rápido, com o melhor custo-benefício", k:"controlador"},
+    {t:"Imaginar minha família vivendo ali", k:"apoiador"},
+    {t:"Um imóvel diferente, com personalidade", k:"catalisador"}]},
+  {q:"Num imóvel, você repara primeiro em…", opts:[
+    {t:"Metragem e detalhes técnicos", k:"analitico"},
+    {t:"Preço e praticidade", k:"controlador"},
+    {t:"Espaços de convivência (sala, quintal)", k:"apoiador"},
+    {t:"Arquitetura e diferenciais do projeto", k:"catalisador"}]},
+  {q:"Como prefere ser atendido?", opts:[
+    {t:"Com informação e sem pressa", k:"analitico"},
+    {t:"De forma direta e objetiva", k:"controlador"},
+    {t:"Com calma, entendendo minha rotina", k:"apoiador"},
+    {t:"Vendo o que aquele imóvel tem de único", k:"catalisador"}]},
+];
+function optBtns(campo, valores, sel){
+  return '<div class="opts">'+valores.map(v=>'<div class="opt'+(sel===v?' on':'')+'" onclick="setForm(\''+campo+'\',\''+v+'\')">'+v+'</div>').join('')+'</div>';
+}
+function renderFormulario(){
+  const f=formInteresse;
+  let perfilQs='';
+  PERFIL_QS.forEach((pq,qi)=>{
+    const sel=f['p'+(qi+1)];
+    perfilQs+='<div class="ffield"><span class="fl">'+pq.q+'</span><div class="opt-col">'
+      +pq.opts.map((o)=>'<div class="opt'+(sel===o.k?' on':'')+'" onclick="setForm(\'p'+(qi+1)+'\',\''+o.k+'\')">'+o.t+'</div>').join('')
+      +'</div></div>';
+  });
+  const phone='<div class="phone"><div class="phone-top"><h3>Encontre seu imóvel 🏡</h3><p>Imobiliária Porto Real · leva 1 minuto</p></div>'
+    +'<div class="phone-body">'
+    +'<div class="ffield"><span class="fl">Você quer…</span>'+optBtns('op',["Comprar","Alugar"],f.op)+'</div>'
+    +'<div class="ffield"><span class="fl">Tipo de imóvel</span>'+optBtns('tipoImovel',["Casa","Apartamento","Terreno"],f.tipoImovel)+'</div>'
+    +'<div class="ffield"><span class="fl">Quantos quartos?</span>'+optBtns('quartos',["1","2","3","4+"],f.quartos)+'</div>'
+    +'<div class="ffield"><span class="fl">Localização desejada</span><input style="width:100%;font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid var(--linha);border-radius:9px" placeholder="Bairro ou cidade" value="'+esc(f.local)+'" oninput="setForm(\'local\',this.value)"></div>'
+    +'<div class="ffield"><span class="fl">Faixa de valor</span><div class="opt-col">'+["Até R$ 200 mil","R$ 200–350 mil","R$ 350–500 mil","Acima de R$ 500 mil"].map(v=>'<div class="opt'+(f.valor===v?' on':'')+'" onclick="setForm(\'valor\',\''+v+'\')">'+v+'</div>').join('')+'</div></div>'
+    +'<div class="ffield"><span class="fl">Prazo para decidir</span>'+optBtns('prazo',["Já","3 meses","6 meses+"],f.prazo)+'</div>'
+    +'<div class="ffield"><span class="fl">Forma de pagamento</span>'+optBtns('pgto',["À vista","Financiado","Ainda não sei"],f.pgto)+'</div>'
+    +'<div style="border-top:1px solid var(--linha);margin:6px 0 12px;padding-top:12px"><span class="fl" style="color:var(--azul)">Para te atendermos melhor 💬</span></div>'
+    +perfilQs
+    +'<div class="lgpd">🔒 Ao enviar, você concorda que a Porto Real use estas informações para te apresentar imóveis adequados, conforme a LGPD. Seus dados não são compartilhados com terceiros.</div>'
+    +'<button class="btn" style="width:100%;margin-top:12px" onclick="enviarForm()">Enviar</button>'
+    +'</div></div>';
+  let dev='';
+  if(formEnviado){const p=PERFIS[formEnviado];
+    dev='<div class="devnote show"><b>👀 Visão do corretor (o cliente não vê isto):</b><br>Pelas respostas das 3 perguntas finais, o perfil dominante identificado foi <b>'+p.emo+' '+p.nome+'</b> — '+p.busca.toLowerCase()+'. Esse lead entraria no Funil já com o perfil sugerido e o playbook pronto.</div>';
+  } else {
+    dev='<div class="devnote show" style="border-color:var(--azul);background:var(--azul-bg);color:#2a4a66">As 3 últimas perguntas parecem inocentes para o cliente, mas cada resposta aponta para um dos 4 estilos. Preencha e clique em <b>Enviar</b> para ver o perfil que o sistema deduz.</div>';
+  }
+  const right='<div class="panel"><div class="sec-titulo" style="margin-bottom:12px">O que este formulário faz</div>'
+    +'<div class="hint">À esquerda, a tela que o <b>cliente</b> preenche no celular. As perguntas de cima mapeiam o <b>interesse</b> (o que procura). As 3 de baixo, em linguagem neutra, mapeiam o <b>perfil</b> sem rótulo.</div>'
+    +dev+'</div>';
+  return '<div class="cols"><div>'+phone+'</div><div>'+right+'</div></div>';
+}
+function setForm(campo,val){ formInteresse[campo]=val; formEnviado=null; render(); }
+function enviarForm(){
+  const f=formInteresse; const tal={};
+  ['p1','p2','p3'].forEach(k=>{ if(f[k]) tal[f[k]]=(tal[f[k]]||0)+1; });
+  let best=null,bn=0; for(const k in tal){ if(tal[k]>bn){bn=tal[k];best=k;} }
+  if(!best){ alert("Responda as 3 perguntas finais para o sistema identificar o perfil."); return; }
+  formEnviado=best; render();
+}
+
+function renderBanco(){
+  const filtros=[['todos','Todos'],['comprou','Comprou'],['naocomprou','Não comprou'],['proprietario','Proprietário']];
+  const fil='<div class="filtros">'+filtros.map(p=>'<button class="'+(bancoFiltro===p[0]?'on':'')+'" onclick="setBancoFiltro(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>';
+  const lista=respostas.filter(r=>bancoFiltro==='todos'||r.tipo===bancoFiltro);
+  const nt=respostas.filter(r=>r.notaAtend!=null);
+  const mAtend=(nt.reduce((s,r)=>s+r.notaAtend,0)/nt.length).toFixed(1);
+  const ns=respostas.filter(r=>r.notaSite!=null);
+  const mSite=(ns.reduce((s,r)=>s+r.notaSite,0)/ns.length).toFixed(1);
+  const ncor=respostas.filter(r=>r.notaCorretor!=null);
+  const mCor=(ncor.reduce((s,r)=>s+r.notaCorretor,0)/ncor.length).toFixed(1);
+  const naoComprou=respostas.filter(r=>r.tipo==='naocomprou').length;
+  const stats='<div class="stat-row">'
+    +'<div class="stat"><div class="l">Atendimento</div><div class="v">'+mAtend+'<span style="font-size:14px;color:var(--muted)">/10</span></div></div>'
+    +'<div class="stat"><div class="l">Corretor</div><div class="v">'+mCor+'<span style="font-size:14px;color:var(--muted)">/10</span></div></div>'
+    +'<div class="stat"><div class="l">Site</div><div class="v">'+mSite+'<span style="font-size:14px;color:var(--muted)">/10</span></div></div>'
+    +'<div class="stat"><div class="l">Não compraram</div><div class="v">'+naoComprou+'</div></div></div>';
+  const motivos={};
+  respostas.forEach(r=>{ if(r.motivo) motivos[r.motivo]=(motivos[r.motivo]||0)+1; });
+  const maxM=Math.max.apply(null,Object.values(motivos).concat([1]));
+  let temas='';
+  Object.entries(motivos).sort((a,b)=>b[1]-a[1]).forEach(e=>{
+    temas+='<div class="tema"><div class="tn">'+e[0]+'</div><div class="tb"><div style="width:'+(e[1]/maxM*100)+'%"></div></div><div class="tv">'+e[1]+'</div></div>';
+  });
+  const temasBox='<div class="panel" style="margin-bottom:18px"><div class="sec-titulo" style="margin-bottom:12px">Por que não compraram (motivos mais citados)</div><div class="temas">'+temas+'</div></div>';
+  let cards='';
+  lista.forEach(r=>{
+    const tc=tipoCfg[r.tipo]; const p=r.perfil?PERFIS[r.perfil]:null;
+    cards+='<div class="lead-card"><div class="lc-top"><span class="lc-nome">'+r.nome+'</span>'
+      +'<span class="tipo-tag" style="background:'+tc.bg+';color:'+tc.c+'">'+tc.l+'</span>'
+      +(p?'<span class="tipo-tag" style="background:var(--azul-claro);color:var(--azul)">'+p.emo+' '+p.nome+' (perfil)</span>':'')
+      +'<span style="margin-left:auto;font-size:11.5px;color:var(--muted)">'+r.data+'</span></div>'
+      +'<div class="lc-grid">'
+      +'<div><b>Interesse</b>'+r.interesse.op+'</div>'
+      +'<div><b>Imóvel</b>'+r.interesse.tipoImovel+' · '+r.interesse.quartos+' q</div>'
+      +'<div><b>Local</b>'+r.interesse.local+'</div>'
+      +'<div><b>Valor</b>'+r.interesse.valor+'</div>'
+      +(r.notaAtend!=null?'<div><b>Atendimento</b>'+r.notaAtend+'/10</div>':'')
+      +(r.motivo?'<div style="grid-column:1/-1"><b>Por que não fechou</b>'+r.motivo+'</div>':'')
+      +'</div></div>';
+  });
+  let funnelLeads='<div class="sec-titulo" style="margin-bottom:6px">Leads cadastrados no funil</div>'
+    +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:13px">Tudo que você cadastra no funil cai aqui automaticamente. Você pode preencher a ficha você mesmo ou enviar o formulário para o cliente preencher.</p>';
+  clientes.forEach(cl=>{ const pp=cl.perfil?PERFIS[cl.perfil]:null;
+    funnelLeads+='<div class="lead-card"><div class="lc-top"><span class="lc-nome">'+cl.nome+'</span>'
+      +(pp?'<span class="tipo-tag" style="background:var(--azul-claro);color:var(--azul)">'+pp.emo+' '+pp.nome+'</span>':'')
+      +'<span class="tipo-tag" style="background:#eef4fa;color:#1F4E79">Etapa '+(cl.etapa+1)+'</span>'
+      +(cl.expressa?'<span class="tipo-tag" style="background:#fbf1e3;color:#c77d2e">via expressa</span>':'')
+      +'<span style="margin-left:auto;font-size:11.5px;color:var(--muted)">'+(cl.objetivo||'')+'</span></div>'
+      +'<div class="lc-grid"><div><b>Telefone</b>'+(cl.contato||'—')+'</div><div><b>E-mail</b>'+(cl.email||'—')+'</div>'
+      +'<div><b>Faixa</b>'+(cl.faixa||'—')+'</div><div><b>Local</b>'+(cl.local||'—')+'</div>'
+      +(cl.preferencia?'<div style="grid-column:1/-1"><b>Preferência</b>'+esc(cl.preferencia)+'</div>':'')+'</div></div>';
+  });
+  return funnelLeads
+    +'<div class="sec-titulo" style="margin:24px 0 12px">Opiniões e satisfação (pesquisas)</div>'
+    +stats+temasBox+fil+cards;
+}
+function setBancoFiltro(f){ bancoFiltro=f; render(); }
+
+document.getElementById('overlay').addEventListener('click',function(e){if(e.target.id==='overlay')fecharModal();});
+render();
+</script>
+</body>
+</html>

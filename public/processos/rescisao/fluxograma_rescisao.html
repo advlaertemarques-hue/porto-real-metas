@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxograma de Rescisão – Porto Real</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:   #2d3e50;
+  --blue2:  #3d5166;
+  --red:    #e02020;
+  --red2:   #c01818;
+  --green:  #1a7a4a;
+  --green2: #155f3a;
+  --amber:  #d97706;
+  --light:  #f4f6f8;
+  --white:  #ffffff;
+  --border: #dde3ea;
+  --text:   #1e2a35;
+  --muted:  #6b7a8d;
+  --shadow: 0 4px 24px rgba(45,62,80,.12);
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--light);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--blue);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 3px solid var(--red);
+}
+
+.header-logo {
+  height: 26px;
+  filter: brightness(0) invert(1);
+  opacity: .9;
+}
+
+.header-title {
+  font-size: .75rem;
+  font-weight: 500;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.5);
+}
+
+.header-sep { flex: 1; }
+
+.restart-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.7);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .75rem;
+  padding: .35rem .9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: .05em;
+  transition: all .2s;
+}
+.restart-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+/* ── BREADCRUMB TRAIL ── */
+.trail-wrap {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: .7rem 2rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.trail {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+}
+
+.trail-step {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+.trail-step .crumb {
+  background: var(--light);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: .2rem .6rem;
+  font-size: .68rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trail-step .crumb.decision-yes  { border-color: #bbdacc; color: var(--green); background: #f0faf5; }
+.trail-step .crumb.decision-no   { border-color: #f5c0c0; color: var(--red);   background: #fff5f5; }
+.trail-step .crumb.decision-opt  { border-color: #b8cfe0; color: var(--blue);  background: #f0f5fa; }
+
+.trail-arrow { color: var(--border); font-size: .8rem; }
+
+/* ── MAIN STAGE ── */
+.stage {
+  max-width: 680px;
+  margin: 2.5rem auto;
+  padding: 0 1.2rem;
+}
+
+/* NODE CARD */
+.node-card {
+  background: var(--white);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: slideIn .28s cubic-bezier(.25,.8,.25,1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Node type headers */
+.node-header {
+  padding: 1.2rem 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+.node-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.type-action   .node-header { background: var(--blue); }
+.type-action   .node-icon   { background: rgba(255,255,255,.12); }
+.type-action   .node-type, .type-action .node-title { color: #fff; }
+
+.type-decision .node-header { background: #fff8e8; border-bottom: 1px solid #f5dfa0; }
+.type-decision .node-icon   { background: rgba(217,119,6,.12); }
+.type-decision .node-type   { color: var(--amber); }
+.type-decision .node-title  { color: var(--text); }
+
+.type-terminal-ok .node-header  { background: #f0faf5; border-bottom: 1px solid #b8ddc9; }
+.type-terminal-ok .node-icon    { background: rgba(26,122,74,.1); }
+.type-terminal-ok .node-type    { color: var(--green); }
+.type-terminal-ok .node-title   { color: var(--text); }
+
+.type-terminal-err .node-header { background: #fff5f5; border-bottom: 1px solid #f5c0c0; }
+.type-terminal-err .node-icon   { background: rgba(224,32,32,.08); }
+.type-terminal-err .node-type   { color: var(--red); }
+.type-terminal-err .node-title  { color: var(--text); }
+
+.type-warning  .node-header { background: #fff5f0; border-bottom: 1px solid #f8d0b0; }
+.type-warning  .node-icon   { background: rgba(217,119,6,.1); }
+.type-warning  .node-type   { color: #c05000; }
+.type-warning  .node-title  { color: var(--text); }
+
+.node-type {
+  font-size: .63rem;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  margin-bottom: .1rem;
+}
+
+.node-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* NODE BODY */
+.node-body {
+  padding: 1.4rem 1.6rem;
+}
+
+.node-desc {
+  font-size: .9rem;
+  line-height: 1.7;
+  color: #3a4a5a;
+  margin-bottom: 1.2rem;
+}
+
+/* CHECKLIST inside node */
+.node-checklist {
+  background: var(--light);
+  border-radius: 8px;
+  padding: .8rem 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.node-checklist-title {
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .6rem;
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .3rem 0;
+  font-size: .84rem;
+  color: var(--text);
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.check-item:last-child { border-bottom: none; }
+
+.check-box {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65rem;
+  color: transparent;
+}
+.check-box.checked { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* SCRIPT box */
+.script-box {
+  background: #f0f5fa;
+  border-left: 3px solid var(--blue);
+  border-radius: 0 8px 8px 0;
+  padding: .9rem 1.1rem;
+  margin-bottom: 1.2rem;
+  font-size: .84rem;
+  line-height: 1.65;
+  color: #2a3a4a;
+  font-style: italic;
+}
+
+.script-label {
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--blue);
+  font-style: normal;
+  display: block;
+  margin-bottom: .35rem;
+}
+
+/* ALERT box */
+.alert-box {
+  border-radius: 8px;
+  padding: .8rem 1rem;
+  margin-bottom: 1.2rem;
+  font-size: .84rem;
+  line-height: 1.6;
+  display: flex;
+  gap: .7rem;
+  align-items: flex-start;
+}
+.alert-box .alert-icon { font-size: 1rem; flex-shrink: 0; }
+.alert-red    { background: #fff0f0; border: 1px solid #fbbcbc; color: #7a1010; }
+.alert-green  { background: #f0faf5; border: 1px solid #a8d8be; color: #0e4a28; }
+.alert-blue   { background: #f0f5fa; border: 1px solid #b0cce0; color: #1a3050; }
+.alert-amber  { background: #fffbf0; border: 1px solid #f5d88a; color: #7a4a00; }
+
+/* BUTTONS */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-top: .4rem;
+}
+
+.btn-row {
+  display: flex;
+  gap: .6rem;
+}
+
+.btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: .85rem 1.2rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.btn-yes    { background: var(--green); color: #fff; }
+.btn-yes:hover { background: var(--green2); transform: translateY(-1px); }
+
+.btn-no     { background: var(--red); color: #fff; }
+.btn-no:hover { background: var(--red2); transform: translateY(-1px); }
+
+.btn-next   { background: var(--blue); color: #fff; }
+.btn-next:hover { background: var(--blue2); transform: translateY(-1px); }
+
+.btn-opt    { background: var(--light); color: var(--text); border: 1.5px solid var(--border); }
+.btn-opt:hover { background: #e8edf2; border-color: #b0bec8; transform: translateY(-1px); }
+
+.btn-warn   { background: var(--amber); color: #fff; }
+.btn-warn:hover { opacity: .9; }
+
+.btn-icon { font-size: 1rem; }
+
+/* STEP COUNTER */
+.step-counter {
+  text-align: center;
+  font-size: .72rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: .05em;
+}
+
+/* SUMMARY (end states) */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin-bottom: 1.2rem;
+}
+
+.summary-item {
+  background: var(--light);
+  border-radius: 8px;
+  padding: .8rem;
+  text-align: center;
+}
+
+.summary-item .s-icon { font-size: 1.4rem; display: block; margin-bottom: .3rem; }
+.summary-item .s-label { font-size: .72rem; color: var(--muted); display: block; }
+.summary-item .s-val { font-size: .85rem; font-weight: 600; color: var(--text); display: block; margin-top: .15rem; }
+
+/* PROGRESS BAR */
+.progress-wrap {
+  height: 3px;
+  background: var(--border);
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--red);
+  transition: width .4s ease;
+}
+
+/* TAG */
+.tag {
+  display: inline-block;
+  font-size: .65rem;
+  font-weight: 600;
+  padding: .15rem .55rem;
+  border-radius: 20px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-right: .3rem;
+}
+.tag-blue  { background: #dce8f5; color: var(--blue); }
+.tag-red   { background: #fde8e8; color: var(--red); }
+.tag-green { background: #daf0e8; color: var(--green); }
+
+@media (max-width: 500px) {
+  .stage { margin: 1.2rem auto; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .btn-row { flex-direction: column; }
+  .node-header { padding: 1rem 1.2rem; }
+  .node-body   { padding: 1rem 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <img src="logo-with-icon.jpg" alt="Porto Real" class="header-logo">
+  <span class="header-sep"></span>
+  <span class="header-title">Fluxo de Rescisão</span>
+  <span class="header-sep"></span>
+  <button class="restart-btn" onclick="restart()">↺ Reiniciar</button>
+</header>
+
+<!-- TRAIL -->
+<div class="trail-wrap" id="trailWrap">
+  <div class="trail" id="trail"></div>
+</div>
+
+<!-- STAGE -->
+<div class="stage">
+  <div class="step-counter" id="stepCounter">etapa 1</div>
+  <div id="nodeContainer"></div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<script>
+// ─── FLOW DATA ────────────────────────────────────────────────────────────────
+// Each node: { id, type, icon, typeLabel, title, desc, checklist?, script?, alert?, buttons[] }
+// button: { label, icon?, style, next, crumbLabel, crumbStyle }
+
+const NODES = {
+
+  // ── INÍCIO ──────────────────────────────────────────────────────────────────
+  start: {
+    type: 'action',
+    icon: '📋', typeLabel: 'Início',
+    title: 'Nova Rescisão',
+    desc: 'O inquilino manifestou intenção de saída. Antes de qualquer ação, verifique se o aviso é formal.',
+    alert: { style: 'alert-blue', icon: 'ℹ️', text: 'A rescisão SÓ começa oficialmente após aviso escrito. Verbal não conta.' },
+    buttons: [{ label: 'Verificar aviso', icon: '→', style: 'btn-next', next: 'q_aviso_formal', crumb: 'Início', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── QUESTÃO 1: Aviso formal? ─────────────────────────────────────────────
+  q_aviso_formal: {
+    type: 'decision',
+    icon: '❓', typeLabel: 'Decisão',
+    title: 'O inquilino enviou aviso por escrito?',
+    desc: 'Aviso válido = mensagem escrita (WhatsApp ou e-mail) com: nome, endereço, data prevista de saída e intenção clara de rescisão.',
+    checklist: [
+      'Nome completo do inquilino',
+      'Endereço do imóvel',
+      'Declaração clara de rescisão',
+      'Data prevista de desocupação',
+    ],
+    buttons: [
+      { label: 'Sim — aviso escrito recebido', icon: '✓', style: 'btn-yes', next: 'registro_interno', crumb: 'Aviso formal ✓', crumbStyle: 'decision-yes' },
+      { label: 'Não — apenas verbal ou informal', icon: '✗', style: 'btn-no', next: 'solicitar_formalizacao', crumb: 'Aviso informal', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── SOLICITAR FORMALIZAÇÃO ──────────────────────────────────────────────
+  solicitar_formalizacao: {
+    type: 'warning',
+    icon: '✉️', typeLabel: 'Ação necessária',
+    title: 'Solicitar formalização escrita',
+    desc: 'O processo NÃO pode avançar. Solicite ao inquilino que formalize a saída por escrito.',
+    script: '"Perfeito, para darmos início ao processo, preciso que nos envie uma formalização por escrito com a data prevista de saída. Assim que recebermos, iniciamos oficialmente a rescisão."',
+    alert: { style: 'alert-amber', icon: '⚠️', text: 'Aguarde a formalização. A data da mensagem escrita é o marco oficial do início do processo.' },
+    buttons: [
+      { label: 'Formalização recebida', icon: '✓', style: 'btn-yes', next: 'registro_interno', crumb: 'Formalização recebida', crumbStyle: 'decision-yes' }
+    ]
+  },
+
+  // ── REGISTRO INTERNO ───────────────────────────────────────────────────
+  registro_interno: {
+    type: 'action',
+    icon: '🗂️', typeLabel: 'Ação interna',
+    title: 'Registrar internamente — antes de qualquer contato',
+    desc: 'Antes de falar com inquilino ou proprietário, registre tudo no sistema e entenda o contrato.',
+    checklist: [
+      'Abrir rescisão no sistema',
+      'Registrar nome, imóvel e data da formalização',
+      'Identificar tipo de garantia (caução / fiador / seguro fiança)',
+      'Verificar prazo contratual e existência de multa',
+      'Registrar valor da caução (se houver)',
+      'Definir data prevista da vistoria final',
+    ],
+    alert: { style: 'alert-red', icon: '🚫', text: 'NENHUMA promessa feita antes deste registro. Nem devolução de caução, nem ausência de multa.' },
+    buttons: [{ label: 'Registro concluído', icon: '→', style: 'btn-next', next: 'comunicar_inquilino', crumb: 'Registro interno ✓', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── COMUNICAR INQUILINO ─────────────────────────────────────────────────
+  comunicar_inquilino: {
+    type: 'action',
+    icon: '💬', typeLabel: 'Comunicação',
+    title: 'Comunicação oficial ao inquilino',
+    desc: 'Agora sim — comunicar oficialmente o início da rescisão. Use o modelo padrão.',
+    checklist: [
+      'Confirmar recebimento do aviso e data de saída',
+      'Enviar vistoria inicial em anexo',
+      'Informar data e horário da vistoria final',
+      'Avisar que imóvel deve estar vazio e limpo',
+      'Informar que valores só serão definidos após vistoria',
+      'Informar prazo de até 30 dias para devolução de caução',
+      'Oferecer apoio preventivo na adequação',
+    ],
+    buttons: [{ label: 'Comunicação enviada', icon: '→', style: 'btn-next', next: 'comunicar_proprietario', crumb: 'Inquilino comunicado ✓', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── COMUNICAR PROPRIETÁRIO ──────────────────────────────────────────────
+  comunicar_proprietario: {
+    type: 'action',
+    icon: '🏠', typeLabel: 'Comunicação',
+    title: 'Comunicação oficial ao proprietário',
+    desc: 'No mesmo dia — alinhar expectativas do proprietário sobre o processo técnico.',
+    checklist: [
+      'Informar saída do inquilino e data prevista',
+      'Explicar que o processo é técnico, com vistoria e análise',
+      'Alertar que nem todo desgaste é responsabilidade do inquilino',
+      'Informar data da vistoria final',
+      'Esclarecer que somente após vistoria haverá relatório completo',
+    ],
+    buttons: [{ label: 'Proprietário comunicado', icon: '→', style: 'btn-next', next: 'dia_vistoria', crumb: 'Proprietário comunicado ✓', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── DIA DA VISTORIA ─────────────────────────────────────────────────────
+  dia_vistoria: {
+    type: 'action',
+    icon: '🔍', typeLabel: 'Vistoria final',
+    title: 'Dia da vistoria final',
+    desc: 'Chegou a data agendada. Verifique primeiro se o inquilino está presente.',
+    alert: { style: 'alert-blue', icon: 'ℹ️', text: 'O vistoriador apenas registra fatos. Não negocia, não discute valores, não promete nada.' },
+    buttons: [
+      { label: 'Inquilino presente', icon: '✓', style: 'btn-yes', next: 'realizar_vistoria', crumb: 'Inquilino presente', crumbStyle: 'decision-yes' },
+      { label: 'Inquilino ausente', icon: '✗', style: 'btn-no', next: 'q_primeira_ausencia', crumb: 'Inquilino ausente', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── PRIMEIRA AUSÊNCIA? ──────────────────────────────────────────────────
+  q_primeira_ausencia: {
+    type: 'decision',
+    icon: '❓', typeLabel: 'Decisão',
+    title: 'É a primeira vez que o inquilino faltou?',
+    desc: 'Na primeira ausência, a vistoria NÃO é realizada. Na segunda ausência, a vistoria é realizada sem o inquilino.',
+    buttons: [
+      { label: 'Sim — primeira ausência', icon: '1', style: 'btn-opt', next: 'notificar_ausencia', crumb: '1ª ausência', crumbStyle: 'decision-no' },
+      { label: 'Não — segunda ausência', icon: '2', style: 'btn-warn', next: 'realizar_vistoria_sem', crumb: '2ª ausência', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── NOTIFICAR AUSÊNCIA ──────────────────────────────────────────────────
+  notificar_ausencia: {
+    type: 'warning',
+    icon: '📨', typeLabel: 'Notificação',
+    title: 'Registrar ausência e reagendar',
+    desc: 'NÃO realizar a vistoria agora. Enviar notificação no mesmo dia.',
+    script: '"Informamos que comparecemos hoje ao imóvel em [endereço], conforme agendado, porém não houve acompanhamento. Reagendamos para [nova data]. Caso não haja presença nesta nova data, a vistoria será realizada normalmente e o laudo valerá como base do processo."',
+    checklist: [
+      'Registrar ausência internamente com data/hora',
+      'Enviar notificação por escrito no mesmo dia',
+      'Agendar nova vistoria (normalmente 48h depois)',
+      'Informar que na 2ª ausência a vistoria ocorre sem o inquilino',
+    ],
+    buttons: [{ label: 'Nova data agendada', icon: '→', style: 'btn-next', next: 'dia_vistoria_2', crumb: 'Reagendado', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── DIA DA VISTORIA 2 ───────────────────────────────────────────────────
+  dia_vistoria_2: {
+    type: 'action',
+    icon: '🔍', typeLabel: 'Vistoria — 2ª tentativa',
+    title: 'Nova data da vistoria final',
+    desc: 'Segunda tentativa de vistoria. Se o inquilino faltar novamente, a vistoria é realizada.',
+    buttons: [
+      { label: 'Inquilino presente', icon: '✓', style: 'btn-yes', next: 'realizar_vistoria', crumb: 'Presente na 2ª', crumbStyle: 'decision-yes' },
+      { label: 'Ausente novamente', icon: '✗', style: 'btn-no', next: 'realizar_vistoria_sem', crumb: '2ª ausência', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── VISTORIA SEM PRESENÇA ───────────────────────────────────────────────
+  realizar_vistoria_sem: {
+    type: 'warning',
+    icon: '📸', typeLabel: 'Vistoria',
+    title: 'Realizar vistoria sem o inquilino',
+    desc: 'A ausência voluntária não impede o processo. Realize a vistoria e o laudo técnico vale como base.',
+    checklist: [
+      'Registrar que vistoria foi realizada sem acompanhamento',
+      'Fotografar todos os ambientes com qualidade',
+      'Comparar item por item com a vistoria inicial',
+      'Descrever tecnicamente cada apontamento',
+      'Assinar e datar o laudo',
+    ],
+    alert: { style: 'alert-amber', icon: '⚠️', text: 'Documentar bem é essencial — esse laudo será a única prova caso haja questionamento posterior.' },
+    buttons: [{ label: 'Laudo concluído', icon: '→', style: 'btn-next', next: 'analisar_danos', crumb: 'Vistoria concluída', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── REALIZAR VISTORIA (normal) ──────────────────────────────────────────
+  realizar_vistoria: {
+    type: 'action',
+    icon: '📸', typeLabel: 'Vistoria',
+    title: 'Conduzir vistoria final',
+    desc: 'Comparar o estado atual com a vistoria inicial, item por item. Registrar tudo com fotos.',
+    checklist: [
+      'Ter a vistoria inicial em mãos para comparação',
+      'Fotografar todos os ambientes',
+      'Registrar cada alteração em relação à vistoria inicial',
+      'Manter postura neutra — não debater com o inquilino',
+      'Se questionado: "Tudo será analisado pela equipe após a vistoria"',
+      'Encaminhar laudo + fotos ao setor de rescisão',
+    ],
+    buttons: [{ label: 'Laudo encaminhado', icon: '→', style: 'btn-next', next: 'analisar_danos', crumb: 'Vistoria concluída', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── ANALISAR DANOS ──────────────────────────────────────────────────────
+  analisar_danos: {
+    type: 'action',
+    icon: '🔎', typeLabel: 'Análise técnica',
+    title: 'Análise técnica da vistoria',
+    desc: 'Comparar vistoria inicial × vistoria final item por item. Identificar e classificar os apontamentos.',
+    alert: { style: 'alert-blue', icon: 'ℹ️', text: 'Toda conclusão deve estar respaldada pela documentação. Sem impressões pessoais.' },
+    buttons: [
+      { label: 'Sem danos relevantes', icon: '✓', style: 'btn-yes', next: 'encerramento_direto', crumb: 'Sem danos', crumbStyle: 'decision-yes' },
+      { label: 'Há danos — classificar', icon: '→', style: 'btn-next', next: 'classificar_dano', crumb: 'Danos identificados', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── CLASSIFICAR DANO ───────────────────────────────────────────────────
+  classificar_dano: {
+    type: 'decision',
+    icon: '⚖️', typeLabel: 'Decisão',
+    title: 'Qual é a classificação do dano?',
+    desc: 'Leve: ajustes simples (lâmpadas, furos, limpeza). Médio: reparos que o inquilino pode fazer (pintura, portas, vidros). Grave: estrutural, infiltração, modificações não autorizadas.',
+    buttons: [
+      { label: '🟢  Dano Leve', style: 'btn-opt', next: 'dano_leve', crumb: 'Dano leve', crumbStyle: 'decision-yes' },
+      { label: '🟡  Dano Médio', style: 'btn-opt', next: 'dano_medio', crumb: 'Dano médio', crumbStyle: 'decision-opt' },
+      { label: '🔴  Dano Grave', style: 'btn-opt', next: 'dano_grave', crumb: 'Dano grave', crumbStyle: 'decision-no' },
+    ]
+  },
+
+  // ── DANO LEVE ───────────────────────────────────────────────────────────
+  dano_leve: {
+    type: 'action',
+    icon: '🟢', typeLabel: 'Dano leve',
+    title: 'Dano leve — executar diretamente',
+    desc: 'Apontamentos simples. A imobiliária pode executar e descontar da caução sem negociação.',
+    checklist: [
+      'Identificar e orçar os itens a reparar',
+      'Executar os reparos (ou contratar)',
+      'Registrar os valores dos reparos',
+      'Consolidar todos os valores da rescisão',
+    ],
+    alert: { style: 'alert-green', icon: '✓', text: 'Dano leve não exige prazo adicional nem negociação. Seguir direto para encerramento.' },
+    buttons: [
+      { label: 'Há caução para usar?', icon: '→', style: 'btn-next', next: 'q_tipo_garantia', crumb: 'Dano leve OK', crumbStyle: 'decision-yes' }
+    ]
+  },
+
+  // ── DANO MÉDIO ──────────────────────────────────────────────────────────
+  dano_medio: {
+    type: 'warning',
+    icon: '🟡', typeLabel: 'Dano médio',
+    title: 'Dano médio — prazo ao inquilino',
+    desc: 'O inquilino pode corrigir. As chaves ficam com ele e o contrato permanece ativo — dias proporcionais seguem correndo.',
+    checklist: [
+      'Notificar o inquilino com lista de apontamentos',
+      'Estabelecer prazo definido para correção (com data)',
+      'Deixar claro: contrato ativo, dias correndo, chaves com inquilino',
+      'Informar que nova vistoria confirmará adequação',
+    ],
+    alert: { style: 'alert-amber', icon: '⚠️', text: 'Entregar imóvel com pendências de dano médio = indício de quebra contratual.' },
+    buttons: [
+      { label: 'Reparos feitos pelo inquilino', icon: '✓', style: 'btn-yes', next: 'nova_vistoria_medio', crumb: 'Reparos feitos', crumbStyle: 'decision-yes' },
+      { label: 'Inquilino não fez / não cumpriu prazo', icon: '✗', style: 'btn-no', next: 'executar_terceiros', crumb: 'Inadimplência reparo', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── NOVA VISTORIA MÉDIO ─────────────────────────────────────────────────
+  nova_vistoria_medio: {
+    type: 'action',
+    icon: '🔍', typeLabel: 'Nova vistoria',
+    title: 'Realizar nova vistoria de conformidade',
+    desc: 'Verificar se todos os reparos foram executados conforme a vistoria inicial.',
+    buttons: [
+      { label: 'Imóvel adequado — tudo OK', icon: '✓', style: 'btn-yes', next: 'q_tipo_garantia', crumb: 'Imóvel adequado ✓', crumbStyle: 'decision-yes' },
+      { label: 'Ainda há pendências', icon: '✗', style: 'btn-no', next: 'executar_terceiros', crumb: 'Pendências restantes', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── EXECUTAR TERCEIROS ──────────────────────────────────────────────────
+  executar_terceiros: {
+    type: 'warning',
+    icon: '🔧', typeLabel: 'Execução por terceiros',
+    title: 'Contratar reparos e cobrar do inquilino',
+    desc: 'O inquilino não executou. A imobiliária contrata e apura os valores para cobrança.',
+    checklist: [
+      'Obter ao menos 2 orçamentos dos reparos',
+      'Contratar e executar os serviços',
+      'Documentar notas fiscais e comprovantes',
+      'Somar ao cálculo financeiro da rescisão',
+    ],
+    buttons: [{ label: 'Valores apurados', icon: '→', style: 'btn-next', next: 'q_tipo_garantia', crumb: 'Terceiros executaram', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── DANO GRAVE ──────────────────────────────────────────────────────────
+  dano_grave: {
+    type: 'terminal-err',
+    icon: '🔴', typeLabel: 'Dano grave',
+    title: 'Dano grave — negociação estruturada',
+    desc: 'Situações com prejuízo relevante, modificações estruturais ou responsabilidade não objetiva. O operador NÃO decide sozinho.',
+    checklist: [
+      'Consolidar laudo completo, fotos e comparação de vistorias',
+      'Obter orçamentos para os reparos',
+      'Calcular todos os valores envolvidos',
+      'Encaminhar processo completo para a diretoria',
+    ],
+    alert: { style: 'alert-red', icon: '🚫', text: 'O setor operacional não decide em caso de dano grave. Encaminhar para diretoria ou jurídico.' },
+    buttons: [{ label: 'Encaminhado à diretoria', icon: '→', style: 'btn-next', next: 'negociacao_estruturada', crumb: 'Dano grave → diretoria', crumbStyle: 'decision-no' }]
+  },
+
+  // ── NEGOCIAÇÃO ESTRUTURADA ──────────────────────────────────────────────
+  negociacao_estruturada: {
+    type: 'action',
+    icon: '🤝', typeLabel: 'Negociação',
+    title: 'Conduzir negociação formal',
+    desc: 'A negociação começa somente quando o cenário estiver 100% preparado. Jamais improvise.',
+    checklist: [
+      'Laudo completo + comparação de vistorias',
+      'Orçamentos dos reparos obtidos',
+      'Dias proporcionais calculados',
+      'Multa contratual verificada',
+      'Proposta de encerramento definida',
+      'Notificação enviada via DocuSign (ou equivalente)',
+    ],
+    alert: { style: 'alert-blue', icon: '💬', text: 'Rigor no processo, empatia na postura. O prazo deve ter data definida — sem prazo aberto.' },
+    buttons: [
+      { label: 'Acordo alcançado', icon: '✓', style: 'btn-yes', next: 'q_tipo_garantia', crumb: 'Acordo ✓', crumbStyle: 'decision-yes' },
+      { label: 'Impasse — sem acordo', icon: '✗', style: 'btn-no', next: 'impasse_diretoria', crumb: 'Impasse', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── IMPASSE ─────────────────────────────────────────────────────────────
+  impasse_diretoria: {
+    type: 'warning',
+    icon: '⚡', typeLabel: 'Escalada',
+    title: 'Escalar para diretoria / jurídico',
+    desc: 'Impasses não resolvidos no nível operacional são escalados. O cliente deve ser informado que o caso está em análise.',
+    script: '"Estamos analisando internamente as informações e retornaremos em [prazo] com o posicionamento completo."',
+    checklist: [
+      'Enviar dossiê completo para a diretoria',
+      'Informar o cliente que o caso está em análise (com prazo)',
+      'Aguardar posicionamento da diretoria',
+      'Comunicar decisão formalmente após aprovação',
+    ],
+    buttons: [{ label: 'Decisão da diretoria recebida', icon: '→', style: 'btn-next', next: 'q_tipo_garantia', crumb: 'Diretoria decidiu', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── TIPO DE GARANTIA ────────────────────────────────────────────────────
+  q_tipo_garantia: {
+    type: 'decision',
+    icon: '🛡️', typeLabel: 'Garantia',
+    title: 'Qual é o tipo de garantia do contrato?',
+    desc: 'O tipo de garantia define o fluxo financeiro da rescisão.',
+    buttons: [
+      { label: 'Caução (depósito)', style: 'btn-opt', next: 'fluxo_caucao', crumb: 'Garantia: caução', crumbStyle: 'decision-opt' },
+      { label: 'Fiador', style: 'btn-opt', next: 'fluxo_fiador', crumb: 'Garantia: fiador', crumbStyle: 'decision-opt' },
+      { label: 'Seguro fiança / sem garantia', style: 'btn-opt', next: 'consolidar_valores', crumb: 'Seguro / sem garantia', crumbStyle: 'decision-opt' },
+    ]
+  },
+
+  // ── CAUÇÃO ──────────────────────────────────────────────────────────────
+  fluxo_caucao: {
+    type: 'action',
+    icon: '💰', typeLabel: 'Caução',
+    title: 'Apurar e aplicar caução',
+    desc: 'A caução só pode ser definida após conclusão técnica completa.',
+    checklist: [
+      'Calcular dias proporcionais de aluguel',
+      'Calcular multa contratual (se houver)',
+      'Somar valores de reparos (se houver)',
+      'Subtrair do valor da caução',
+      'Preparar memória de cálculo clara para o inquilino',
+    ],
+    alert: { style: 'alert-blue', icon: 'ℹ️', text: 'Prazo de devolução: até 30 dias após encerramento completo. Se valores > caução, cobrar diferença formalmente.' },
+    buttons: [{ label: 'Cálculo finalizado', icon: '→', style: 'btn-next', next: 'consolidar_valores', crumb: 'Caução calculada', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── FIADOR ──────────────────────────────────────────────────────────────
+  fluxo_fiador: {
+    type: 'action',
+    icon: '👤', typeLabel: 'Fiador',
+    title: 'Notificar fiador simultaneamente',
+    desc: 'O fiador deve ser notificado ao mesmo tempo que o inquilino, formalmente.',
+    checklist: [
+      'Confirmar dados do fiador no sistema',
+      'Enviar notificação formal ao fiador (DocuSign)',
+      'Incluir: laudo, valores apurados, prazo para regularização',
+      'Deixar explícito que a responsabilidade é solidária',
+    ],
+    alert: { style: 'alert-amber', icon: '⚠️', text: 'Tom respeitoso — o fiador muitas vezes não acompanhou o dia a dia da locação. Apresentar o cenário com clareza.' },
+    buttons: [
+      { label: 'Fiador regularizou', icon: '✓', style: 'btn-yes', next: 'consolidar_valores', crumb: 'Fiador OK', crumbStyle: 'decision-yes' },
+      { label: 'Fiador não responde / resiste', icon: '✗', style: 'btn-no', next: 'fiador_juridico', crumb: 'Fiador resistente', crumbStyle: 'decision-no' }
+    ]
+  },
+
+  // ── FIADOR JURÍDICO ─────────────────────────────────────────────────────
+  fiador_juridico: {
+    type: 'warning',
+    icon: '⚖️', typeLabel: 'Escalada jurídica',
+    title: 'Encaminhar ao jurídico / diretoria',
+    desc: 'Sem retorno ou resistência do fiador — escalar conforme política interna.',
+    buttons: [{ label: 'Resolvido / encaminhado', icon: '→', style: 'btn-next', next: 'consolidar_valores', crumb: 'Fiador jurídico', crumbStyle: 'decision-opt' }]
+  },
+
+  // ── CONSOLIDAR VALORES ──────────────────────────────────────────────────
+  consolidar_valores: {
+    type: 'action',
+    icon: '🧮', typeLabel: 'Fechamento financeiro',
+    title: 'Consolidar valores e entregar chaves',
+    desc: 'Todos os valores apurados. Preparar para encerramento formal.',
+    checklist: [
+      'Todos os valores consolidados e documentados',
+      'Inquilino ou representante presente',
+      'Imóvel vazio e em condição de entrega',
+      'Assinar Termo de Entrega de Chaves',
+    ],
+    alert: { style: 'alert-green', icon: '✓', text: 'A partir daqui o inquilino perde a posse do imóvel.' },
+    buttons: [{ label: 'Chaves entregues e termo assinado', icon: '→', style: 'btn-next', next: 'transferencia_contas', crumb: 'Chaves entregues', crumbStyle: 'decision-yes' }]
+  },
+
+  // ── TRANSFERÊNCIA ───────────────────────────────────────────────────────
+  transferencia_contas: {
+    type: 'action',
+    icon: '🔌', typeLabel: 'Encerramento operacional',
+    title: 'Transferir água e energia',
+    desc: 'Transferir titularidade das contas do inquilino para o proprietário e emitir relatórios das concessionárias.',
+    checklist: [
+      'Solicitar transferência de conta de água',
+      'Solicitar transferência de conta de energia',
+      'Emitir e arquivar relatórios das concessionárias',
+    ],
+    buttons: [{ label: 'Transferências concluídas', icon: '→', style: 'btn-next', next: 'termo_quitacao', crumb: 'Contas transferidas', crumbStyle: 'decision-yes' }]
+  },
+
+  // ── TERMO DE QUITAÇÃO ───────────────────────────────────────────────────
+  termo_quitacao: {
+    type: 'action',
+    icon: '📝', typeLabel: 'Encerramento formal',
+    title: 'Termo de Quitação com o proprietário',
+    desc: 'Apresentar o processo completo ao proprietário para análise e assinatura do Termo de Quitação.',
+    checklist: [
+      'Apresentar laudo da vistoria final',
+      'Apresentar valores apurados e memória de cálculo',
+      'Apresentar comprovantes de transferência das contas',
+      'Proprietário assina Termo de Quitação',
+    ],
+    buttons: [{ label: 'Termo assinado pelo proprietário', icon: '✓', style: 'btn-yes', next: 'arquivamento', crumb: 'Termo de quitação ✓', crumbStyle: 'decision-yes' }]
+  },
+
+  // ── ARQUIVAMENTO ─────────────────────────────────────────────────────────
+  arquivamento: {
+    type: 'action',
+    icon: '🗄️', typeLabel: 'Arquivamento',
+    title: 'Arquivar dossiê completo',
+    desc: 'Garantir rastreabilidade do processo.',
+    checklist: [
+      'Vistoria inicial e vistoria final',
+      'Relatório de comparação e laudo técnico',
+      'Comunicações formais (inquilino e proprietário)',
+      'Notificações enviadas',
+      'Termo de Entrega de Chaves',
+      'Relatórios de água e energia',
+      'Memória de cálculo financeiro',
+      'Termo de Quitação assinado',
+    ],
+    buttons: [{ label: 'Rescisão encerrada', icon: '✓', style: 'btn-yes', next: 'fim', crumb: 'Arquivado ✓', crumbStyle: 'decision-yes' }]
+  },
+
+  // ── ENCERRAMENTO DIRETO (sem danos) ────────────────────────────────────
+  encerramento_direto: {
+    type: 'terminal-ok',
+    icon: '✅', typeLabel: 'Encerramento rápido',
+    title: 'Sem danos — seguir para encerramento',
+    desc: 'Imóvel devolvido em conformidade. Processo segue diretamente para etapas finais.',
+    alert: { style: 'alert-green', icon: '✓', text: 'Ótimo cenário! Confirmar apenas valores financeiros (dias proporcionais, multa se houver) antes das etapas finais.' },
+    buttons: [{ label: 'Ir para entrega das chaves', icon: '→', style: 'btn-next', next: 'consolidar_valores', crumb: 'Sem danos → encerramento', crumbStyle: 'decision-yes' }]
+  },
+
+  // ── FIM ──────────────────────────────────────────────────────────────────
+  fim: {
+    type: 'terminal-ok',
+    icon: '🏁', typeLabel: 'Concluído',
+    title: 'Rescisão encerrada com sucesso',
+    desc: 'O contrato está formalmente encerrado. O imóvel está liberado para nova locação ou destinação do proprietário.',
+    alert: { style: 'alert-green', icon: '🎉', text: 'Parabéns! Processo conduzido com organização técnica e segurança jurídica.' },
+    buttons: [{ label: 'Iniciar nova rescisão', icon: '↺', style: 'btn-next', next: 'start', crumb: '', crumbStyle: '' }]
+  }
+};
+
+// ─── TOTAL DE NÓS PARA PROGRESSO ─────────────────────────────────────────────
+const TOTAL = 22;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let history = []; // [{nodeId, crumbLabel, crumbStyle}]
+let checks  = {}; // nodeId → Set of checked indices
+let current = 'start';
+
+function render(nodeId) {
+  current = nodeId;
+  const node = NODES[nodeId];
+
+  // Progress
+  const pct = Math.min(98, Math.round((history.length / TOTAL) * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Step counter
+  document.getElementById('stepCounter').textContent = `etapa ${history.length + 1}`;
+
+  // Trail
+  const trail = document.getElementById('trail');
+  trail.innerHTML = '';
+  history.forEach((h, i) => {
+    if (i > 0) trail.innerHTML += `<span class="trail-arrow">›</span>`;
+    trail.innerHTML += `<span class="trail-step"><span class="crumb ${h.crumbStyle}">${h.crumbLabel}</span></span>`;
+  });
+
+  // Build node HTML
+  let html = `<div class="node-card type-${node.type}">`;
+
+  // Header
+  html += `<div class="node-header">
+    <div class="node-icon">${node.icon}</div>
+    <div>
+      <div class="node-type">${node.typeLabel}</div>
+      <div class="node-title">${node.title}</div>
+    </div>
+  </div>`;
+
+  // Body
+  html += `<div class="node-body">`;
+  html += `<p class="node-desc">${node.desc}</p>`;
+
+  // Alert
+  if (node.alert) {
+    html += `<div class="alert-box ${node.alert.style}"><span class="alert-icon">${node.alert.icon}</span><span>${node.alert.text}</span></div>`;
+  }
+
+  // Script
+  if (node.script) {
+    html += `<div class="script-box"><span class="script-label">💬 Frase padrão</span>${node.script}</div>`;
+  }
+
+  // Checklist
+  if (node.checklist) {
+    if (!checks[nodeId]) checks[nodeId] = new Set();
+    html += `<div class="node-checklist"><div class="node-checklist-title">✓ O que fazer</div>`;
+    node.checklist.forEach((item, i) => {
+      const checked = checks[nodeId].has(i);
+      html += `<div class="check-item">
+        <div class="check-box ${checked ? 'checked' : ''}" onclick="toggleCheck('${nodeId}',${i})">${checked ? '✓' : ''}</div>
+        <span style="${checked ? 'text-decoration:line-through;color:#aaa' : ''}">${item}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Buttons
+  html += `<div class="btn-group">`;
+  const btns = node.buttons;
+
+  if (btns.length === 2 && (btns[0].style === 'btn-yes' || btns[0].style === 'btn-no')) {
+    html += `<div class="btn-row">`;
+    btns.forEach(b => {
+      html += `<button class="btn ${b.style}" onclick="go('${b.next}','${escapeCrumb(b.crumb)}','${b.crumbStyle}')">
+        ${b.icon ? `<span class="btn-icon">${b.icon}</span>` : ''} ${b.label}
+      </button>`;
+    });
+    html += `</div>`;
+  } else {
+    btns.forEach(b => {
+      html += `<button class="btn ${b.style}" onclick="go('${b.next}','${escapeCrumb(b.crumb)}','${b.crumbStyle}')">
+        ${b.icon ? `<span class="btn-icon">${b.icon}</span>` : ''} ${b.label}
+      </button>`;
+    });
+  }
+
+  html += `</div></div></div>`;
+
+  document.getElementById('nodeContainer').innerHTML = html;
+
+  // Scroll trail to end
+  const tw = document.getElementById('trailWrap');
+  tw.scrollLeft = tw.scrollWidth;
+}
+
+function escapeCrumb(s) { return (s || '').replace(/'/g, "\\'"); }
+
+function go(nextId, crumbLabel, crumbStyle) {
+  if (nextId === 'start') { restart(); return; }
+  const node = NODES[current];
+  if (crumbLabel) {
+    history.push({ crumbLabel, crumbStyle });
+  }
+  render(nextId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleCheck(nodeId, idx) {
+  if (!checks[nodeId]) checks[nodeId] = new Set();
+  if (checks[nodeId].has(idx)) checks[nodeId].delete(idx);
+  else checks[nodeId].add(idx);
+  render(current);
+}
+
+function restart() {
+  history = [];
+  checks  = {};
+  current = 'start';
+  render('start');
+  window.scrollTo({ top: 0 });
+}
+
+// Init
+render('start');
+</script>
+</body>
+</html>
