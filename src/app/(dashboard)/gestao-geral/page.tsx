@@ -112,64 +112,25 @@ function VendasMockupContent() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
-      {/* HEADER TABS */}
-      <div className="bg-[#1F4E79] text-white px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-md sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Porto Real Logo" className="h-[36px] w-auto bg-white px-2.5 py-1 rounded-lg shadow-sm font-bold text-[#1F4E79] flex items-center justify-center" />
-          <div>
-            <h1 className="font-extrabold text-lg tracking-tight">Apoio à Venda</h1>
-            <p className="text-[10px] text-slate-200 uppercase tracking-widest font-semibold">Sistema de Suporte &amp; CRM</p>
-          </div>
-        </div>
-        
-        {/* Navigation Tabs */}
-        <div className="flex bg-[#123658] p-1 rounded-xl gap-1">
+    <div className="flex flex-col min-h-screen bg-transparent text-slate-800 font-sans pb-24 relative z-10">
+      <div className="max-w-[1440px] w-full mx-auto px-4 md:px-6 mt-6 flex-1 flex flex-col">
+        {/* Sub-navigation Tabs */}
+        <div className="flex border-b border-slate-200/80 mb-6 gap-6 items-center">
           {navigationTabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveView(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-semibold rounded-lg transition-all ${
+              className={`pb-3 text-xs md:text-sm font-extrabold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
                 activeView === tab.id
-                  ? 'bg-white text-[#1F4E79] shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-[#1f4e79]/45'
+                  ? 'border-[#eb3238] text-[#eb3238]'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-[#ffffff12] border border-white/10 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-            Conectado ao Supabase
-          </div>
-          
-          {/* User info & Logout */}
-          {user && (
-            <div className="flex items-center gap-3 bg-[#ffffff12] border border-white/10 px-3 py-1.5 rounded-xl text-xs font-semibold">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-white uppercase text-[11px] shadow-xs">
-                {getInitials(user.nome)}
-              </div>
-              <div className="hidden md:block text-left">
-                <div className="font-bold text-white max-w-[110px] truncate">{user.nome}</div>
-                <div className="text-[9px] text-slate-300 font-medium uppercase tracking-wider mt-0.5">{user.role === 'superadmin' ? 'Diretoria' : 'Corretor'}</div>
-              </div>
-              <button 
-                onClick={logout} 
-                className="p-1 text-slate-200 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                title="Sair do sistema"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="max-w-[1440px] w-full mx-auto px-4 md:px-6 mt-6 flex-1 flex flex-col">
         {activeView === 'acoes' && (
           <AcoesDoDia
             clientes={clientes}

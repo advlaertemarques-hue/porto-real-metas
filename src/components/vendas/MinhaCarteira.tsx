@@ -90,6 +90,7 @@ export default function MinhaCarteira({
   // Ficha Edit
   const [fichaOpen, setFichaOpen] = useState(false)
   const [novaNotaTxt, setNovaNotaTxt] = useState('')
+  const [checklistExpanded, setChecklistExpanded] = useState(true)
 
   const activeClient = clientes.find(c => c.id === activeId)
 
@@ -125,6 +126,19 @@ export default function MinhaCarteira({
     const updated = await updateVendasCliente(activeId, params)
     if (updated) {
       setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+    }
+  }
+
+  const moveClientEtapa = async (clientId: string, newEtapa: number) => {
+    const client = clientes.find(c => c.id === clientId)
+    if (!client) return
+    const params: Partial<VendasCliente> = { etapa: newEtapa }
+    if (client.status_finalizacao === 'interessado') {
+      params.status_finalizacao = null
+    }
+    const updated = await updateVendasCliente(clientId, params)
+    if (updated) {
+      setClientes(prev => prev.map(c => c.id === clientId ? updated : c))
     }
   }
 
@@ -345,429 +359,639 @@ export default function MinhaCarteira({
     }
   }
 
-  return (
-    <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-      
-      {/* Sidebar Clientes */}
-      <aside className="bg-white border border-slate-200 rounded-2xl flex flex-col max-h-[750px] shadow-sm">
-        <div className="p-4 border-b border-slate-100 space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Meus clientes</h2>
-          </div>
-          
-          <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[10px] font-bold">
-            <button
-              onClick={() => setSidebarView('ativos')}
-              className={`flex-1 py-1.5 transition-all text-center ${
-                sidebarView === 'ativos'
-                  ? 'bg-[#1F4E79] text-white'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-              }`}
-            >
-              Ativos
-            </button>
-            <button
-              onClick={() => setSidebarView('interessados')}
-              className={`flex-1 py-1.5 transition-all text-center border-x border-slate-200 ${
-                sidebarView === 'interessados'
-                  ? 'bg-[#1F4E79] text-white'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-              }`}
-            >
-              Interessados
-            </button>
-            <button
-              onClick={() => setSidebarView('finalizados')}
-              className={`flex-1 py-1.5 transition-all text-center ${
-                sidebarView === 'finalizados'
-                  ? 'bg-[#1F4E79] text-white'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-              }`}
-            >
-              Arquivados
-            </button>
-          </div>
+  const myCorretor = corretores.find(co => co.user_id === user?.id)
+  
+  // KPI Owner ID
+  const kpiOwnerId = user?.role === 'vendas'
+    ? myCorretor?.id
+    : (funilCorretorFiltro !== 'todos' && funilCorretorFiltro !== 'sem_atribuicao' ? funilCorretorFiltro : null)
 
-          {user?.role === 'superadmin' && (
-            <div className="mb-1">
-              <select
-                value={funilCorretorFiltro}
-                onChange={(e) => setFunilCorretorFiltro(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-[#1F4E79] bg-slate-50/50 cursor-pointer text-slate-700 font-medium"
-              >
-                <option value="todos">Todos os corretores</option>
-                <option value="sem_atribuicao">Sem corretor atribuído</option>
-                {corretores.map(co => (
-                  <option key={co.id} value={co.id}>{co.nome}</option>
-                ))}
-              </select>
-            </div>
-          )}
+  const isToday = (dateStr: string | Date | null) => {
+    if (!dateStr) return false
+    const d = new Date(dateStr)
+    const today = new Date()
+    return d.getDate() === today.getDate() &&
+           d.getMonth() === today.getMonth() &&
+           d.getFullYear() === today.getFullYear()
+  }
+
+  // Active leads
+  const kpiLeads = clientes.filter(c => {
+    const belongs = !kpiOwnerId || c.corretor_id === kpiOwnerId
+    const isUnassigned = funilCorretorFiltro === 'sem_atribuicao' && !c.corretor_id
+    const matchesBroker = belongs || (user?.role === 'superadmin' && isUnassigned)
+    return matchesBroker && !c.finalizado && c.status_finalizacao !== 'interessado'
+  })
+
+  // Visits scheduled today
+  const kpiVisitasHoje = clientes.filter(c => {
+    const belongs = !kpiOwnerId || c.corretor_id === kpiOwnerId
+    const isUnassigned = funilCorretorFiltro === 'sem_atribuicao' && !c.corretor_id
+    const matchesBroker = belongs || (user?.role === 'superadmin' && isUnassigned)
+    return matchesBroker && isToday(c.visita_agendada_em ?? null) && !c.finalizado
+  })
+
+  // Propostas (etapa === 3)
+  const kpiPropostas = clientes.filter(c => {
+    const belongs = !kpiOwnerId || c.corretor_id === kpiOwnerId
+    const isUnassigned = funilCorretorFiltro === 'sem_atribuicao' && !c.corretor_id
+    const matchesBroker = belongs || (user?.role === 'superadmin' && isUnassigned)
+    return matchesBroker && c.etapa === 3 && !c.finalizado
+  })
+
+  // Vendas fechadas (finalizado && sucesso)
+  const kpiVendasFechadas = clientes.filter(c => {
+    const belongs = !kpiOwnerId || c.corretor_id === kpiOwnerId
+    const isUnassigned = funilCorretorFiltro === 'sem_atribuicao' && !c.corretor_id
+    const matchesBroker = belongs || (user?.role === 'superadmin' && isUnassigned)
+    return matchesBroker && c.finalizado && c.status_finalizacao === 'sucesso'
+  })
+
+  // Filtered clients for current view
+  const myClientsFiltered = clientes.filter(c => {
+    // 1. Filter by view type
+    if (sidebarView === 'ativos') {
+      if (c.finalizado || c.status_finalizacao === 'interessado') return false
+    } else if (sidebarView === 'interessados') {
+      if (c.status_finalizacao !== 'interessado') return false
+    } else if (sidebarView === 'finalizados') {
+      if (!c.finalizado || c.status_finalizacao === 'interessado') return false
+    }
+
+    // 2. Filter by broker assignment
+    if (user?.role === 'vendas') {
+      return c.corretor_id === myCorretor?.id
+    } else if (user?.role === 'superadmin') {
+      if (funilCorretorFiltro !== 'todos') {
+        if (funilCorretorFiltro === 'sem_atribuicao') {
+          return !c.corretor_id
+        }
+        return c.corretor_id === funilCorretorFiltro
+      }
+    }
+    return true
+  })
+
+  // Helper color tints for column headers E1 to E6
+  const COLUMN_TINTS = [
+    'bg-slate-100 border-slate-200 text-slate-800',
+    'bg-blue-50 border-blue-100 text-blue-800',
+    'bg-emerald-50 border-emerald-100 text-emerald-800',
+    'bg-amber-50 border-amber-100 text-amber-800',
+    'bg-purple-50 border-purple-100 text-purple-800',
+    'bg-rose-50 border-rose-100 text-rose-800',
+  ]
+
+  const getEtapaProgress = (etapaIdx: number) => {
+    const total = ETAPAS[etapaIdx]?.chk.length || 0
+    const done = activeChecklist.filter(chk => chk.etapa === etapaIdx).length
+    return { done, total }
+  }
+
+  return (
+    <div className="w-full space-y-6 relative z-10">
+      
+      {/* 1. KPIs ribbon at the top */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="premium-card p-4 flex flex-col justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Leads Ativos</span>
+          <span className="text-2xl font-black text-slate-800 mt-1.5">{kpiLeads.length}</span>
+        </div>
+        <div className="premium-card p-4 flex flex-col justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Visitas Hoje</span>
+          <span className="text-2xl font-black text-slate-800 mt-1.5">{kpiVisitasHoje.length}</span>
+        </div>
+        <div className="premium-card p-4 flex flex-col justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Propostas</span>
+          <span className="text-2xl font-black text-slate-800 mt-1.5">{kpiPropostas.length}</span>
+        </div>
+        <div className="premium-card p-4 flex flex-col justify-between">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Vendas Fechadas</span>
+          <span className="text-2xl font-black text-emerald-600 mt-1.5">{kpiVendasFechadas.length}</span>
+        </div>
+      </div>
+
+      {/* 2. Controls row (Filtros, corretores e novo cliente) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Toggle between Kanban and grids */}
+        <div className="flex bg-slate-200/50 p-1 rounded-xl gap-0.5 self-start">
           <button
-            onClick={() => setModalNovoOpen(true)}
-            className="w-full flex items-center justify-center gap-2 bg-[#EEF4FA] border border-dashed border-[#2E6CA8] hover:bg-[#D6E4F0] text-[#1F4E79] py-2.5 rounded-xl text-xs font-bold transition-colors"
+            onClick={() => { setSidebarView('ativos'); setActiveId(null); }}
+            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+              sidebarView === 'ativos'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
           >
-            <Plus size={14} /> Novo cliente
+            💼 Funil Ativo
+          </button>
+          <button
+            onClick={() => { setSidebarView('interessados'); setActiveId(null); }}
+            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+              sidebarView === 'interessados'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            ⭐ Interessados
+          </button>
+          <button
+            onClick={() => { setSidebarView('finalizados'); setActiveId(null); }}
+            className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+              sidebarView === 'finalizados'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            🏁 Arquivados
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {(() => {
-            const myCorretor = corretores.find(co => co.user_id === user?.id);
-            const filtered = clientes.filter(c => {
-              // Filter by status view
-              if (sidebarView === 'ativos') {
-                if (c.finalizado || c.status_finalizacao === 'interessado') return false;
-              } else if (sidebarView === 'interessados') {
-                if (c.status_finalizacao !== 'interessado') return false;
-              } else if (sidebarView === 'finalizados') {
-                if (!c.finalizado || c.status_finalizacao === 'interessado') return false;
-              }
+        {/* Right side actions */}
+        <div className="flex items-center gap-3 self-end w-full sm:w-auto">
+          {user?.role === 'superadmin' && (
+            <select
+              value={funilCorretorFiltro}
+              onChange={(e) => setFunilCorretorFiltro(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#eb3238] bg-white cursor-pointer text-slate-700"
+            >
+              <option value="todos">Todos os corretores</option>
+              <option value="sem_atribuicao">Sem corretor</option>
+              {corretores.map(co => (
+                <option key={co.id} value={co.id}>{co.nome}</option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={() => setModalNovoOpen(true)}
+            className="flex items-center justify-center gap-2 bg-[#eb3238] hover:bg-[#eb3238]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors w-full sm:w-auto flex-shrink-0"
+          >
+            <Plus size={14} /> Novo Cliente
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Main Views Grid/Kanban */}
+      <div className="w-full">
+        {sidebarView === 'ativos' ? (
+          /* KANBAN BOARD E1 - E6 */
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+            {ETAPAS.slice(0, 6).map((etapa, etapaIdx) => {
+              const columnClients = myClientsFiltered.filter(c => c.etapa === etapaIdx)
               
-              // Filter by broker
-              if (user?.role === 'vendas') {
-                return c.corretor_id === myCorretor?.id;
-              } else if (user?.role === 'superadmin') {
-                if (funilCorretorFiltro !== 'todos') {
-                  if (funilCorretorFiltro === 'sem_atribuicao') {
-                    return !c.corretor_id;
-                  }
-                  return c.corretor_id === funilCorretorFiltro;
-                }
-              }
-              return true;
-            });
-
-            if (filtered.length === 0) {
-              return (
-                <p className="text-xs text-slate-400 text-center py-8">Nenhum cliente nesta carteira.</p>
-              );
-            }
-
-            return filtered.map(c => {
-              const isAtivo = c.id === activeId
-              const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
-              const perf = c.perfil ? PERFIS[c.perfil] : null
-              const progVal = Math.round((c.etapa / (ETAPAS.length - 1)) * 100)
-
               return (
                 <div
-                  key={c.id}
-                  onClick={() => selectClient(c.id)}
-                  className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
-                    isAtivo
-                      ? 'border-[#1F4E79] bg-[#EEF4FA] shadow-sm'
-                      : 'border-slate-100 hover:border-slate-300 bg-white hover:bg-slate-50/50'
-                  }`}
+                  key={etapaIdx}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    const clientId = e.dataTransfer.getData('clientId')
+                    if (clientId) moveClientEtapa(clientId, etapaIdx)
+                  }}
+                  className="w-72 flex-shrink-0 flex flex-col bg-slate-100/40 border border-slate-200/50 rounded-2xl p-3 min-h-[500px]"
                 >
-                  <div className="flex justify-between items-start gap-1 mb-1">
-                    <span className={`font-bold text-xs md:text-sm line-clamp-1 ${c.finalizado ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                      {c.nome}
-                    </span>
-                    {c.finalizado && (
-                      <span className={`text-[8.5px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0 ${
-                        c.status_finalizacao === 'sucesso' 
-                          ? 'bg-emerald-50 text-emerald-600' 
-                          : c.status_finalizacao === 'interessado'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'bg-rose-50 text-rose-600'
-                      }`}>
-                        {c.status_finalizacao === 'sucesso' ? 'Ganho' : c.status_finalizacao === 'interessado' ? 'Interessado' : 'Perdido'}
-                      </span>
-                    )}
-                    {c.expressa && !c.finalizado && (
-                      <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8.5px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0">Expressa</span>
-                    )}
+                  {/* Column Header */}
+                  <div className={`p-2.5 rounded-xl border border-hairline font-bold flex items-center justify-between mb-3 shadow-xs ${COLUMN_TINTS[etapaIdx]}`}>
+                    <span className="text-[10px] uppercase tracking-wider truncate mr-2">{etapa.nome}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-white/70 rounded-full font-black flex-shrink-0">{columnClients.length}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px] text-slate-500">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tc.cor }}></span>
-                      {tc.rotulo}
-                    </span>
-                    {perf ? (
-                      <span className="bg-[#D6E4F0] text-[#1F4E79] px-2 py-0.5 rounded font-bold">
-                        {perf.emo} {perf.nome}
-                        {c.perfil_secundario && PERFIS[c.perfil_secundario] && (
-                          <span className="font-normal text-[9.5px] opacity-85 border-l border-slate-300 pl-1.5 ml-1.5">
-                            {PERFIS[c.perfil_secundario].emo} {PERFIS[c.perfil_secundario].nome}
-                          </span>
-                        )}
-                      </span>
+
+                  {/* Cards container */}
+                  <div className="flex-1 overflow-y-auto space-y-2.5 pb-8 min-h-[400px]">
+                    {columnClients.length === 0 ? (
+                      <div className="border border-dashed border-slate-200 rounded-xl p-4 text-center text-[10px] text-slate-400 font-semibold py-8">
+                        Nenhum lead aqui
+                      </div>
                     ) : (
-                      <span className="bg-rose-50 text-rose-600 px-2 py-0.5 rounded font-bold">perfil?</span>
+                      columnClients.map(c => {
+                        const isSelected = c.id === activeId
+                        const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
+                        const perf = c.perfil ? PERFIS[c.perfil] : null
+
+                        return (
+                          <div
+                            key={c.id}
+                            draggable={true}
+                            onDragStart={(e) => e.dataTransfer.setData('clientId', c.id)}
+                            onClick={() => selectClient(c.id)}
+                            className={`p-3.5 border rounded-xl bg-white shadow-xs cursor-grab active:cursor-grabbing hover:border-slate-300 transition-all ${
+                              isSelected 
+                                ? 'ring-2 ring-[#eb3238] border-transparent' 
+                                : 'border-slate-200/80'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start gap-2 mb-1.5">
+                              <span className="font-extrabold text-[12px] text-slate-800 line-clamp-1 heading-premium">
+                                {c.nome}
+                              </span>
+                              {c.expressa && (
+                                <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0">Expressa</span>
+                              )}
+                            </div>
+
+                            {/* Tags */}
+                            <div className="flex flex-wrap items-center gap-1 mt-2">
+                              <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
+                                {tc.rotulo}
+                              </span>
+                              {perf && (
+                                <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                                  <span>{perf.emo}</span>
+                                  <span>{perf.nome}</span>
+                                </span>
+                              )}
+                              {c.em_captacao && (
+                                <span className="bg-rose-50 text-[#eb3238] text-[9px] px-1.5 py-0.5 rounded font-black">
+                                  🔍 Captação
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Proxima Acao */}
+                            {c.proxima_acao && (
+                              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-start gap-1 text-[9px] text-slate-500">
+                                <span className="text-slate-400 mt-0.5">📅</span>
+                                <span className="line-clamp-1 font-medium">{c.proxima_acao}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
                     )}
                   </div>
-                  {sidebarView === 'interessados' ? (
-                    <div className="mt-2.5 space-y-1 text-[10px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 font-medium">
-                      {c.local && <div>📍 <b>Local:</b> {c.local}</div>}
-                      {c.faixa && <div>💰 <b>Faixa:</b> {c.faixa}</div>}
-                      {c.preferencia && <div className="line-clamp-1">🔑 <b>Pref:</b> {c.preferencia}</div>}
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <div className="flex justify-between text-[10px] font-semibold text-[#1F4E79] mb-1">
-                        <span>Etapa {c.etapa + 1}: {ETAPAS[c.etapa]?.nome}</span>
-                        <span>{progVal}%</span>
-                      </div>
-                      <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#2E6CA8] transition-all" style={{ width: `${progVal}%` }}></div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )
-            })
-          })()}
-        </div>
-      </aside>
-
-      {/* Principal Client Detail */}
-      {activeClient ? (
-        <main className="space-y-6 flex-1">
-          {/* Header card */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl md:text-2xl font-black text-slate-800">{activeClient.nome}</h2>
-                  {activeClient.expressa && (
-                    <span className="bg-[#fbf1e3] text-[#c77d2e] text-[10px] font-bold px-2 py-0.5 rounded-md">VIA EXPRESSA</span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {activeClient.contato} · Origem: <span className="font-semibold text-slate-600">{activeClient.origem}</span>
-                  {activeClient.valor > 0 && ` · Imóvel-alvo: ${fmtBRL(activeClient.valor)}`}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setFichaOpen(true)}
-                  className="bg-white border border-[#2E6CA8] hover:bg-[#EEF4FA] text-[#1F4E79] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1"
-                >
-                  📇 Ficha do Cliente
-                </button>
-                <span className="bg-[#EEF4FA] text-[#1F4E79] text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-                  {RESP_EMO[RESP[activeClient.etapa]]} {RESP[activeClient.etapa]}
-                </span>
-                <select
-                  value={activeClient.perfil || ''}
-                  onChange={async (e) => {
-                    const newPerf = e.target.value || null
-                    const updated = await updateVendasCliente(activeClient.id, { perfil: newPerf })
-                    if (updated) {
-                      setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
-                    }
-                  }}
-                  className="border border-[#D6E4F0] rounded-full text-xs font-bold px-3 py-1.5 cursor-pointer bg-[#D6E4F0] text-[#1F4E79] outline-none focus:border-[#1F4E79] font-semibold"
-                >
-                  <option value="">🧠 Sem Perfil Dominante</option>
-                  <option value="analitico">🧠 Analítico</option>
-                  <option value="controlador">⚡ Controlador</option>
-                  <option value="apoiador">❤️ Apoiador</option>
-                  <option value="catalisador">🚀 Catalisador</option>
-                </select>
-
-                <select
-                  value={activeClient.perfil_secundario || ''}
-                  onChange={async (e) => {
-                    const newPerfSec = e.target.value || null
-                    const updated = await updateVendasCliente(activeClient.id, { perfil_secundario: newPerfSec })
-                    if (updated) {
-                      setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
-                    }
-                  }}
-                  className="border border-slate-200 rounded-full text-xs font-bold px-3 py-1.5 cursor-pointer bg-slate-100 text-slate-700 outline-none focus:border-[#1F4E79] font-semibold"
-                >
-                  <option value="">🥈 Sem Perfil Secundário</option>
-                  <option value="analitico">🧠 Analítico</option>
-                  <option value="controlador">⚡ Controlador</option>
-                  <option value="apoiador">❤️ Apoiador</option>
-                  <option value="catalisador">🚀 Catalisador</option>
-                </select>
-                
-                <select
-                  value={activeClient.temp}
-                  onChange={(e) => setClientTemp(e.target.value as any)}
-                  className="border border-slate-200 rounded-full text-xs font-bold px-3 py-1.5 cursor-pointer bg-white outline-none focus:border-[#1F4E79]"
-                >
-                  <option value="quente">🔥 Quente</option>
-                  <option value="morno">⚡ Morno</option>
-                  <option value="frio">❄ Frio</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Overall Checklist progression */}
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden max-w-xs">
-                <div
-                  className="h-full bg-emerald-500 transition-all"
-                  style={{
-                    width: `${Math.round(
-                      (activeChecklist.length /
-                        ETAPAS.reduce((s, e) => s + e.chk.length, 0)) *
-                        100
-                    )}%`
-                  }}
-                ></div>
-              </div>
-              <span className="text-[10px] md:text-xs text-slate-500 font-semibold">
-                {activeChecklist.length} de {ETAPAS.reduce((s, e) => s + e.chk.length, 0)} itens de checklist concluídos no processo
-              </span>
-            </div>
-
-            {activeClient.expressa && (
-              <div className="mt-4 bg-[#fbf1e3] border border-[#ecd3ad] border-l-4 border-[#c77d2e] rounded-xl p-4 text-xs md:text-sm text-[#7a5b00] leading-relaxed">
-                ⚡ <b>Via expressa — qualificação pendente.</b> Este cliente marcou visita direta pelo site. Qualifique e descubra o perfil durante a visita. <b>Comece pelo imóvel escolhido</b>, apresentando alternativas apenas se necessário.
-              </div>
-            )}
-
-            {/* Lembrete de Próxima Ação */}
-            <div className="mt-4 border-t border-slate-100 pt-4 space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                <ClipboardList size={16} className="text-[#1F4E79]" />
-                Próxima Ação / Lembrete
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">O que fazer a seguir?</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Enviar catálogo de imóveis no WhatsApp..."
-                    key={`pa_${activeClient.id}`}
-                    defaultValue={activeClient.proxima_acao || ''}
-                    onBlur={(e) => setCrmField('proxima_acao', e.target.value.trim() || null)}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#1F4E79] bg-slate-50/50"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Quando fazer?</label>
-                  <input
-                    type="datetime-local"
-                    key={`pad_${activeClient.id}`}
-                    defaultValue={activeClient.proxima_acao_data ? new Date(new Date(activeClient.proxima_acao_data).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => setCrmField('proxima_acao_data', e.target.value || null)}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#1F4E79] bg-slate-50/50"
-                  />
-                </div>
-              </div>
-            </div>
+            })}
           </div>
-
-          {/* Section 1: Process Stepper */}
-          <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-              <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">1</span>
-              Onde o cliente está no processo
-            </h3>
-
-            <div className="flex flex-wrap gap-2">
-              {ETAPAS.map((etapa, idx) => {
-                const isDone = idx < activeClient.etapa
-                const isCurrent = idx === activeClient.etapa
-                let cls = 'border-slate-200 text-slate-500 bg-white hover:border-slate-300 hover:bg-slate-50/50 font-medium'
-                if (isDone) cls = 'border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100/50 hover:border-emerald-300'
-                if (isCurrent) cls = 'border-[#eb3238] bg-gradient-to-r from-[#eb3238] to-[#f43f5e] text-white shadow-md scale-105 ring-2 ring-red-100 font-extrabold z-10'
+        ) : (
+          /* INTERESTED AND ARCHIVED GRIDS */
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {myClientsFiltered.length === 0 ? (
+              <div className="col-span-full border border-dashed border-slate-200 rounded-2xl p-12 text-center text-xs text-slate-400 font-semibold bg-white/40">
+                Nenhum lead nesta lista
+              </div>
+            ) : (
+              myClientsFiltered.map(c => {
+                const isSelected = c.id === activeId
+                const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
+                const perf = c.perfil ? PERFIS[c.perfil] : null
 
                 return (
-                  <button
-                    key={idx}
-                    onClick={() => changeEtapa(idx)}
-                    className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-bold transition-all duration-200 ${cls}`}
+                  <div
+                    key={c.id}
+                    onClick={() => selectClient(c.id)}
+                    className={`p-4 border rounded-xl bg-white shadow-xs cursor-pointer hover:border-slate-300 transition-all ${
+                      isSelected 
+                        ? 'ring-2 ring-[#eb3238] border-transparent' 
+                        : 'border-slate-200/80'
+                    }`}
                   >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shadow-inner"
-                      style={{ backgroundColor: RESP_COR[RESP[idx]] || '#94a3b8' }}
-                      title={`Responsável: ${RESP[idx]}`}
-                    ></span>
-                    <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold ${
-                      isCurrent ? 'bg-white text-[#eb3238]' : isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
-                    }`}>
-                      {isDone ? '✓' : idx + 1}
-                    </span>
-                    {etapa.nome}
-                  </button>
-                )
-              })}
-              {!activeClient.finalizado && (
-                <button
-                  onClick={() => {
-                    setFinalizarStatus('sucesso')
-                    setFinalizarMotivo('')
-                    setValProcurado(activeClient.valor ? String(activeClient.valor) : '')
-                    setValFechado('')
-                    setValPedido('')
-                    setValVendido('')
-                    setFinalizarModalOpen(true)
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-rose-600 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                >
-                  🏁 Finalizar
-                </button>
-              )}
-            </div>
-
-            {activeClient.finalizado && (
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">
-                    {activeClient.status_finalizacao === 'sucesso' ? '🎉' : '❌'}
-                  </span>
-                  <div>
-                    <div className="text-xs font-bold text-slate-700">
-                      Processo Finalizado ({activeClient.status_finalizacao === 'sucesso' ? 'Ganho / Sucesso' : 'Perdido'})
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      {activeClient.motivo_finalizacao && `Motivo: ${activeClient.motivo_finalizacao}`}
-                      {activeClient.status_finalizacao === 'sucesso' && activeClient.valor_fechado && (
-                        <span className="block font-semibold mt-0.5 text-emerald-600">
-                          Valor Fechado: {fmtBRL(Number(activeClient.valor_fechado))}
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <span className="font-extrabold text-xs text-slate-800 line-clamp-1 heading-premium">
+                        {c.nome}
+                      </span>
+                      {c.finalizado && (
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0 ${
+                          c.status_finalizacao === 'sucesso' 
+                            ? 'bg-emerald-50 text-emerald-600' 
+                            : 'bg-rose-50 text-[#eb3238]'
+                        }`}>
+                          {c.status_finalizacao === 'sucesso' ? 'Ganho' : 'Perdido'}
                         </span>
                       )}
                     </div>
+
+                    <div className="text-[10px] text-slate-500 font-semibold mb-2">
+                      {c.contato} · Etapa: {ETAPAS[c.etapa]?.nome}
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
+                        {tc.rotulo}
+                      </span>
+                      {perf && (
+                        <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black">
+                          {perf.emo} {perf.nome}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Specific details for Interessados */}
+                    {sidebarView === 'interessados' && (
+                      <div className="mt-3.5 space-y-1 text-[9px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 font-medium">
+                        {c.local && <div>📍 <b>Local:</b> {c.local}</div>}
+                        {c.faixa && <div>💰 <b>Faixa:</b> {c.faixa}</div>}
+                        {c.preferencia && <div className="line-clamp-1">🔑 <b>Pref:</b> {c.preferencia}</div>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. Slide-over details drawer */}
+      {activeClient && (
+        <>
+          <div 
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs z-40 transition-opacity"
+            onClick={() => setActiveId(null)}
+          />
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-[#FAF9F7] shadow-2xl border-l border-slate-200/80 z-50 flex flex-col h-full overflow-hidden animate-slide-in">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-200/80 bg-white flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setActiveId(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                  title="Fechar"
+                >
+                  <X size={18} />
+                </button>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Detalhes do Lead</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setFichaOpen(true)}
+                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  📇 Ficha Completa
+                </button>
+                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-slate-200">
+                  {RESP_EMO[RESP[activeClient.etapa]]} {RESP[activeClient.etapa]}
+                </span>
+              </div>
+            </div>
+
+            {/* Scrollable details container */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              
+              {/* Card 1: Header Identity */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg md:text-xl font-black text-slate-800 heading-premium">{activeClient.nome}</h2>
+                    {activeClient.expressa && (
+                      <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">VIA EXPRESSA</span>
+                    )}
+                    {activeClient.em_captacao && (
+                      <span className="bg-rose-50 text-[#eb3238] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">EM CAPTAÇÃO</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                    {activeClient.contato} · Origem: <span className="font-semibold text-slate-600">{activeClient.origem}</span>
+                    {activeClient.valor > 0 && ` · Imóvel-alvo: ${fmtBRL(activeClient.valor)}`}
+                  </p>
+                </div>
+
+                {/* Attributes dropdowns styled as premium pills */}
+                <div className="flex flex-wrap items-center gap-2.5 pt-3.5 border-t border-slate-100">
+                  {/* Perfil Dominante */}
+                  <div className="flex items-center gap-1 bg-[#EEF4FA] border border-[#D6E4F0] rounded-xl px-2.5 py-1 text-[11px] font-bold text-[#1F4E79]">
+                    <span>🧠 Perfil:</span>
+                    <select
+                      value={activeClient.perfil || ''}
+                      onChange={async (e) => {
+                        const newPerf = e.target.value || null
+                        const updated = await updateVendasCliente(activeClient.id, { perfil: newPerf })
+                        if (updated) {
+                          setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
+                        }
+                      }}
+                      className="bg-transparent border-none outline-none cursor-pointer font-black text-[#1F4E79]"
+                    >
+                      <option value="">Nenhum</option>
+                      <option value="analitico">Analítico</option>
+                      <option value="controlador">Controlador</option>
+                      <option value="apoiador">Apoiador</option>
+                      <option value="catalisador">Catalisador</option>
+                    </select>
+                  </div>
+
+                  {/* Perfil Secundario */}
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                    <span>🥈 Secundário:</span>
+                    <select
+                      value={activeClient.perfil_secundario || ''}
+                      onChange={async (e) => {
+                        const newPerfSec = e.target.value || null
+                        const updated = await updateVendasCliente(activeClient.id, { perfil_secundario: newPerfSec })
+                        if (updated) {
+                          setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
+                        }
+                      }}
+                      className="bg-transparent border-none outline-none cursor-pointer font-black text-slate-600"
+                    >
+                      <option value="">Nenhum</option>
+                      <option value="analitico">Analítico</option>
+                      <option value="controlador">Controlador</option>
+                      <option value="apoiador">Apoiador</option>
+                      <option value="catalisador">Catalisador</option>
+                    </select>
+                  </div>
+
+                  {/* Temperatura */}
+                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-700">
+                    <span>🔥 Temp:</span>
+                    <select
+                      value={activeClient.temp}
+                      onChange={(e) => setClientTemp(e.target.value as any)}
+                      className="bg-transparent border-none outline-none cursor-pointer font-black text-slate-700"
+                    >
+                      <option value="quente">Quente</option>
+                      <option value="morno">Morno</option>
+                      <option value="frio">Frio</option>
+                    </select>
                   </div>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (!activeId) return
-                    const updated = await updateVendasCliente(activeId, {
-                      finalizado: false,
-                      status_finalizacao: null,
-                      motivo_finalizacao: null,
-                      valor_fechado: null,
-                      valor_pedido: null,
-                      valor_vendido: null
-                    })
-                    if (updated) {
-                      setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
-                    }
-                  }}
-                  className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold rounded-lg text-[10px] uppercase tracking-wide transition-colors"
-                >
-                  Reabrir Processo
-                </button>
               </div>
-            )}
 
-            <div className="flex flex-wrap items-center gap-4 pt-2 text-[10px] text-slate-500 border-t border-slate-50 font-semibold">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#1F4E79' }}></span> Andressa (1-6)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#1f9d6b' }}></span> Corretor (7-9)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#2E6CA8' }}></span> Andressa + Corretor (10-12)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#c77d2e' }}></span> Pós-venda (13-15)</span>
-              <span className="text-[#6b4fbb]">🤖 Lais (IA) apoia o 1º contato e a via expressa</span>
-            </div>
-          </section>
+              {/* Card 2: Lembrete / Próxima Ação */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                  <ClipboardList size={16} className="text-[#1F4E79]" />
+                  Próxima Ação / Lembrete
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">O que fazer a seguir?</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Enviar catálogo de imóveis no WhatsApp..."
+                      key={`pa_${activeClient.id}`}
+                      defaultValue={activeClient.proxima_acao || ''}
+                      onBlur={(e) => setCrmField('proxima_acao', e.target.value.trim() || null)}
+                      className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#eb3238] bg-slate-50/50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Quando fazer?</label>
+                    <input
+                      type="datetime-local"
+                      key={`pad_${activeClient.id}`}
+                      defaultValue={activeClient.proxima_acao_data ? new Date(new Date(activeClient.proxima_acao_data).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setCrmField('proxima_acao_data', e.target.value || null)}
+                      className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#eb3238] bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          {/* Section 2: Conteúdo Dinâmico da Etapa + Checklist */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
-            
-            {/* Conteúdo Dinâmico por Etapa */}
-            <div key={`${activeClient.id}_${activeClient.etapa}`} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
-                Ações da Etapa — {ETAPAS[activeClient.etapa]?.nome}
-              </h3>
+              {/* Card 3: Stepper Comercial */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">1</span>
+                  Funil Comercial (Etapa)
+                </h3>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {ETAPAS.slice(0, 6).map((etapa, idx) => {
+                    const isDone = idx < activeClient.etapa
+                    const isCurrent = idx === activeClient.etapa
+                    const { done, total } = getEtapaProgress(idx)
+
+                    let cls = 'border-slate-200 text-slate-500 bg-white hover:border-slate-300 hover:bg-slate-50/50 font-medium'
+                    if (isDone) cls = 'border-emerald-200 bg-emerald-50/40 text-emerald-700 font-bold hover:bg-emerald-100/40 hover:border-emerald-300'
+                    if (isCurrent) cls = 'border-[#eb3238] bg-rose-50/60 text-[#eb3238] ring-2 ring-red-100 font-black'
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => changeEtapa(idx)}
+                        className={`flex flex-col items-start gap-1 p-2.5 border rounded-xl text-left transition-all text-xs ${cls}`}
+                      >
+                        <div className="flex items-center gap-1.5 w-full">
+                          <span
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: RESP_COR[RESP[idx]] || '#94a3b8' }}
+                            title={`Responsável: ${RESP[idx]}`}
+                          ></span>
+                          <span className="font-extrabold truncate">{etapa.nome}</span>
+                          {isDone && <span className="ml-auto text-emerald-600 font-black">✓</span>}
+                        </div>
+                        <span className="text-[9px] font-semibold text-slate-400 mt-0.5">
+                          {done} de {total} concluídos
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Legenda de responsáveis para 9 etapas */}
+                <div className="flex flex-col gap-1.5 pt-3 text-[9px] text-slate-400 border-t border-slate-100 font-bold">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1F4E79' }}></span> Andressa: Triagem (E1)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2E6CA8' }}></span> Andressa+Corretor: Atendimento (E2), Fechamento (E6)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1f9d6b' }}></span> Corretor: Visita (E3), Proposta (E4), Negociação (E5)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#c77d2e' }}></span> Pós-venda: Pós-venda (E7), Depoimento (E8), Indicação (E9)</span>
+                  </div>
+                  <span className="text-[#6b4fbb] font-black">🤖 Lais (IA) apoia o 1º contato e a via expressa</span>
+                </div>
+
+                {/* Finalizar Button */}
+                {!activeClient.finalizado && (
+                  <button
+                    onClick={() => {
+                      setFinalizarStatus('sucesso')
+                      setFinalizarMotivo('')
+                      setValProcurado(activeClient.valor ? String(activeClient.valor) : '')
+                      setValFechado('')
+                      setValPedido('')
+                      setValVendido('')
+                      setFinalizarModalOpen(true)
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-[#eb3238] rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs"
+                  >
+                    🏁 Finalizar Atendimento (Comprar / Arquivar)
+                  </button>
+                )}
+
+                {/* Finalizado Box */}
+                {activeClient.finalizado && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">
+                        {activeClient.status_finalizacao === 'sucesso' ? '🎉' : '❌'}
+                      </span>
+                      <div>
+                        <div className="text-xs font-bold text-slate-700">
+                          Processo Finalizado ({activeClient.status_finalizacao === 'sucesso' ? 'Ganho / Sucesso' : 'Perdido'})
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          {activeClient.motivo_finalizacao && `Motivo: ${activeClient.motivo_finalizacao}`}
+                          {activeClient.status_finalizacao === 'sucesso' && activeClient.valor_fechado && (
+                            <span className="block font-semibold mt-0.5 text-emerald-600">
+                              Valor Fechado: {fmtBRL(Number(activeClient.valor_fechado))}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!activeId) return
+                        const updated = await updateVendasCliente(activeId, {
+                          finalizado: false,
+                          status_finalizacao: null,
+                          motivo_finalizacao: null,
+                          valor_fechado: null,
+                          valor_pedido: null,
+                          valor_vendido: null
+                        })
+                        if (updated) {
+                          setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold rounded-lg text-[10px] uppercase tracking-wide transition-colors"
+                    >
+                      Reabrir Processo
+                    </button>
+                  </div>
+                )}
+
+                {/* Pós-Venda (E7-E9) inside details if won */}
+                {activeClient.status_finalizacao === 'sucesso' && (
+                  <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                    <div className="text-[10px] font-black text-[#c77d2e] uppercase tracking-wider">Acompanhamento de Pós-Venda (E7-E9)</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {ETAPAS.slice(6, 9).map((etapa, idx) => {
+                        const stepIdx = idx + 6
+                        const isDone = stepIdx < activeClient.etapa
+                        const isCurrent = stepIdx === activeClient.etapa
+                        const { done, total } = getEtapaProgress(stepIdx)
+
+                        let cls = 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50/50'
+                        if (isDone) cls = 'border-amber-200 bg-amber-50/40 text-amber-800 font-bold hover:bg-amber-100/40'
+                        if (isCurrent) cls = 'border-[#c77d2e] bg-amber-50/60 text-[#c77d2e] ring-2 ring-amber-100 font-black'
+
+                        return (
+                          <button
+                            key={stepIdx}
+                            onClick={() => changeEtapa(stepIdx)}
+                            className={`flex flex-col items-start gap-1 p-2 border rounded-xl text-left transition-all text-[11px] ${cls}`}
+                          >
+                            <span className="font-extrabold truncate">{etapa.nome}</span>
+                            <span className="text-[9px] font-semibold text-slate-400">
+                              {done} de {total}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Grid block for actions and checklist */}
+              <div className="space-y-5">
+                
+                {/* Dynamic Stage Actions */}
 
               {/* ETAPA 0: Triagem */}
               {activeClient.etapa === 0 && (
@@ -1450,19 +1674,27 @@ export default function MinhaCarteira({
             </div>
 
             {/* Checklist Section (Checklist da Etapa) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
-                Checklist — {ETAPAS[activeClient.etapa]?.nome}
-              </h3>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div 
+                className="flex justify-between items-center cursor-pointer select-none" 
+                onClick={() => setChecklistExpanded(!checklistExpanded)}
+              >
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
+                  Checklist — {ETAPAS[activeClient.etapa]?.nome}
+                </h3>
+                <span className="text-xs text-slate-400 font-semibold">
+                  {checklistExpanded ? 'Recolher ▲' : 'Expandir ▼'}
+                </span>
+              </div>
 
-              {(() => {
+              {checklistExpanded && (() => {
                 const totalItens = ETAPAS[activeClient.etapa]?.chk.length || 0
                 const concluidos = activeChecklist.filter(chk => chk.etapa === activeClient.etapa).length
                 const pct = totalItens ? Math.round((concluidos / totalItens) * 100) : 0
 
                 return (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}></div>
@@ -1500,351 +1732,103 @@ export default function MinhaCarteira({
               })()}
             </div>
 
-          </div>
-
-          {/* Section 3: Resumo do Status (Expandido e Completo) */}
-          <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
-              <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">4</span>
-              Resumo do Status & Linha do Tempo
-            </h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6">
-              {/* Resumo Geral & Playbook */}
+            {/* Dossiê & Resumo do Status */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
+                <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
+                Dossiê & Playbook do Perfil
+              </h3>
+              
               <div className="space-y-4">
-                <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4.5 space-y-3 text-xs md:text-sm text-slate-700 leading-relaxed shadow-xs">
+                <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 space-y-3 text-xs text-slate-700 leading-relaxed shadow-xs font-medium">
                   <p>
-                    <b>{activeClient.nome}</b> está atualmente na <b>etapa {activeClient.etapa + 1} de {ETAPAS.length}</b> — <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome}</span>, sob responsabilidade de <b>{RESP[activeClient.etapa]}</b>.
+                    <b>{activeClient.nome}</b> está atualmente na <b>etapa {activeClient.etapa + 1}</b> — <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome}</span>.
                   </p>
                   <p>
-                    Temperatura do lead: <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>.
+                    Temperatura: <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>.
                     {activeClient.perfil ? (
-                      <span> Perfil consultivo mapeado como <b className="text-[#1F4E79]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</b>
+                      <span> Perfil: <b className="text-[#1F4E79]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</b>
                         {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
-                          <> e perfil secundário <b className="text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</b></>
+                          <> / Secundário: <b className="text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</b></>
                         )}.
                       </span>
                     ) : (
-                      <span> Perfil de compra SPIN ainda pendente de diagnóstico.</span>
-                    )}
-                  </p>
-                  {activeClient.expressa && !activeClient.finalizado && (
-                    <p className="bg-[#fbf1e3] text-[#c77d2e] px-3 py-1.5 rounded-lg font-bold border border-[#ecd3ad]">
-                      ⚡ Cliente via expressa marcou visita diretamente no site.
-                    </p>
-                  )}
-                  <p className="font-extrabold text-[#1F4E79] pt-2 border-t border-slate-200/50 mt-1">
-                    {activeClient.etapa < ETAPAS.length - 1 ? (
-                      <span>Próximo passo planejado: {ETAPAS[activeClient.etapa + 1]?.nome}</span>
-                    ) : (
-                      <span>Processo concluído com sucesso! 🎉</span>
+                      <span> Perfil ainda pendente de diagnóstico.</span>
                     )}
                   </p>
                 </div>
 
-                {/* Playbook Playbox se perfil mapeado */}
+                {/* Playbook se perfil mapeado */}
                 {activeClient.perfil && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 space-y-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                     <h4 className="text-xs font-extrabold text-[#1F4E79] uppercase tracking-wide flex items-center gap-1.5">
                       {PERFIS[activeClient.perfil].emo} Playbook: O que Falar com este Perfil
                     </h4>
-                    <ul className="space-y-1.5 text-xs text-slate-700">
-                      {PERFIS[activeClient.perfil].estrategia.map((est, eIdx) => (
+                    <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
+                      {PERFIS[activeClient.perfil].estrategia.slice(0, 4).map((est, eIdx) => (
                         <li key={eIdx} className="flex items-start gap-2">
                           <span className="text-emerald-500 font-bold">✓</span>
                           <span>{est}</span>
                         </li>
                       ))}
                     </ul>
-                    {PERFIS[activeClient.perfil].evitar && (
-                      <div className="border-t border-slate-200/50 pt-2.5">
-                        <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                          ⚠️ Evitar Absolutamente
-                        </h5>
-                        <ul className="space-y-1 text-xs text-slate-600">
-                          {PERFIS[activeClient.perfil].evitar.map((ev, evIdx) => (
-                            <li key={evIdx} className="flex items-start gap-1.5">
-                              <span className="text-rose-500">•</span>
-                              <span>{ev}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Histórico/Linha do tempo de informações inseridas */}
-              <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4.5 space-y-3.5 max-h-[400px] overflow-y-auto">
-                <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-200/60">
-                  📋 Dossiê de Lançamentos do Cliente
-                </h4>
+            {/* Ações da conversa / Anotações */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                Anotações da Conversa
+              </h3>
 
-                <div className="space-y-4">
-                  {/* Etapa 1: Lead */}
-                  <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                    <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 1: Lead (Cadastro Inicial)</span>
-                    <div className="text-xs text-slate-700 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 font-medium">
-                      <div>• <b>Nome:</b> {activeClient.nome}</div>
-                      <div>• <b>WhatsApp:</b> {activeClient.contato || '—'}</div>
-                      <div>• <b>E-mail:</b> {activeClient.email || '—'}</div>
-                      <div>• <b>Origem:</b> {activeClient.origem || '—'}</div>
-                    </div>
-                  </div>
-
-                  {/* Etapa 2: Cadastro no CRM */}
-                  {(activeClient.perfil_quiz?.cadastro_finalidade || activeClient.perfil_quiz?.cadastro_canal || activeClient.perfil_quiz?.cadastro_obs) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 2: Cadastro no CRM</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Finalidade:</b> {activeClient.perfil_quiz.cadastro_finalidade || 'Moradia'} | <b>Canal:</b> {activeClient.perfil_quiz.cadastro_canal || 'WhatsApp'} | <b>Horário:</b> {activeClient.perfil_quiz.cadastro_horario || 'Qualquer'}</div>
-                        {activeClient.perfil_quiz.cadastro_orcamento && <div>• <b>Orçamento Inicial:</b> {activeClient.perfil_quiz.cadastro_orcamento}</div>}
-                        {activeClient.perfil_quiz.cadastro_obs && <div className="text-slate-600 italic font-normal">• "{activeClient.perfil_quiz.cadastro_obs}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 3: Primeiro Atendimento */}
-                  {(activeClient.perfil_quiz?.atend_rapport || activeClient.perfil_quiz?.atend_necessidade) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 3: Primeiro Atendimento</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Canal de Atendimento:</b> {activeClient.perfil_quiz.atend_canal || '—'}</div>
-                        {activeClient.perfil_quiz.atend_rapport && <div className="text-slate-600 font-normal">• <b>Rapport/Impressões:</b> "{activeClient.perfil_quiz.atend_rapport}"</div>}
-                        {activeClient.perfil_quiz.atend_necessidade && <div className="text-slate-600 font-normal">• <b>Dores/Motivação:</b> "{activeClient.perfil_quiz.atend_necessidade}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 4: Identificar Perfil */}
-                  {activeClient.perfil && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 4: Descoberta de Perfil</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Perfil Identificado:</b> {PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}
-                          {activeClient.perfil_secundario && ` / Secundário: ${PERFIS[activeClient.perfil_secundario].nome} ${PERFIS[activeClient.perfil_secundario].emo}`}
-                        </div>
-                        <div className="text-[10px] text-slate-500 font-semibold">• Comportamentos marcados: {
-                          Object.entries(activeClient.perfil_quiz || {})
-                            .filter(([k, v]) => k.startsWith('s_') && v === 'true')
-                            .map(([k]) => {
-                              const parts = k.split('_');
-                              const profKey = parts[1];
-                              const sIdx = Number(parts[2]);
-                              return (SINAIS_COMPORTAMENTAIS as any)[profKey]?.[sIdx];
-                            })
-                            .filter(Boolean)
-                            .join(', ') || 'nenhum sinal de comportamento anotado'
-                        }</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 5: Estratégia */}
-                  {(activeClient.perfil_quiz?.estrategia_cadencia || activeClient.perfil_quiz?.estrategia_roteiro) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 5: Estratégia de Atendimento</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Cadência:</b> {activeClient.perfil_quiz.estrategia_cadencia || '—'}</div>
-                        {activeClient.perfil_quiz.estrategia_roteiro && <div className="text-slate-600 font-normal">• <b>Roteiro:</b> "{activeClient.perfil_quiz.estrategia_roteiro}"</div>}
-                        {activeClient.perfil_quiz.estrategia_argumentos && <div className="text-slate-600 font-normal">• <b>Argumentação:</b> "{activeClient.perfil_quiz.estrategia_argumentos}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 6: Seleção de Imóveis */}
-                  {(activeClient.perfil_quiz?.selecao_imoveis || activeClient.perfil_quiz?.selecao_motivo) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 6: Seleção de Imóveis</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        {activeClient.perfil_quiz.selecao_imoveis && <div className="whitespace-pre-wrap font-normal text-slate-600">• <b>Imóveis selecionados:</b>&#10;{activeClient.perfil_quiz.selecao_imoveis}</div>}
-                        {activeClient.perfil_quiz.selecao_motivo && <div className="text-slate-600 font-normal">• <b>Motivo/Filtro:</b> "{activeClient.perfil_quiz.selecao_motivo}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 7: Apresentação */}
-                  {(activeClient.perfil_quiz?.apres_reacao || activeClient.perfil_quiz?.apres_destaques) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 7: Apresentação de Imóveis</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        {activeClient.perfil_quiz.apres_reacao && <div className="text-slate-600 font-normal">• <b>Reação:</b> "{activeClient.perfil_quiz.apres_reacao}"</div>}
-                        {activeClient.perfil_quiz.apres_destaques && <div className="text-slate-600 font-normal">• <b>Imóveis favoritos:</b> "{activeClient.perfil_quiz.apres_destaques}"</div>}
-                        {activeClient.perfil_quiz.apres_ajustes && <div>• <b>Ajuste no Filtro:</b> {activeClient.perfil_quiz.apres_ajustes}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 8: Visita */}
-                  {(activeClient.perfil_quiz?.visita_imoveis || activeClient.perfil_quiz?.visita_feedback) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 8: Visita (Imóveis Visitados)</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        {activeClient.perfil_quiz.visita_imoveis && <div className="whitespace-pre-wrap font-normal text-slate-600">• <b>Imóveis visitados:</b>&#10;{activeClient.perfil_quiz.visita_imoveis}</div>}
-                        {activeClient.perfil_quiz.visita_feedback && <div className="text-slate-600 font-normal">• <b>Feedback/Resultado:</b> "{activeClient.perfil_quiz.visita_feedback}"</div>}
-                        {activeClient.perfil_quiz.visita_pontos_atencao && <div>• <b>Objeções/Atenções:</b> {activeClient.perfil_quiz.visita_pontos_atencao}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 9: Proposta */}
-                  {(activeClient.perfil_quiz?.proposta_imovel || activeClient.perfil_quiz?.proposta_valor) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 9: Proposta Lançada</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Imóvel-alvo:</b> {activeClient.perfil_quiz.proposta_imovel || '—'}</div>
-                        <div>• <b>Valor da Proposta:</b> {activeClient.perfil_quiz.proposta_valor || fmtBRL(activeClient.valor || 0)} {activeClient.perfil_quiz.proposta_data && ` em ${activeClient.perfil_quiz.proposta_data}`}</div>
-                        {activeClient.perfil_quiz.proposta_condicoes && <div className="text-slate-600 font-normal">• <b>Condições de pgto:</b> "{activeClient.perfil_quiz.proposta_condicoes}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 10: Negociação */}
-                  {(activeClient.perfil_quiz?.negoc_contraproposta || activeClient.perfil_quiz?.negoc_impasse) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 10: Negociação</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        {activeClient.perfil_quiz.negoc_contraproposta && <div className="text-slate-600 font-normal">• <b>Contraproposta / Posição proprietário:</b> "{activeClient.perfil_quiz.negoc_contraproposta}"</div>}
-                        {activeClient.perfil_quiz.negoc_impasse && <div className="text-slate-600 font-normal">• <b>Impasse / Objeções:</b> "{activeClient.perfil_quiz.negoc_impasse}"</div>}
-                        {activeClient.perfil_quiz.negoc_concessoes && <div>• <b>Concessões acordadas:</b> {activeClient.perfil_quiz.negoc_concessoes}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 11: Documentação / Financiamento */}
-                  {(activeClient.perfil_quiz?.doc_financiamento || activeClient.perfil_quiz?.doc_pendencias) && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 11: Documentação & Crédito</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        {activeClient.perfil_quiz.doc_financiamento && <div className="text-slate-600 font-normal">• <b>Crédito / Financiamento:</b> "{activeClient.perfil_quiz.doc_financiamento}"</div>}
-                        {activeClient.perfil_quiz.doc_pendencias && <div className="text-slate-600 font-normal">• <b>Certidões pendentes:</b> "{activeClient.perfil_quiz.doc_pendencias}"</div>}
-                        {activeClient.perfil_quiz.doc_previsao && <div>• <b>Previsão de Assinatura:</b> {activeClient.perfil_quiz.doc_previsao}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 12: Fechamento */}
-                  {(activeClient.finalizado || activeClient.perfil_quiz?.fech_imovel || activeClient.valor_fechado) && (
-                    <div className="space-y-1.5 border-l-2 border-emerald-500 pl-3.5 py-0.5 relative bg-emerald-50/20 p-2.5 rounded-lg border border-emerald-100/50">
-                      <div className="absolute -left-[5px] top-4 w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block">Etapa 12: Fechamento Concluído</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Imóvel:</b> {activeClient.perfil_quiz.fech_imovel || '—'}</div>
-                        <div>• <b>VGV Final Fechado:</b> <span className="text-emerald-600 font-black">{fmtBRL(activeClient.valor_fechado || 0)}</span></div>
-                        {activeClient.valor_pedido && <div>• <b>Valor Pedido Original:</b> {fmtBRL(activeClient.valor_pedido)} | <b>Escriturado:</b> {fmtBRL(activeClient.valor_vendido || 0)}</div>}
-                        {activeClient.perfil_quiz.fech_data_assinatura && <div>• <b>Assinatura:</b> {activeClient.perfil_quiz.fech_data_assinatura} | <b>Chaves:</b> {activeClient.perfil_quiz.fech_data_chaves || '—'}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 13: Pós-venda */}
-                  {activeClient.perfil_quiz?.pos_data && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 13: Pós-venda</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Data Contato:</b> {activeClient.perfil_quiz.pos_data} | <b>Nota de Satisfação:</b> <span className="font-bold text-[#1F4E79]">{activeClient.perfil_quiz.pos_satisfacao}/10</span></div>
-                        {activeClient.perfil_quiz.pos_obs && <div className="text-slate-600 font-normal">• <b>Obs do cliente:</b> "{activeClient.perfil_quiz.pos_obs}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 14: Depoimento */}
-                  {activeClient.perfil_quiz?.depoimento_texto && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 14: Prova Social (Depoimento)</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Autorizado:</b> {activeClient.perfil_quiz.depoimento_autorizado || 'Sim'} | <b>Canal:</b> {activeClient.perfil_quiz.depoimento_canal || '—'}</div>
-                        {activeClient.perfil_quiz.depoimento_texto && <div className="text-slate-600 font-normal italic">• "{activeClient.perfil_quiz.depoimento_texto}"</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Etapa 15: Indicação */}
-                  {activeClient.perfil_quiz?.indicacao_nome && (
-                    <div className="space-y-1.5 border-l-2 border-[#1F4E79] pl-3.5 py-0.5 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#1F4E79]" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapa 15: Captação de Indicação</span>
-                      <div className="text-xs text-slate-700 space-y-1 font-medium">
-                        <div>• <b>Nome do indicado:</b> {activeClient.perfil_quiz.indicacao_nome}</div>
-                        <div>• <b>WhatsApp/Contato:</b> {activeClient.perfil_quiz.indicacao_contato || '—'} | <b>Interesse:</b> {activeClient.perfil_quiz.indicacao_tipo || 'Comprar'}</div>
-                        {activeClient.perfil_quiz.indicacao_obs && <div className="text-slate-600 font-normal">• <b>Obs da indicação:</b> {activeClient.perfil_quiz.indicacao_obs}</div>}
-                      </div>
-                    </div>
-                  )}
-
+              <div className="space-y-3">
+                <textarea
+                  value={novaNotaTxt}
+                  onChange={(e) => setNovaNotaTxt(e.target.value)}
+                  placeholder="O que ficou acertado nesta conversa?"
+                  className="w-full text-xs border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-[#eb3238] min-h-[70px] resize-y bg-slate-50/50"
+                ></textarea>
+                
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleAddNota}
+                    className="bg-[#eb3238] hover:bg-[#eb3238]/90 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs"
+                  >
+                    + Adicionar Nota
+                  </button>
+                  <span className="text-[9px] text-slate-400 font-bold">
+                    Etapa: <b>{ETAPAS[activeClient.etapa]?.nome}</b>
+                  </span>
                 </div>
               </div>
-            </div>
-          </section>
 
-          {/* Section 4: Conversations Timeline */}
-          <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-              <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">5</span>
-              Anotações da conversa
-            </h3>
-
-            <div className="space-y-3">
-              <textarea
-                value={novaNotaTxt}
-                onChange={(e) => setNovaNotaTxt(e.target.value)}
-                placeholder="O que o cliente falou? O que ficou acertado nesta etapa?"
-                className="w-full text-xs md:text-sm border border-slate-200 rounded-xl p-3.5 focus:outline-none focus:border-[#2E6CA8] min-h-[70px] resize-y"
-              ></textarea>
-              
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  onClick={handleAddNota}
-                  className="bg-[#1F4E79] hover:bg-[#2E6CA8] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                >
-                  + Adicionar anotação
-                </button>
-                <span className="text-[10px] text-slate-400 font-semibold">
-                  Registrada com a etapa atual: <b>{ETAPAS[activeClient.etapa]?.nome}</b>
-                </span>
+              {/* Notes Feed */}
+              <div className="space-y-3 pt-2 max-h-[300px] overflow-y-auto">
+                {activeNotas.length === 0 ? (
+                  <div className="text-slate-400 text-xs italic py-2 text-center">Nenhuma nota cadastrada.</div>
+                ) : (
+                  activeNotas.slice().reverse().map(nota => (
+                    <div key={nota.id} className="flex gap-4 border-l-2 border-slate-200 pl-4 py-1 relative">
+                      <div className="absolute -left-[5px] top-2.5 w-2 h-2 rounded-full bg-[#eb3238]"></div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-slate-400">{nota.data}</span>
+                          <span className="bg-[#fbf1e3] text-[#c77d2e] text-[9px] font-bold px-2 py-0.5 rounded-full">{nota.etapa}</span>
+                        </div>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{nota.texto}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-
-            {/* Notes Feed */}
-            <div className="space-y-3 pt-2">
-              {activeNotas.length === 0 ? (
-                <div className="text-slate-400 text-xs italic py-4">Nenhuma nota cadastrada para este cliente.</div>
-              ) : (
-                activeNotas.slice().reverse().map(nota => (
-                  <div key={nota.id} className="flex gap-4 border-l-2 border-slate-100 pl-4 py-1 relative">
-                    <div className="absolute -left-[5px] top-2.5 w-2 h-2 rounded-full bg-[#2E6CA8]"></div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400">{nota.data}</span>
-                        <span className="bg-[#EEF4FA] text-[#1F4E79] text-[9px] font-bold px-2 py-0.5 rounded-full">{nota.etapa}</span>
-                      </div>
-                      <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{nota.texto}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </main>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 font-medium flex-1">
-          Nenhum cliente cadastrado no funil de vendas. Adicione um para começar.
+          </div>
         </div>
-      )}
+      </>
+    )}
+
 
       {/* ============================================================
           MODAL: FICHA DO CLIENTE (CRM DETAILS / EDIT)
