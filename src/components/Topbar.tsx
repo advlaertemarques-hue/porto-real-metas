@@ -43,8 +43,9 @@ export default function Topbar() {
       ]
       if (user.role === 'superadmin') {
         items.push({ href: '/metas', label: 'Metas' })
-        items.push({ href: '/lancamentos', label: 'Pesquisas & Leads' })
-        items.push({ href: '/corretores', label: 'Banco de Dados' })
+        items.push({ href: '/lancamentos', label: 'Pesquisas' })
+        items.push({ href: '/banco-dados', label: 'Banco de Dados' })
+        items.push({ href: '/corretores', label: 'Controle de Usuários' })
         items.push({ href: '/vendas-vgv', label: 'VGV e Alertas' })
         items.push({ href: '/treinamentos', label: 'Treinamentos' })
         items.push({ href: '/auditoria', label: 'Auditoria' })
