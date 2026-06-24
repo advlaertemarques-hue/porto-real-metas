@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { PresenceProvider } from '@/contexts/PresenceContext'
-import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { useModule } from '@/contexts/ModuleContext'
 
@@ -16,7 +15,6 @@ export default function DashboardLayout({
   const { user, loading } = useAuth()
   const { activeModule } = useModule()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,19 +41,10 @@ export default function DashboardLayout({
           <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#1F4E79] opacity-[0.04] blur-[80px] md:blur-[120px]" />
         </div>
 
-        <div className="app flex-1 min-h-0 relative z-10 bg-transparent flex">
-          {/* Mobile backdrop */}
-          {sidebarOpen && (
-            <div 
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-
-          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="app flex-1 min-h-0 relative z-10 bg-transparent flex flex-col">
+          <Topbar />
           
-          <div className="main flex-1 flex flex-col min-w-0 bg-transparent">
-            <Topbar onMenuClick={() => setSidebarOpen(true)} />
+          <div className="main flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden">
             <div className="content !p-0 flex-1 overflow-y-auto bg-transparent">
               {children}
             </div>

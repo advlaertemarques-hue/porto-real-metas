@@ -35,7 +35,8 @@ import {
   Settings,
   MessageSquare,
   Copy,
-  Share2
+  Share2,
+  ArrowLeft
 } from 'lucide-react'
 
 interface MinhaCarteiraProps {
@@ -492,8 +493,9 @@ export default function MinhaCarteira({
 
   return (
     <div className="w-full space-y-6 relative z-10">
-      
-      {/* 1. KPIs ribbon at the top */}
+      {!activeClient && (
+        <>
+          {/* 1. KPIs ribbon at the top */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="premium-card p-4 flex flex-col justify-between">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Leads Ativos</span>
@@ -736,15 +738,82 @@ export default function MinhaCarteira({
           </div>
         )}
       </div>
+      </>
+      )}
 
-      {/* 4. Slide-over details drawer */}
+      {/* 4. Split screen layout or Slide-over details drawer */}
       {activeClient && (
-        <>
+        <div className="flex flex-col md:flex-row gap-6 items-stretch w-full min-h-[calc(100vh-140px)] relative">
+          {/* Left Column: MEUS CLIENTES (hidden on mobile, visible on desktop) */}
+          <div className="hidden md:flex w-[320px] bg-white border border-slate-200/80 rounded-2xl flex-col p-4 shadow-sm flex-shrink-0">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Meus Clientes</h3>
+            <button
+              onClick={() => setModalNovoOpen(true)}
+              className="mb-4 flex items-center justify-center gap-1.5 bg-[#EEF4FA] hover:bg-[#D6E4F0] border border-[#D6E4F0] text-[#1F4E79] px-4 py-2.5 rounded-xl text-xs font-black shadow-xs hover:shadow-sm transition-all duration-200 w-full cursor-pointer"
+            >
+              <Plus size={15} /> Novo cliente
+            </button>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[calc(100vh-260px)] scrollbar-thin">
+              {myClientsFiltered.map(c => {
+                const isSelected = c.id === activeId
+                const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
+                const perf = c.perfil ? PERFIS[c.perfil] : null
+
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => selectClient(c.id)}
+                    className={`p-3.5 border rounded-xl bg-white shadow-xs hover:shadow-md cursor-pointer hover:border-slate-400 transition-all duration-200 hover:-translate-y-0.5 ${
+                      isSelected 
+                        ? 'ring-2 ring-[#1F4E79] border-transparent' 
+                        : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start gap-2 mb-1.5">
+                      <span className="font-black text-[13px] text-slate-900 line-clamp-1 leading-snug">
+                        {c.nome}
+                      </span>
+                      {c.expressa && (
+                        <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0">Expressa</span>
+                      )}
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-1 mt-2">
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
+                        {tc.rotulo}
+                      </span>
+                      {perf && (
+                        <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                          <span>{perf.emo}</span>
+                          <span>{perf.nome}</span>
+                        </span>
+                      )}
+                      {c.em_captacao && (
+                        <span className="bg-rose-50 text-[#eb3238] text-[9px] px-1.5 py-0.5 rounded font-black">
+                          🔍 Captação
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-[10px] text-slate-500 font-semibold mt-2 pt-2 border-t border-slate-100">
+                      {ETAPAS[c.etapa]?.nome || `Etapa ${c.etapa}`}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Backdrop (mobile only) */}
           <div 
-            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs z-40 transition-opacity"
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs z-40 transition-opacity md:hidden"
             onClick={() => setActiveId(null)}
           />
-          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-[#FAF9F7] shadow-2xl border-l border-slate-200/80 z-50 flex flex-col h-full overflow-hidden animate-slide-in">
+
+          {/* Right Column: Details Panel */}
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-[#FAF9F7] shadow-2xl border-l border-slate-200/80 z-50 flex flex-col h-full overflow-hidden animate-slide-in md:static md:inset-auto md:w-auto md:max-w-none md:flex-1 md:border md:rounded-2xl md:shadow-none md:animate-none">
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-200/80 bg-white flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -1030,6 +1099,87 @@ export default function MinhaCarteira({
                 )}
               </div>
 
+              {/* Card 4: SPIN Quiz & Sinais (Helper de Perfil) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
+                  Identificar o Perfil do Comprador
+                </h3>
+                
+                <div className="bg-slate-50 rounded-xl p-3.5 text-[11px] text-slate-500 leading-relaxed border border-slate-100">
+                  Responda observando o cliente — cada resposta aponta para um estilo. Ao final, o sistema indica o perfil mais compatível.
+                </div>
+
+                <div className="space-y-4 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
+                  {PERFIL_QUIZ.map((pq, qi) => {
+                    const sel = activeClient.perfil_quiz?.[qi]
+                    return (
+                      <div key={qi} className="space-y-2 border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                        <span className="text-[11px] font-bold text-slate-700 block">{qi + 1}. {pq.q}</span>
+                        <div className="flex flex-col gap-1.5">
+                          {pq.opts.map(o => {
+                            const isSel = sel === o.k
+                            return (
+                              <button
+                                key={o.k}
+                                type="button"
+                                onClick={() => handleQuizAnswer(qi, o.k)}
+                                className={`w-full text-left text-[11px] px-3.5 py-2.5 rounded-xl border transition-all ${
+                                  isSel
+                                    ? 'border-[#eb3238] bg-rose-50/20 text-[#eb3238] font-bold'
+                                    : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
+                                }`}
+                              >
+                                {o.t}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Subsection: Sinais Comportamentais */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <span className="text-xs font-bold text-slate-700 block">Sinais Comportamentais Observados</span>
+                  <div className="bg-slate-50 rounded-xl p-3.5 text-[11px] text-slate-500 leading-relaxed border border-slate-100 mb-2">
+                    Marque os sinais que observou no comportamento do cliente. Eles também pesam na definição do perfil dominante e secundário.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(() => {
+                      const list: { perfKey: string; sIdx: number; sinal: string }[] = []
+                      const keys = Object.keys(SINAIS_COMPORTAMENTAIS) as (keyof typeof SINAIS_COMPORTAMENTAIS)[]
+                      for (let i = 0; i < 5; i++) {
+                        keys.forEach(k => {
+                          list.push({
+                            perfKey: k,
+                            sIdx: i,
+                            sinal: SINAIS_COMPORTAMENTAIS[k][i]
+                          })
+                        })
+                      }
+                      return list.map(({ perfKey, sIdx, sinal }) => {
+                        const key = `s_${perfKey}_${sIdx}`
+                        const isChecked = activeClient.perfil_quiz?.[key] === 'true'
+                        return (
+                          <label key={`${perfKey}_${sIdx}`} className="flex items-start gap-2.5 text-[11px] text-slate-650 cursor-pointer select-none py-2 hover:bg-slate-50 px-2.5 rounded-xl border border-slate-200/50 bg-white transition-colors shadow-xs">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleSignalToggle(perfKey, sIdx)}
+                              className="rounded text-[#eb3238] focus:ring-[#eb3238] h-4 w-4 mt-0.5"
+                            />
+                            <span className="leading-snug">{sinal}</span>
+                          </label>
+                        )
+                      })
+                    })()}
+                  </div>
+                </div>
+              </div>
+
               {/* Grid block for actions and checklist */}
               <div className="space-y-5">
                 
@@ -1216,43 +1366,6 @@ export default function MinhaCarteira({
                         placeholder="Como o cliente reagiu às opções enviadas?..."
                         className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none min-h-[60px] resize-y"
                       />
-                    </div>
-                  </div>
-
-                  {/* SPIN Quiz & Sinais (Helper de Perfil) */}
-                  <div className="pt-4 border-t border-slate-100 space-y-3">
-                    <span className="text-xs font-bold text-slate-700 block">Questionário SPIN & Sinais Comportamentais</span>
-                    <div className="bg-slate-50 rounded-xl p-3 text-[11px] text-slate-500 leading-relaxed border border-slate-100">
-                      Responda para ajudar a definir o perfil dominante (Analítico, Controlador, Apoiador, Catalisador) no cabeçalho do painel.
-                    </div>
-                    <div className="space-y-4 max-h-[260px] overflow-y-auto pr-1">
-                      {PERFIL_QUIZ.map((pq, qi) => {
-                        const sel = activeClient.perfil_quiz?.[qi]
-                        return (
-                          <div key={qi} className="space-y-2 border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                            <span className="text-[11px] font-bold text-slate-700 block">{qi + 1}. {pq.q}</span>
-                            <div className="flex flex-col gap-1.5">
-                              {pq.opts.map(o => {
-                                const isSel = sel === o.k
-                                return (
-                                  <button
-                                    key={o.k}
-                                    type="button"
-                                    onClick={() => handleQuizAnswer(qi, o.k)}
-                                    className={`w-full text-left text-[11px] px-3.5 py-2.5 rounded-xl border transition-all ${
-                                      isSel
-                                        ? 'border-[#eb3238] bg-rose-50/20 text-[#eb3238] font-bold'
-                                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
-                                    }`}
-                                  >
-                                    {o.t}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )
-                      })}
                     </div>
                   </div>
                 </div>
@@ -1864,12 +1977,12 @@ export default function MinhaCarteira({
                     </div>
                   ))
                 )}
-              </div>
             </div>
           </div>
         </div>
-      </>
-    )}
+      </div>
+    </div>
+  )}
 
 
       {/* ============================================================

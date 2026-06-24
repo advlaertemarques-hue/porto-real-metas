@@ -76,12 +76,7 @@ function VendasMockupContent() {
           ? cls.filter(c => c.corretor_id === myCorretor?.id)
           : cls
 
-        const activeCls = myClients.filter(c => !c.finalizado)
-        if (activeCls.length > 0) {
-          setActiveId(activeCls[0].id)
-        } else if (myClients.length > 0) {
-          setActiveId(myClients[0].id)
-        }
+        // Do not auto-select first client on load to keep Kanban board visible by default
       } catch (err) {
         console.error("Erro ao carregar dados:", err)
       } finally {

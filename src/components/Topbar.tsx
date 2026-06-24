@@ -1,10 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useModule } from '@/contexts/ModuleContext'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth, canAccessModule } from '@/contexts/AuthContext'
 import { usePresence } from '@/contexts/PresenceContext'
-import { Menu, LogOut, Shield } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 function getInitials(nome: string) {
   const parts = nome.trim().split(' ')
@@ -12,11 +13,7 @@ function getInitials(nome: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-interface TopbarProps {
-  onMenuClick?: () => void
-}
-
-export default function Topbar({ onMenuClick }: TopbarProps) {
+export default function Topbar() {
   const { activeModule, setActiveModule } = useModule()
   const { user, logout } = useAuth()
   const { onlineUsers } = usePresence()
@@ -38,138 +35,115 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
   const onlineCount = Object.keys(onlineUsers || {}).length || 1
 
-  // Determine page title and sub
-  let pageTitle = 'Gestão Geral'
-  let pageSub = 'Painel de Operações e Acompanhamento de Metas'
-
-  if (pathname === '/gestao-geral') {
-    pageTitle = activeModule === 'vendas' ? 'CRM & Funil de Vendas' : 'Operação Comercial'
-    pageSub = activeModule === 'vendas' ? 'Ações diárias e gestão de clientes' : 'Apoio geral de metas'
-  } else if (pathname === '/institucional') {
-    pageTitle = 'Institucional'
-    pageSub = 'Painel Institucional e Avisos Gerais da Porto Real'
-  } else if (pathname === '/checklist') {
-    pageTitle = 'Aluguel'
-    pageSub = 'Checklists de locação e acompanhamento'
-  } else if (pathname === '/vendas-vgv') {
-    pageTitle = 'VGV e Estatísticas'
-    pageSub = 'Indicadores consolidados de Volume Geral de Vendas'
-  } else {
-    // Fallback from path
-    const parts = pathname.split('/').filter(Boolean)
-    if (parts.length > 0) {
-      const last = parts[parts.length - 1].replace(/-/g, ' ')
-      pageTitle = last.charAt(0).toUpperCase() + last.slice(1)
-      pageSub = 'Painel de controle e operações'
+  // Navigation items based on module and role
+  const getNavItems = () => {
+    if (activeModule === 'vendas') {
+      const items = [
+        { href: '/gestao-geral', label: 'Funil' },
+      ]
+      if (user.role === 'superadmin') {
+        items.push({ href: '/metas', label: 'Metas' })
+        items.push({ href: '/lancamentos', label: 'Pesquisas & Leads' })
+        items.push({ href: '/corretores', label: 'Banco de Dados' })
+        items.push({ href: '/vendas-vgv', label: 'VGV e Alertas' })
+        items.push({ href: '/treinamentos', label: 'Treinamentos' })
+        items.push({ href: '/auditoria', label: 'Auditoria' })
+      }
+      return items
+    } else if (activeModule === 'aluguel') {
+      return [
+        { href: '/checklist', label: 'Checklist' },
+        { href: '/processos', label: 'Processos' },
+        { href: '/pdi', label: 'Meu PDI' },
+        { href: '/documentos', label: 'Documentos' },
+      ]
+    } else {
+      return [
+        { href: '/institucional', label: 'Sobre a Empresa' },
+        { href: '/quadro-de-avisos', label: 'Quadro de Avisos' },
+      ]
     }
   }
 
-  return (
-    <header className="h-16 bg-[#FAF9F7]/95 backdrop-blur-md border-b border-slate-200/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 flex-shrink-0">
-      <div className="flex items-center gap-3 min-w-0">
-        {/* Hamburger Menu on mobile */}
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden text-slate-600 hover:text-slate-800 p-1.5 hover:bg-slate-200/50 rounded-lg transition-colors flex-shrink-0"
-          title="Abrir Menu"
-        >
-          <Menu size={20} />
-        </button>
+  const navItems = getNavItems()
 
-        {/* Page Title & Breadcrumb */}
-        <div className="truncate">
-          <h2 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-wider leading-none truncate">
-            {pageTitle}
-          </h2>
-          <p className="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 truncate">
-            {pageSub}
-          </p>
-        </div>
+  return (
+    <header className="h-16 bg-[#1F4E79] border-b border-white/10 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 text-white shadow-md">
+      {/* Brand & Navigation */}
+      <div className="flex items-center gap-6 min-w-0 flex-1">
+        {/* Brand Logo */}
+        <Link href="/gestao-geral" className="flex items-center gap-2.5 flex-shrink-0 hover:opacity-90 transition-opacity">
+          <div className="h-8 w-8 rounded-full bg-[#eb3238] flex items-center justify-center shadow-md">
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 text-white fill-white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3L2 12h3v8h14v-8h3L12 3z" />
+            </svg>
+          </div>
+          <div className="font-extrabold text-[15px] text-white tracking-tight leading-none">
+            Porto<span className="font-medium text-slate-200">Real</span>
+          </div>
+        </Link>
+
+        {/* Top Navigation Items */}
+        <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-1 max-w-[50vw] sm:max-w-none">
+          {navItems.map((item, idx) => {
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={idx}
+                href={item.href}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-white text-[#1F4E79] shadow-xs'
+                    : 'text-slate-200 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
       </div>
 
-      {/* Center/Right: Module Tabs + User Menu */}
+      {/* Right controls */}
       <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
-        {/* Module Switcher tabs */}
-        <div className="hidden md:flex items-center bg-slate-200/60 p-1 rounded-xl gap-0.5">
-          {canAccessModule(user.role, 'institucional') && (
-            <button
-              onClick={() => handleModuleClick('institucional')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all ${
-                activeModule === 'institucional'
-                  ? 'bg-white text-emerald-600 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              🏢 Institucional
-            </button>
-          )}
-          {canAccessModule(user.role, 'vendas') && (
-            <button
-              onClick={() => handleModuleClick('vendas')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all ${
-                activeModule === 'vendas'
-                  ? 'bg-white text-[#eb3238] shadow-xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              📈 Vendas
-            </button>
-          )}
-          {canAccessModule(user.role, 'aluguel') && (
-            <button
-              onClick={() => handleModuleClick('aluguel')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all ${
-                activeModule === 'aluguel'
-                  ? 'bg-white text-blue-600 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              🔑 Aluguel
-            </button>
-          )}
+        {/* Module Switcher dropdown */}
+        <div className="flex items-center gap-2">
+          <select
+            value={activeModule}
+            onChange={(e) => handleModuleClick(e.target.value as any)}
+            className="bg-white/10 border border-white/20 text-white rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer hover:bg-white/15 focus:border-[#eb3238]"
+          >
+            {canAccessModule(user.role, 'vendas') && <option className="text-slate-800" value="vendas">📈 Vendas</option>}
+            {canAccessModule(user.role, 'aluguel') && <option className="text-slate-800" value="aluguel">🔑 Aluguel</option>}
+            {canAccessModule(user.role, 'institucional') && <option className="text-slate-800" value="institucional">🏢 Institucional</option>}
+          </select>
         </div>
 
-        {/* User controls */}
-        <div className="flex items-center gap-2">
-          {/* Online count */}
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[9px] font-extrabold text-emerald-600">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            {onlineCount > 1 ? `${onlineCount} ONLINE` : 'ONLINE'}
-          </div>
+        {/* Online count */}
+        <div className="hidden sm:flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[9px] font-extrabold text-emerald-400">
+          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+          {onlineCount > 1 ? `${onlineCount} ONLINE` : 'ONLINE'}
+        </div>
 
-          {/* Audit shield for Admin */}
-          {user.role === 'superadmin' && (
-            <button
-              onClick={() => router.push('/auditoria')}
-              className={`p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all ${
-                pathname === '/auditoria' ? 'text-[#eb3238] bg-slate-100' : ''
-              }`}
-              title="Painel de Auditoria"
-            >
-              <Shield size={16} />
-            </button>
-          )}
-
-          {/* User profile info (Avatar & logout) */}
-          <div className="flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-black text-[10px] flex items-center justify-center shadow-xs">
-              {getInitials(user.nome)}
-            </div>
-            <span className="hidden sm:inline text-[11px] font-bold text-slate-700 max-w-[100px] truncate pl-1">
-              {user.nome.split(' ')[0]}
-            </span>
-            <div className="h-4 w-[1px] bg-slate-300/60 mx-1.5 hidden sm:block" />
-            <button
-              onClick={() => {
-                logout()
-                router.push('/login')
-              }}
-              className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-              title="Sair"
-            >
-              <LogOut size={14} />
-            </button>
+        {/* User profile info & logout */}
+        <div className="flex items-center gap-2 bg-white/10 p-1 rounded-xl border border-white/5">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-black text-[10px] flex items-center justify-center shadow-xs">
+            {getInitials(user.nome)}
           </div>
+          <span className="hidden md:inline text-[11px] font-bold text-slate-200 max-w-[100px] truncate pl-1">
+            {user.nome.split(' ')[0]}
+          </span>
+          <div className="h-4 w-[1px] bg-white/10 mx-1.5 hidden md:block" />
+          <button
+            onClick={() => {
+              logout()
+              router.push('/login')
+            }}
+            className="p-1 text-slate-300 hover:text-[#eb3238] rounded transition-colors"
+            title="Sair"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </header>
