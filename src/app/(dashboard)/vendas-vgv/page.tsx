@@ -93,7 +93,7 @@ export default function VendasVgvPage() {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-sm font-semibold text-slate-600 font-sans">Carregando painel de VGV...</span>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function VendasVgvPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-[#1F4E79] flex items-center gap-2 tracking-tight">
+          <h1 className="text-xl md:text-2xl font-black text-[#33415C] flex items-center gap-2 tracking-tight">
             💰 Metas &amp; Evolução de VGV
           </h1>
           <p className="text-xs text-slate-500 mt-1">Consolidado analítico de fechamentos de contratos, projeções financeiras e alertas em tempo real.</p>
@@ -308,20 +308,20 @@ export default function VendasVgvPage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center pb-2 border-b border-slate-100">
             <div>
-              <h3 className="text-sm font-extrabold text-[#1F4E79] uppercase tracking-wide">Evolução do VGV vs Linha de Metas</h3>
+              <h3 className="text-sm font-extrabold text-[#33415C] uppercase tracking-wide">Evolução do VGV vs Linha de Metas</h3>
               <p className="text-[10px] text-slate-400 font-medium mt-0.5">Visão cumulativa de fechamentos reais vs escalonamento proporcional do alvo anual.</p>
             </div>
             
             <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200/50">
               <button
                 onClick={() => setChartPeriod(6)}
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${chartPeriod === 6 ? 'bg-[#1F4E79] text-white shadow-xs' : 'text-slate-500 hover:text-[#1F4E79]'}`}
+                className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${chartPeriod === 6 ? 'bg-[#33415C] text-white shadow-xs' : 'text-slate-500 hover:text-[#33415C]'}`}
               >
                 6 Meses
               </button>
               <button
                 onClick={() => setChartPeriod(12)}
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${chartPeriod === 12 ? 'bg-[#1F4E79] text-white shadow-xs' : 'text-slate-500 hover:text-[#1F4E79]'}`}
+                className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${chartPeriod === 12 ? 'bg-[#33415C] text-white shadow-xs' : 'text-slate-500 hover:text-[#33415C]'}`}
               >
                 12 Meses
               </button>
@@ -441,7 +441,7 @@ export default function VendasVgvPage() {
         {/* Funil Visual Rápido */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
           <div>
-            <h3 className="text-sm font-extrabold text-[#1F4E79] uppercase tracking-wide">Fases do Pipeline Ativo</h3>
+            <h3 className="text-sm font-extrabold text-[#33415C] uppercase tracking-wide">Fases do Pipeline Ativo</h3>
             <p className="text-[10px] text-slate-400 font-medium mt-0.5">Distribuição do volume financeiro ativo do CRM pelas principais fases.</p>
           </div>
 
@@ -475,9 +475,9 @@ export default function VendasVgvPage() {
 
           <div className="pt-4 border-t border-slate-100 flex flex-col justify-end h-full">
             <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-100 space-y-2">
-              <span className="text-[9px] text-[#1F4E79] font-black uppercase tracking-wider block">Inspeção da Carteira</span>
+              <span className="text-[9px] text-[#33415C] font-black uppercase tracking-wider block">Inspeção da Carteira</span>
               <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                O funil conta hoje com <strong className="text-[#1F4E79]">{clientes.filter(c => !c.finalizado && c.temp === 'quente').length} leads quentes</strong>, representando <strong className="text-[#1F4E79]">{fmtBRL(clientes.filter(c => !c.finalizado && c.temp === 'quente').reduce((sum, c) => sum + c.valor, 0))}</strong> de receita potencial imediata.
+                O funil conta hoje com <strong className="text-[#33415C]">{clientes.filter(c => !c.finalizado && c.temp === 'quente').length} leads quentes</strong>, representando <strong className="text-[#33415C]">{fmtBRL(clientes.filter(c => !c.finalizado && c.temp === 'quente').reduce((sum, c) => sum + c.valor, 0))}</strong> de receita potencial imediata.
               </p>
             </div>
           </div>

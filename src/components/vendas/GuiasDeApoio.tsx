@@ -187,8 +187,8 @@ export default function GuiasDeApoio({ stageIndex }: GuiasDeApoioProps) {
   const profileConfig = {
     analitico: {
       name: 'Analítico',
-      icon: <Brain className="text-[#1F4E79]" size={16} />,
-      color: 'bg-blue-50 border-blue-200 text-[#1F4E79]',
+      icon: <Brain className="text-[#33415C]" size={16} />,
+      color: 'bg-blue-50 border-blue-200 text-[#33415C]',
       desc: 'Valoriza dados, fatos, comparações precisas e segurança baseada em números.'
     },
     controlador: {
@@ -605,9 +605,9 @@ export default function GuiasDeApoio({ stageIndex }: GuiasDeApoioProps) {
         {subTab === 'spin' && (
           <div className="space-y-6">
             <div className="bg-[#EEF4FA] border border-[#D6E4F0] rounded-2xl p-4 flex gap-3">
-              <HelpCircle className="text-[#1F4E79] flex-shrink-0 mt-0.5" size={18} />
+              <HelpCircle className="text-[#33415C] flex-shrink-0 mt-0.5" size={18} />
               <div>
-                <h4 className="text-xs font-black text-[#1F4E79]">Método SPIN de Qualificação</h4>
+                <h4 className="text-xs font-black text-[#33415C]">Método SPIN de Qualificação</h4>
                 <p className="text-[11px] text-slate-600 font-semibold leading-relaxed mt-0.5">
                   Esta é uma estrutura de apoio para ajudar a mapear a necessidade real do cliente. Use como um roteiro flexível de perguntas para obter rapport e entender a dor profunda do comprador, e não como um interrogatório rígido.
                 </p>

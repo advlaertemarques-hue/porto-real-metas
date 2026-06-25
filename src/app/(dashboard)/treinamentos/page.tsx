@@ -45,7 +45,7 @@ export default function PrioridadesCaptacaoPage() {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-sm font-semibold text-slate-600">Carregando prioridades de captação...</span>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function PrioridadesCaptacaoPage() {
       {/* Header section */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-xl md:text-2xl font-black text-[#1F4E79] tracking-tight flex items-center gap-2.5">
+          <h2 className="text-xl md:text-2xl font-black text-[#33415C] tracking-tight flex items-center gap-2.5">
             <Target className="text-[#eb3238]" size={24} />
             Prioridades de Captação
           </h2>
@@ -92,10 +92,10 @@ export default function PrioridadesCaptacaoPage() {
           </p>
         </div>
         <div className="bg-[#EEF4FA] border border-[#D6E4F0] px-4 py-3 rounded-xl flex items-center gap-3 self-start md:self-auto flex-shrink-0">
-          <Users className="text-[#1F4E79]" size={20} />
+          <Users className="text-[#33415C]" size={20} />
           <div>
             <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider block">Interessados Ativos</span>
-            <span className="text-lg font-black text-[#1F4E79]">{totalDemandas} compradores</span>
+            <span className="text-lg font-black text-[#33415C]">{totalDemandas} compradores</span>
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function PrioridadesCaptacaoPage() {
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
             <div className="border-b border-slate-100 pb-3 flex items-center gap-2">
-              <TrendingUp className="text-[#1F4E79]" size={18} />
+              <TrendingUp className="text-[#33415C]" size={18} />
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Média de Demanda por Bairro</h3>
             </div>
 
@@ -128,14 +128,14 @@ export default function PrioridadesCaptacaoPage() {
                       {/* Bar indicator */}
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-[#1F4E79] to-[#eb3238]" 
+                          className="h-full bg-gradient-to-r from-[#33415C] to-[#eb3238]" 
                           style={{ width: `${pct}%` }}
                         ></div>
                       </div>
 
                       <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold pt-1">
                         <span>Ticket Médio: <b className="text-slate-700">{d.avgBudget > 0 ? fmtBRL(d.avgBudget) : 'A definir'}</b></span>
-                        <span className="text-[#1F4E79] font-bold">{pct}% da fila</span>
+                        <span className="text-[#33415C] font-bold">{pct}% da fila</span>
                       </div>
                     </div>
                   )
@@ -150,7 +150,7 @@ export default function PrioridadesCaptacaoPage() {
 
           {/* Quick Guidance Box */}
           <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-2xl p-5 space-y-3">
-            <h4 className="text-xs font-black uppercase text-[#1F4E79] tracking-wider flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase text-[#33415C] tracking-wider flex items-center gap-1.5">
               💡 Dica de Captação Externa
             </h4>
             <p className="text-xs text-slate-650 leading-relaxed font-semibold">
@@ -163,7 +163,7 @@ export default function PrioridadesCaptacaoPage() {
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
           <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <ClipboardList className="text-[#1F4E79]" size={18} />
+              <ClipboardList className="text-[#33415C]" size={18} />
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Demandas Específicas de Interessados</h3>
             </div>
             <span className="text-[10px] text-slate-400 font-bold uppercase">Lista Automatizada</span>
@@ -185,7 +185,7 @@ export default function PrioridadesCaptacaoPage() {
                       
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {c.perfil && (
-                          <span className="bg-[#EEF4FA] text-[#1F4E79] text-[9.5px] font-black px-2 py-0.5 rounded border border-[#D6E4F0] uppercase">
+                          <span className="bg-[#EEF4FA] text-[#33415C] text-[9.5px] font-black px-2 py-0.5 rounded border border-[#D6E4F0] uppercase">
                             🧠 {c.perfil}
                           </span>
                         )}
@@ -206,8 +206,8 @@ export default function PrioridadesCaptacaoPage() {
                       </div>
                       <div>
                         <span className="text-[9px] text-slate-400 uppercase block">Orçamento Máximo</span>
-                        <span className="text-[#1F4E79] font-black flex items-center gap-1 mt-0.5">
-                          <DollarSign size={12} className="text-[#1F4E79]" />
+                        <span className="text-[#33415C] font-black flex items-center gap-1 mt-0.5">
+                          <DollarSign size={12} className="text-[#33415C]" />
                           {c.valor ? fmtBRL(c.valor) : (c.faixa || 'A definir')}
                         </span>
                       </div>

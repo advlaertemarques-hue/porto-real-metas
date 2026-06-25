@@ -22,6 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# scratch / scripts de busca e depuração descartáveis
+/scratch
+
 # local env files
 .env*.local
 

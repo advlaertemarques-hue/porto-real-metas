@@ -114,7 +114,7 @@ export default function Dashboard({
               <Award size={16} />
             </div>
           </div>
-          <h3 className="text-3xl font-black text-[#1F4E79]">{realCaptados}</h3>
+          <h3 className="text-3xl font-black text-[#33415C]">{realCaptados}</h3>
           <p className="text-[10px] text-slate-500">Com exclusividade contratual (30 dias)</p>
         </div>
 
@@ -144,7 +144,7 @@ export default function Dashboard({
             <div key={corr.id} className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-md space-y-4 hover:shadow-lg hover:border-slate-400/80 transition-all duration-300">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 bg-slate-50/70 -mx-5 -mt-5 p-5 rounded-t-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#EEF4FA] text-[#1F4E79] font-black text-sm flex items-center justify-center uppercase">
+                  <div className="w-10 h-10 rounded-xl bg-[#EEF4FA] text-[#33415C] font-black text-sm flex items-center justify-center uppercase">
                     {getInitials(corr.nome)}
                   </div>
                   <div>
@@ -155,7 +155,7 @@ export default function Dashboard({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-[#EEF4FA] text-[#1F4E79] text-[10px] font-bold px-2.5 py-1 rounded-md">
+                  <span className="bg-[#EEF4FA] text-[#33415C] text-[10px] font-bold px-2.5 py-1 rounded-md">
                     {corrClients.filter(c => !c.finalizado).length} Processo(s) Ativo(s)
                   </span>
                   <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-md">
@@ -189,7 +189,7 @@ export default function Dashboard({
                             </td>
                             <td className="py-3 pr-2">
                               <span className={`text-[9.5px] font-extrabold px-2 py-0.5 rounded-full ${
-                                c.objetivo === 'Comprar' ? 'bg-[#EEF4FA] text-[#1F4E79]' :
+                                c.objetivo === 'Comprar' ? 'bg-[#EEF4FA] text-[#33415C]' :
                                 c.objetivo === 'Alugar' ? 'bg-amber-50 text-amber-700' :
                                 c.objetivo === 'Vender' ? 'bg-emerald-50 text-emerald-700' : 'bg-purple-50 text-purple-700'
                               }`}>
@@ -270,7 +270,7 @@ export default function Dashboard({
                                   setActiveId(c.id)
                                   setActiveView('funil')
                                 }}
-                                className="px-2.5 py-1 text-[10px] font-bold text-[#1F4E79] hover:text-white bg-[#EEF4FA] hover:bg-[#1F4E79] border border-[#2E6CA8]/20 rounded-lg transition-all"
+                                className="px-2.5 py-1 text-[10px] font-bold text-[#33415C] hover:text-white bg-[#EEF4FA] hover:bg-[#33415C] border border-[#47587A]/20 rounded-lg transition-all"
                               >
                                 Ver no Funil
                               </button>
@@ -322,7 +322,7 @@ export default function Dashboard({
                         </td>
                         <td className="py-3 pr-2">
                           <span className={`text-[9.5px] font-extrabold px-2 py-0.5 rounded-full ${
-                            c.objetivo === 'Comprar' ? 'bg-[#EEF4FA] text-[#1F4E79]' : 'bg-emerald-50 text-emerald-700'
+                            c.objetivo === 'Comprar' ? 'bg-[#EEF4FA] text-[#33415C]' : 'bg-emerald-50 text-emerald-700'
                           }`}>
                             {c.objetivo}
                           </span>

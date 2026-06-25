@@ -121,7 +121,7 @@ export default function GestaoMetas({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-[#1F4E79]">Acompanhamento de Metas</h1>
+          <h1 className="text-xl md:text-2xl font-black text-[#33415C]">Acompanhamento de Metas</h1>
           <p className="text-xs text-slate-500 mt-1">Métricas medidas de forma consolidada e autônoma a partir do CRM e feedbacks.</p>
         </div>
 
@@ -138,8 +138,8 @@ export default function GestaoMetas({
                 onClick={() => setMetaPeriodo(p.id as any)}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   metaPeriodo === p.id
-                    ? 'bg-[#1F4E79] text-white shadow-sm'
-                    : 'text-slate-500 hover:text-[#1F4E79]'
+                    ? 'bg-[#33415C] text-white shadow-sm'
+                    : 'text-slate-500 hover:text-[#33415C]'
                 }`}
               >
                 {p.label}
@@ -159,7 +159,7 @@ export default function GestaoMetas({
 
       {showMetaSettings && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3 animate-fadeIn">
-          <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79]">⚙ Escolher metas exibidas</h3>
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C]">⚙ Escolher metas exibidas</h3>
           <p className="text-xs text-slate-500">Marque quais metas automáticas constam nos painéis.</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
             {[
@@ -185,12 +185,12 @@ export default function GestaoMetas({
                   }}
                   className={`flex items-center gap-2 px-3.5 py-3 rounded-xl border text-left text-xs font-bold transition-all ${
                     isActive
-                      ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]'
+                      ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]'
                       : 'border-slate-100 hover:border-slate-200 bg-white text-slate-600'
                   }`}
                 >
                   <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
-                    isActive ? 'bg-[#1F4E79] border-[#1F4E79] text-white' : 'border-slate-300'
+                    isActive ? 'bg-[#33415C] border-[#33415C] text-white' : 'border-slate-300'
                   }`}>
                     {isActive && '✓'}
                   </span>
@@ -260,11 +260,11 @@ export default function GestaoMetas({
             </div>
             <div className="space-y-1.5">
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                <div className="h-full bg-[#2E6CA8]" style={{ width: `${Math.min(convPct, 100)}%` }}></div>
+                <div className="h-full bg-[#47587A]" style={{ width: `${Math.min(convPct, 100)}%` }}></div>
               </div>
               <div className="flex justify-between text-[10px] font-semibold text-slate-500">
                 <span>Etapa 8 para 12</span>
-                <span className="text-[#2E6CA8] font-extrabold">{convPct}% da meta</span>
+                <span className="text-[#47587A] font-extrabold">{convPct}% da meta</span>
               </div>
             </div>
           </div>
@@ -349,7 +349,7 @@ export default function GestaoMetas({
       {/* Metas Funil de Conversao Chart */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
         <div>
-          <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">Funil de Conversão (Clientes no Processo)</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Funil de Conversão (Clientes no Processo)</h3>
           <p className="text-xs text-slate-400 mt-1">Gráfico de conversão linear das etapas estratégicas do suporte de vendas.</p>
         </div>
 
@@ -366,7 +366,7 @@ export default function GestaoMetas({
                 <div className="w-40 flex-shrink-0 text-slate-600">{row.label}</div>
                 <div className="flex-1 bg-slate-50 h-8 rounded-xl overflow-hidden relative border border-slate-100 shadow-inner">
                   <div
-                    className="h-full bg-gradient-to-r from-[#1F4E79] to-[#2E6CA8] flex items-center px-4 text-white font-bold transition-all text-xs rounded-xl shadow-md"
+                    className="h-full bg-gradient-to-r from-[#33415C] to-[#47587A] flex items-center px-4 text-white font-bold transition-all text-xs rounded-xl shadow-md"
                     style={{ width: `${barPct}%` }}
                   >
                     {row.count}
@@ -385,7 +385,7 @@ export default function GestaoMetas({
 
       {/* Metas de Equipe description */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">Modelo de Atuação &amp; Regras</h3>
+        <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Modelo de Atuação &amp; Regras</h3>
         <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 text-xs md:text-sm text-slate-700 leading-relaxed space-y-2">
           <p>
             As metas operacionais apoiam o modelo consultivo da imobiliária <b>Porto Real</b>:

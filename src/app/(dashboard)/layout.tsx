@@ -34,11 +34,12 @@ export default function DashboardLayout({
 
   return (
     <PresenceProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#FAF9F7] relative">
-        {/* Discret blurred decorative background blobs */}
+      <div className="glass-ui flex flex-col h-screen overflow-hidden relative bg-gradient-to-br from-[#EEF3FA] via-[#FAF9F7] to-[#F3EEF6]">
+        {/* Decorative blurred background blobs — mais visíveis para o efeito de vidro */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#eb3238] opacity-[0.05] blur-[80px] md:blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#1F4E79] opacity-[0.04] blur-[80px] md:blur-[120px]" />
+          <div className="absolute top-[-12%] left-[-8%] w-[48vw] h-[48vw] rounded-full bg-[#eb3238] opacity-[0.13] blur-[90px] md:blur-[130px]" />
+          <div className="absolute bottom-[-14%] right-[-8%] w-[50vw] h-[50vw] rounded-full bg-[#33415C] opacity-[0.12] blur-[90px] md:blur-[130px]" />
+          <div className="absolute top-[30%] left-[40%] w-[36vw] h-[36vw] rounded-full bg-[#47587A] opacity-[0.09] blur-[100px] md:blur-[140px]" />
         </div>
 
         <div className="app flex-1 min-h-0 relative z-10 bg-transparent flex flex-col">

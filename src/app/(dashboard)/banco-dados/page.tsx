@@ -26,7 +26,7 @@ export default function BancoDadosPage() {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-sm font-semibold text-slate-600">Verificando permissões...</span>
         </div>
       </div>

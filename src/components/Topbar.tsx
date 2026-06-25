@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth, canAccessModule } from '@/contexts/AuthContext'
 import { usePresence } from '@/contexts/PresenceContext'
 import { LogOut } from 'lucide-react'
+import Logo from '@/components/Logo'
 
 function getInitials(nome: string) {
   const parts = nome.trim().split(' ')
@@ -69,19 +70,12 @@ export default function Topbar() {
   const navItems = getNavItems()
 
   return (
-    <header className="h-16 bg-[#1F4E79] border-b border-white/10 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 text-white shadow-md">
+    <header className="h-16 bg-[#33415C] border-b border-white/10 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 text-white shadow-md">
       {/* Brand & Navigation */}
       <div className="flex items-center gap-6 min-w-0 flex-1">
         {/* Brand Logo */}
-        <Link href="/gestao-geral" className="flex items-center gap-2.5 flex-shrink-0 hover:opacity-90 transition-opacity">
-          <div className="h-8 w-8 rounded-full bg-[#eb3238] flex items-center justify-center shadow-md">
-            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 text-white fill-white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 3L2 12h3v8h14v-8h3L12 3z" />
-            </svg>
-          </div>
-          <div className="font-extrabold text-[15px] text-white tracking-tight leading-none">
-            Porto<span className="font-medium text-slate-200">Real</span>
-          </div>
+        <Link href="/gestao-geral" className="flex items-center flex-shrink-0 hover:opacity-90 transition-opacity">
+          <Logo iconSize={24} fontSize="text-[19px]" textClassName="text-white" />
         </Link>
 
         {/* Top Navigation Items */}
@@ -94,7 +88,7 @@ export default function Topbar() {
                 href={item.href}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-white text-[#1F4E79] shadow-xs'
+                    ? 'bg-white text-[#33415C] shadow-xs'
                     : 'text-slate-200 hover:text-white hover:bg-white/10'
                 }`}
               >

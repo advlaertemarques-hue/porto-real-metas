@@ -275,6 +275,12 @@ export interface VendasCliente {
   local: string | null
   preferencia: string | null
   imovel_interesse?: string | null
+  // Preferências estruturadas do imóvel desejado
+  tipo_imovel?: string | null
+  quartos?: number | null
+  suites?: number | null
+  vagas?: number | null
+  piscina?: 'sim' | 'nao' | 'indiferente' | null
   perfil_quiz: Record<string, string> // qi -> perfil
   finalizado?: boolean
   status_finalizacao?: 'sucesso' | 'perdido' | 'interessado' | null

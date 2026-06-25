@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { VendasCliente, VendasCorretor, VendasEquipe, User, VendasClienteNota, VendasClienteChecklist } from '@/lib/types'
 import GuiasDeApoio from './GuiasDeApoio'
+import NovoClienteModal, { FormNovoState } from './NovoClienteModal'
+import FinalizarModal, { FinalizarStatus } from './FinalizarModal'
 import {
   getVendasClienteNotas,
   getVendasClienteChecklist,
@@ -20,7 +22,9 @@ import {
   RESP,
   RESP_COR,
   RESP_EMO,
-  fmtBRL
+  fmtBRL,
+  FAIXAS_VALOR,
+  TIPOS_IMOVEL
 } from '@/lib/constants'
 import {
   Plus,
@@ -68,7 +72,7 @@ export default function MinhaCarteira({
   
   // Modals / Form States
   const [modalNovoOpen, setModalNovoOpen] = useState(false)
-  const [formNovo, setFormNovo] = useState({
+  const [formNovo, setFormNovo] = useState<FormNovoState>({
     nome: '',
     contato: '',
     email: '',
@@ -81,7 +85,7 @@ export default function MinhaCarteira({
 
   // Finalizar Modal
   const [finalizarModalOpen, setFinalizarModalOpen] = useState(false)
-  const [finalizarStatus, setFinalizarStatus] = useState<'sucesso' | 'perdido' | 'interessado'>('sucesso')
+  const [finalizarStatus, setFinalizarStatus] = useState<FinalizarStatus>('sucesso')
   const [finalizarMotivo, setFinalizarMotivo] = useState('')
   const [customMotivo, setCustomMotivo] = useState('')
   const [valProcurado, setValProcurado] = useState('')
@@ -112,12 +116,15 @@ export default function MinhaCarteira({
 
   const activeClient = clientes.find(c => c.id === activeId)
 
-  // Sync selectedDetailTab when activeClient changes or its actual stage changes
+  // Inicializa a aba na etapa do cliente APENAS ao abrir um cliente diferente.
+  // As abas de baixo são independentes do funil/kanban: clicar nos botões de
+  // etapa (stepper do topo) não move mais a aba selecionada aqui.
   useEffect(() => {
     if (activeClient) {
       setSelectedDetailTab(Math.min(activeClient.etapa, 5))
     }
-  }, [activeClient?.id, activeClient?.etapa])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeClient?.id])
 
   // Load Active Client Details on ID Change
   useEffect(() => {
@@ -523,10 +530,126 @@ export default function MinhaCarteira({
     return { done, total }
   }
 
+  const renderChecklist = (isMobile: boolean = false) => {
+    if (!activeClient) return null
+    const chkEtapaIndex = selectedDetailTab < 6 ? selectedDetailTab : Math.min(activeClient.etapa, 5)
+    const totalItens = ETAPAS[chkEtapaIndex]?.chk.length || 0
+    const concluidos = activeChecklist.filter(chk => chk.etapa === chkEtapaIndex).length
+    const pct = totalItens ? Math.round((concluidos / totalItens) * 100) : 0
+
+    return (
+      <div className={`space-y-4 ${isMobile ? 'bg-white border border-slate-200 rounded-2xl p-5 shadow-xs' : 'flex-1 flex flex-col'}`}>
+        {!isMobile && (
+          <div className="mb-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Passos da Etapa</span>
+            <h3 className="text-sm font-black text-[#33415C] flex items-center gap-1.5">
+              📋 Checklist — {ETAPAS[chkEtapaIndex]?.nome}
+            </h3>
+          </div>
+        )}
+        {isMobile && (
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] mb-3 flex items-center gap-2">
+            📋 Checklist — {ETAPAS[chkEtapaIndex]?.nome}
+          </h3>
+        )}
+
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-xl">
+          <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${pct}%` }}></div>
+          </div>
+          <span className="text-xs font-black text-emerald-600 w-10 text-right">{pct}%</span>
+        </div>
+
+        <div className={`space-y-2 ${isMobile ? '' : 'overflow-y-auto flex-1 pr-1 scrollbar-thin'}`} style={isMobile ? {} : { maxHeight: 'calc(90vh - 240px)' }}>
+          {ETAPAS[chkEtapaIndex]?.chk.map((item, idx) => {
+            const isChecked = activeChecklist.some(chk => chk.etapa === chkEtapaIndex && chk.item_index === idx)
+            return (
+              <div
+                key={idx}
+                onClick={() => toggleChecklist(idx, chkEtapaIndex)}
+                className={`flex items-start gap-2.5 p-3 border rounded-xl cursor-pointer transition-all ${
+                  isChecked
+                    ? 'border-emerald-100 bg-emerald-50/30 text-slate-405'
+                    : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 bg-white text-slate-800'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  readOnly
+                  className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 mt-0.5 cursor-pointer flex-shrink-0"
+                />
+                <span className={`text-[11px] leading-relaxed ${isChecked ? 'line-through text-slate-450' : 'font-semibold'}`}>
+                  {item}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const renderNotes = (isMobile: boolean = false) => {
+    if (!activeClient) return null
+    return (
+      <div className={`space-y-4 ${isMobile ? 'bg-white border border-slate-200 rounded-2xl p-5 shadow-xs' : 'flex-1 flex flex-col'}`}>
+        {!isMobile && (
+          <div className="mb-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Anotações</span>
+            <h3 className="text-sm font-black text-[#33415C] flex items-center gap-1.5">
+              ✍️ Histórico do Lead
+            </h3>
+          </div>
+        )}
+        {isMobile && (
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] mb-3 flex items-center gap-2">
+            ✍️ Histórico do Lead
+          </h3>
+        )}
+
+        <div className="space-y-3 flex-1 flex flex-col">
+          <textarea
+            value={novaNotaTxt}
+            onChange={(e) => setNovaNotaTxt(e.target.value)}
+            placeholder="O que ficou acertado nesta conversa?"
+            className="w-full text-xs border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-[#eb3238] min-h-[90px] resize-none bg-slate-50/50"
+          />
+          
+          <button
+            onClick={handleAddNota}
+            className="bg-[#eb3238] hover:bg-[#eb3238]/90 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-xs w-full cursor-pointer text-center flex-shrink-0"
+          >
+            + Adicionar Nota
+          </button>
+
+          {/* Notes Feed */}
+          <div className={`space-y-3 pt-2 overflow-y-auto ${isMobile ? '' : 'flex-1 pr-1 scrollbar-thin'}`} style={isMobile ? {} : { maxHeight: 'calc(90vh - 350px)' }}>
+            {activeNotas.length === 0 ? (
+              <div className="text-slate-400 text-xs italic py-2 text-center">Nenhuma nota cadastrada.</div>
+            ) : (
+              activeNotas.slice().reverse().map(nota => (
+                <div key={nota.id} className="flex gap-3 border-l-2 border-slate-200 pl-3.5 py-1 relative">
+                  <div className="absolute -left-[5px] top-2.5 w-2 h-2 rounded-full bg-[#eb3238]"></div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black text-slate-400">{nota.data}</span>
+                      <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8px] font-bold px-1.5 py-0.5 rounded-full">{nota.etapa}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">{nota.texto}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full space-y-6 relative z-10">
-      {!activeClient && (
-        <>
+      <>
           {/* 1. KPIs ribbon at the top */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="premium-card p-4 flex flex-col justify-between">
@@ -672,7 +795,7 @@ export default function MinhaCarteira({
                                 {tc.rotulo}
                               </span>
                               {perf && (
-                                <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                                <span className="bg-[#D6E4F0]/60 text-[#33415C] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
                                   <span>{perf.emo}</span>
                                   <span>{perf.nome}</span>
                                 </span>
@@ -723,10 +846,7 @@ export default function MinhaCarteira({
                     className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm outline-none bg-white cursor-pointer focus:border-[#eb3238] font-semibold transition-all text-slate-800 h-[38px]"
                   >
                     <option value="">Todas as faixas</option>
-                    <option value="Até R$ 200 mil">Até R$ 200 mil</option>
-                    <option value="R$ 200–350 mil">R$ 200–350 mil</option>
-                    <option value="R$ 350–500 mil">R$ 350–500 mil</option>
-                    <option value="Acima de R$ 500 mil">Acima de R$ 500 mil</option>
+                    {FAIXAS_VALOR.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
                 <div className="flex-1 space-y-1 w-full">
@@ -801,7 +921,7 @@ export default function MinhaCarteira({
                           {tc.rotulo}
                         </span>
                         {perf && (
-                          <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black">
+                          <span className="bg-[#D6E4F0]/60 text-[#33415C] text-[9px] px-1.5 py-0.5 rounded font-black">
                             {perf.emo} {perf.nome}
                           </span>
                         )}
@@ -824,196 +944,100 @@ export default function MinhaCarteira({
         )}
       </div>
       </>
-      )}
 
       {/* 4. Split screen layout or Slide-over details drawer */}
       {activeClient && (
-        <div className="flex flex-col md:flex-row gap-6 items-stretch w-full min-h-[calc(100vh-140px)] relative">
-          {/* Left Column: MEUS CLIENTES (hidden on mobile, visible on desktop) */}
-          <div className="hidden md:flex w-[320px] bg-white border border-slate-200/80 rounded-2xl flex-col p-4 shadow-sm flex-shrink-0">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Meus Clientes</h3>
-            <button
-              onClick={() => setModalNovoOpen(true)}
-              className="mb-4 flex items-center justify-center gap-1.5 bg-[#EEF4FA] hover:bg-[#D6E4F0] border border-[#D6E4F0] text-[#1F4E79] px-4 py-2.5 rounded-xl text-xs font-black shadow-xs hover:shadow-sm transition-all duration-200 w-full cursor-pointer"
-            >
-              <Plus size={15} /> Novo cliente
-            </button>
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[calc(100vh-260px)] scrollbar-thin">
-              {myClientsFiltered.map(c => {
-                const isSelected = c.id === activeId
-                const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
-                const perf = c.perfil ? PERFIS[c.perfil] : null
-
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => selectClient(c.id)}
-                    className={`p-3.5 border rounded-xl bg-white shadow-xs hover:shadow-md cursor-pointer hover:border-slate-400 transition-all duration-200 hover:-translate-y-0.5 ${
-                      isSelected 
-                        ? 'ring-2 ring-[#1F4E79] border-transparent' 
-                        : 'border-slate-200'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start gap-2 mb-1.5">
-                      <span className="font-black text-[13px] text-slate-900 line-clamp-1 leading-snug">
-                        {c.nome}
-                      </span>
-                      {c.expressa && (
-                        <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0">Expressa</span>
-                      )}
-                    </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap items-center gap-1 mt-2">
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
-                        {tc.rotulo}
-                      </span>
-                      {perf && (
-                        <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
-                          <span>{perf.emo}</span>
-                          <span>{perf.nome}</span>
-                        </span>
-                      )}
-                      {c.em_captacao && (
-                        <span className="bg-rose-50 text-[#eb3238] text-[9px] px-1.5 py-0.5 rounded font-black">
-                          🔍 Captação
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-[10px] text-slate-500 font-semibold mt-2 pt-2 border-t border-slate-100">
-                      {ETAPAS[c.etapa]?.nome || `Etapa ${c.etapa}`}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Backdrop (mobile only) */}
+        <div 
+          className="fixed inset-x-0 bottom-0 top-16 z-20 flex items-center justify-center p-4"
+          onClick={() => setActiveId(null)}
+        >
           <div 
-            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs z-40 transition-opacity md:hidden"
-            onClick={() => setActiveId(null)}
-          />
-
-          {/* Right Column: Details Panel */}
-          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-[#FAF9F7] shadow-2xl border-l border-slate-200/80 z-50 flex flex-col h-full overflow-hidden animate-slide-in md:static md:inset-auto md:w-auto md:max-w-none md:flex-1 md:border md:rounded-2xl md:shadow-none md:animate-none">
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-slate-200/80 bg-white flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setActiveId(null)}
-                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-                  title="Fechar"
-                >
-                  <X size={18} />
-                </button>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Detalhes do Lead</span>
+            className="bg-[#FAF9F7] w-full max-w-[95vw] xl:max-w-[90vw] h-full rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-slate-200 z-50 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 bg-white flex flex-col gap-4 flex-shrink-0">
+              {/* Cabeçalho: nome/contato (esq.) + funil compacto e ações (dir.) */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg md:text-xl font-black text-slate-800 heading-premium">{activeClient.nome}</h2>
+                  {activeClient.expressa && (
+                    <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">VIA EXPRESSA</span>
+                  )}
+                  {activeClient.em_captacao && (
+                    <span className="bg-rose-50 text-[#eb3238] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">EM CAPTAÇÃO</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                  {activeClient.contato} · Origem: <span className="font-semibold text-slate-600">{activeClient.origem}</span>
+                  {activeClient.valor > 0 && ` · Imóvel-alvo: ${fmtBRL(activeClient.valor)}`}
+                </p>
               </div>
-              
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Funil de processos — compacto, no canto superior direito */}
+                <div className="flex items-center gap-1 flex-wrap justify-end">
+                  {ETAPAS.slice(0, 6).map((etapa, idx) => {
+                    const isDone = idx < activeClient.etapa
+                    const isCurrent = idx === activeClient.etapa
+                    let cls = 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
+                    if (isDone) cls = 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                    if (isCurrent) cls = 'bg-rose-50 border-[#eb3238] text-[#eb3238] ring-1 ring-red-100'
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => changeEtapa(idx)}
+                        title={etapa.nome}
+                        className={`flex items-center gap-1 px-1.5 py-1 border rounded-lg text-[10px] font-bold transition-all ${cls}`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-black text-white flex-shrink-0"
+                          style={{ backgroundColor: isCurrent ? '#eb3238' : isDone ? '#10b981' : '#cbd5e1' }}
+                        >
+                          {isDone ? '✓' : idx + 1}
+                        </span>
+                        <span className="hidden lg:inline">{etapa.nome.split(' ')[0]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
+
                 <button
                   onClick={() => setFichaOpen(true)}
                   className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                 >
                   📇 Ficha Completa
                 </button>
-                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-slate-200" title={`Responsabilidade da etapa selecionada (${ETAPAS[selectedDetailTab]?.nome})`}>
-                  {RESP_EMO[RESP[selectedDetailTab]]} {RESP[selectedDetailTab]}
-                </span>
+                <button
+                  onClick={() => setActiveId(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                  title="Fechar"
+                >
+                  <X size={18} />
+                </button>
+              </div>
               </div>
             </div>
 
-            {/* Scrollable details container */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              
-              {/* Card 1: Header Identity */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg md:text-xl font-black text-slate-800 heading-premium">{activeClient.nome}</h2>
-                    {activeClient.expressa && (
-                      <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">VIA EXPRESSA</span>
-                    )}
-                    {activeClient.em_captacao && (
-                      <span className="bg-rose-50 text-[#eb3238] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">EM CAPTAÇÃO</span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                    {activeClient.contato} · Origem: <span className="font-semibold text-slate-600">{activeClient.origem}</span>
-                    {activeClient.valor > 0 && ` · Imóvel-alvo: ${fmtBRL(activeClient.valor)}`}
-                  </p>
-                </div>
-
-                {/* Attributes dropdowns styled as premium pills */}
-                <div className="flex flex-wrap items-center gap-2.5 pt-3.5 border-t border-slate-100">
-                  {/* Perfil Dominante */}
-                  <div className="flex items-center gap-1 bg-[#EEF4FA] border border-[#D6E4F0] rounded-xl px-2.5 py-1 text-[11px] font-bold text-[#1F4E79]">
-                    <span>🧠 Perfil:</span>
-                    <select
-                      value={activeClient.perfil || ''}
-                      onChange={async (e) => {
-                        const newPerf = e.target.value || null
-                        const updated = await updateVendasCliente(activeClient.id, { perfil: newPerf })
-                        if (updated) {
-                          setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
-                        }
-                      }}
-                      className="bg-transparent border-none outline-none cursor-pointer font-black text-[#1F4E79]"
-                    >
-                      <option value="">Nenhum</option>
-                      <option value="analitico">Analítico</option>
-                      <option value="controlador">Controlador</option>
-                      <option value="apoiador">Apoiador</option>
-                      <option value="catalisador">Catalisador</option>
-                    </select>
-                  </div>
-
-                  {/* Perfil Secundario */}
-                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                    <span>🥈 Secundário:</span>
-                    <select
-                      value={activeClient.perfil_secundario || ''}
-                      onChange={async (e) => {
-                        const newPerfSec = e.target.value || null
-                        const updated = await updateVendasCliente(activeClient.id, { perfil_secundario: newPerfSec })
-                        if (updated) {
-                          setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
-                        }
-                      }}
-                      className="bg-transparent border-none outline-none cursor-pointer font-black text-slate-600"
-                    >
-                      <option value="">Nenhum</option>
-                      <option value="analitico">Analítico</option>
-                      <option value="controlador">Controlador</option>
-                      <option value="apoiador">Apoiador</option>
-                      <option value="catalisador">Catalisador</option>
-                    </select>
-                  </div>
-
-                  {/* Temperatura */}
-                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-700">
-                    <span>🔥 Temp:</span>
-                    <select
-                      value={activeClient.temp}
-                      onChange={(e) => setClientTemp(e.target.value as any)}
-                      className="bg-transparent border-none outline-none cursor-pointer font-black text-slate-700"
-                    >
-                      <option value="quente">Quente</option>
-                      <option value="morno">Morno</option>
-                      <option value="frio">Frio</option>
-                    </select>
-                  </div>
-                </div>
+            {/* Modal Columns */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Left Column: Checklist (desktop) */}
+              <div className="hidden md:flex w-[280px] bg-white border-r border-slate-200 p-5 flex-col flex-shrink-0">
+                {renderChecklist(false)}
               </div>
 
-              {/* Card 2: Lembrete / Próxima Ação */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                  <ClipboardList size={16} className="text-[#1F4E79]" />
-                  Próxima Ação / Lembrete
-                </h3>
+              {/* Middle Column: Scrollable details panel */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin">
+                
+                {/* Card 2: Lembrete / Próxima Ação */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] flex items-center gap-2">
+                    <ClipboardList size={16} className="text-[#33415C]" />
+                    Próxima Ação / Lembrete
+                  </h3>
                 <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-4">
                   <div className="space-y-1">
                     <label className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">O que fazer a seguir?</label>
@@ -1039,77 +1063,26 @@ export default function MinhaCarteira({
                 </div>
               </div>
 
-              {/* Card 3: Stepper Comercial */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">1</span>
-                  Funil Comercial (Etapa)
-                </h3>
+              {/* Ação de finalizar (sem quadro — apenas o botão / status) */}
+              {!activeClient.finalizado && (
+                <button
+                  onClick={() => {
+                    setFinalizarStatus('sucesso')
+                    setFinalizarMotivo('')
+                    setValProcurado(activeClient.valor ? String(activeClient.valor) : '')
+                    setValFechado('')
+                    setValPedido('')
+                    setValVendido('')
+                    setFinalizarModalOpen(true)
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-[#eb3238] rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs"
+                >
+                  🏁 Finalizar Atendimento (Comprar / Arquivar)
+                </button>
+              )}
 
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                  {ETAPAS.slice(0, 6).map((etapa, idx) => {
-                    const isDone = idx < activeClient.etapa
-                    const isCurrent = idx === activeClient.etapa
-                    const { done, total } = getEtapaProgress(idx)
-
-                    let cls = 'border-slate-200 text-slate-500 bg-white hover:border-slate-300 hover:bg-slate-50/50 font-medium'
-                    if (isDone) cls = 'border-emerald-200 bg-emerald-50/40 text-emerald-700 font-bold hover:bg-emerald-100/40 hover:border-emerald-300'
-                    if (isCurrent) cls = 'border-[#eb3238] bg-rose-50/60 text-[#eb3238] ring-2 ring-red-100 font-black'
-
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => changeEtapa(idx)}
-                        className={`flex flex-col items-start gap-1 p-2.5 border rounded-xl text-left transition-all text-xs ${cls}`}
-                      >
-                        <div className="flex items-center gap-1.5 w-full">
-                          <span
-                            className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: RESP_COR[RESP[idx]] || '#94a3b8' }}
-                            title={`Responsável: ${RESP[idx]}`}
-                          ></span>
-                          <span className="font-extrabold truncate">{etapa.nome}</span>
-                          {isDone && <span className="ml-auto text-emerald-600 font-black">✓</span>}
-                        </div>
-                        <span className="text-[9px] font-semibold text-slate-400 mt-0.5">
-                          {done} de {total} concluídos
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* Legenda de responsáveis para 6 etapas */}
-                <div className="flex flex-col gap-1.5 pt-3 text-[9px] text-slate-400 border-t border-slate-100 font-bold">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1F4E79' }}></span> Andressa: Triagem (E1)</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2E6CA8' }}></span> Andressa+Corretor: Atendimento (E2), Fechamento (E6)</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1f9d6b' }}></span> Corretor: Visita (E3), Proposta (E4)</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5b21b6' }}></span> Corretor + Andressa: Negociação (E5)</span>
-                  </div>
-                  <span className="text-[#6b4fbb] font-black">🤖 Lais (IA) apoia o 1º contato e a via expressa</span>
-                </div>
-
-                {/* Finalizar Button */}
-                {!activeClient.finalizado && (
-                  <button
-                    onClick={() => {
-                      setFinalizarStatus('sucesso')
-                      setFinalizarMotivo('')
-                      setValProcurado(activeClient.valor ? String(activeClient.valor) : '')
-                      setValFechado('')
-                      setValPedido('')
-                      setValVendido('')
-                      setFinalizarModalOpen(true)
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-[#eb3238] rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs"
-                  >
-                    🏁 Finalizar Atendimento (Comprar / Arquivar)
-                  </button>
-                )}
-
-                {/* Finalizado Box */}
-                {activeClient.finalizado && (
+              {/* Finalizado Box */}
+              {activeClient.finalizado && (
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base">
@@ -1150,10 +1123,9 @@ export default function MinhaCarteira({
                     </button>
                   </div>
                 )}
-              </div>
 
-              {/* Chrome/Folder Style Tabs */}
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-slate-200/80 pt-2 flex-shrink-0">
+              {/* Chrome/Folder Style Tabs — quebram em 2 linhas, sem rolagem */}
+              <div className="flex flex-wrap items-center gap-1 border-b border-slate-200/80 pt-2 flex-shrink-0">
                 {ETAPAS.slice(0, 6).map((etapa, idx) => {
                   const isActive = selectedDetailTab === idx
                   const isLeadEtapa = idx === activeClient.etapa
@@ -1164,7 +1136,7 @@ export default function MinhaCarteira({
                       onClick={() => setSelectedDetailTab(idx)}
                       className={`relative px-4 py-2.5 text-[11px] font-black uppercase tracking-wider transition-all rounded-t-2xl border-t-2 border-x -mb-[1px] flex-shrink-0 flex items-center gap-2 ${
                         isActive
-                          ? 'bg-white border-t-[#1F4E79] border-x-slate-200/80 text-[#1F4E79] font-black z-10 shadow-xs'
+                          ? 'bg-white border-t-[#33415C] border-x-slate-200/80 text-[#33415C] font-black z-10 shadow-xs'
                           : 'bg-slate-100/50 border-t-transparent border-x-transparent text-slate-400 hover:bg-slate-150/45 hover:text-slate-600'
                       }`}
                       style={{
@@ -1184,7 +1156,7 @@ export default function MinhaCarteira({
                   onClick={() => setSelectedDetailTab(6)}
                   className={`relative px-4 py-2.5 text-[11px] font-black uppercase tracking-wider transition-all rounded-t-2xl border-t-2 border-x -mb-[1px] flex-shrink-0 flex items-center gap-2 ${
                     selectedDetailTab === 6
-                      ? 'bg-white border-t-[#1F4E79] border-x-slate-200/80 text-[#1F4E79] font-black z-10 shadow-xs'
+                      ? 'bg-white border-t-[#33415C] border-x-slate-200/80 text-[#33415C] font-black z-10 shadow-xs'
                       : 'bg-slate-100/50 border-t-transparent border-x-transparent text-slate-400 hover:bg-slate-150/45 hover:text-slate-600'
                   }`}
                   style={{
@@ -1193,15 +1165,27 @@ export default function MinhaCarteira({
                 >
                   <span>👤 Perfil do Cliente</span>
                 </button>
+
+                {/* 8th Tab: Resumo do Lead */}
+                <button
+                  onClick={() => setSelectedDetailTab(7)}
+                  className={`relative px-4 py-2.5 text-[11px] font-black uppercase tracking-wider transition-all rounded-t-2xl border-t-2 border-x -mb-[1px] flex-shrink-0 flex items-center gap-2 ${
+                    selectedDetailTab === 7
+                      ? 'bg-white border-t-[#33415C] border-x-slate-200/80 text-[#33415C] font-black z-10 shadow-xs'
+                      : 'bg-slate-100/50 border-t-transparent border-x-transparent text-slate-400 hover:bg-slate-150/45 hover:text-slate-600'
+                  }`}
+                  style={{
+                    borderBottomColor: selectedDetailTab === 7 ? '#ffffff' : 'transparent'
+                  }}
+                >
+                  <span>📋 Resumo do Lead</span>
+                </button>
               </div>
 
               {/* Grid block for actions and checklist */}
               <div className="space-y-5">
                 
                 {/* Dynamic Stage Actions */}
-                
-                {/* Embedded support guides contextually by selected stage (Rendered ABOVE the form fields) */}
-                {selectedDetailTab < 6 && <GuiasDeApoio stageIndex={selectedDetailTab} />}
 
               {/* ETAPA 0: Triagem */}
               {selectedDetailTab === 0 && (
@@ -1649,7 +1633,7 @@ export default function MinhaCarteira({
                     return (
                       <div className="bg-[#EEF4FA]/40 border border-[#D6E4F0] rounded-xl p-4.5 space-y-3 mt-4">
                         <div className="flex items-center justify-between border-b border-[#D6E4F0] pb-2">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1F4E79] flex items-center gap-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#33415C] flex items-center gap-1.5">
                             📊 Gaps de Negociação {isEstimate ? '(Estimativa / Proposta)' : '(Acordo Fechado)'}
                           </span>
                           {isEstimate && <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase px-2 py-0.5 rounded">Preview</span>}
@@ -1842,7 +1826,7 @@ export default function MinhaCarteira({
                     return (
                       <div className="bg-[#EEF4FA]/40 border border-[#D6E4F0] rounded-xl p-4.5 space-y-3 mt-4">
                         <div className="flex items-center justify-between border-b border-[#D6E4F0] pb-2">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1F4E79] flex items-center gap-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#33415C] flex items-center gap-1.5">
                             📊 Gaps de Negociação {isEstimate ? '(Estimativa / Proposta)' : '(Acordo Fechado)'}
                           </span>
                           {isEstimate && <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase px-2 py-0.5 rounded">Preview</span>}
@@ -1893,8 +1877,8 @@ export default function MinhaCarteira({
                 <div className="space-y-6">
                   {/* Part 1: Playbook do Perfil (Dossiê Estratégico) */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                      <Sparkles size={16} className="text-[#1F4E79]" />
+                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] flex items-center gap-2">
+                      <Sparkles size={16} className="text-[#33415C]" />
                       Playbook & Dossiê de Atendimento
                     </h3>
 
@@ -1907,7 +1891,7 @@ export default function MinhaCarteira({
                           </span>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="text-sm font-black text-[#1F4E79] uppercase tracking-wide">
+                              <h4 className="text-sm font-black text-[#33415C] uppercase tracking-wide">
                                 Perfil Dominante: {PERFIS[activeClient.perfil].nome}
                               </h4>
                               {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
@@ -1917,7 +1901,7 @@ export default function MinhaCarteira({
                               )}
                             </div>
                             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                              🎯 Quest Primária: <span className="text-[#1F4E79] font-bold">{PERFIS[activeClient.perfil].busca}</span>
+                              🎯 Quest Primária: <span className="text-[#33415C] font-bold">{PERFIS[activeClient.perfil].busca}</span>
                             </p>
                           </div>
                         </div>
@@ -1946,7 +1930,7 @@ export default function MinhaCarteira({
                             ].map((item) => (
                               <div key={item.key} className="bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl p-3.5 transition-all space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-extrabold text-[#1F4E79] uppercase tracking-wide">{item.label}</span>
+                                  <span className="text-[10px] font-extrabold text-[#33415C] uppercase tracking-wide">{item.label}</span>
                                   <button
                                     onClick={() => handleCopyText(item.value, item.key)}
                                     className="flex items-center gap-1 text-[10px] font-bold text-slate-505 hover:text-[#eb3238] bg-white border border-slate-200 rounded-md px-2 py-1 transition-colors shadow-2xs cursor-pointer"
@@ -2010,8 +1994,8 @@ export default function MinhaCarteira({
                   {/* Part 2: SPIN Quiz & Sinais (Helper de Perfil) */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
                     <div>
-                      <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                        <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
+                      <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] flex items-center gap-2">
+                        <span className="w-5 h-5 bg-[#33415C] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
                         Identificar o Perfil do Comprador (SPIN)
                       </h3>
                       <p className="text-[10px] text-slate-450 mt-1 font-semibold">
@@ -2100,218 +2084,151 @@ export default function MinhaCarteira({
               )}
             </div>
 
-            {/* Checklist Section (Checklist da Etapa Selecionada) */}
-            {selectedDetailTab < 6 && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                <div 
-                  className="flex justify-between items-center cursor-pointer select-none" 
-                  onClick={() => setChecklistExpanded(!checklistExpanded)}
-                >
-                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                    <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
-                    Checklist — {ETAPAS[selectedDetailTab]?.nome}
-                  </h3>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    {checklistExpanded ? 'Recolher ▲' : 'Expandir ▼'}
-                  </span>
-                </div>
-
-                {checklistExpanded && (() => {
-                  const totalItens = ETAPAS[selectedDetailTab]?.chk.length || 0
-                  const concluidos = activeChecklist.filter(chk => chk.etapa === selectedDetailTab).length
-                  const pct = totalItens ? Math.round((concluidos / totalItens) * 100) : 0
-
-                  return (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}></div>
-                        </div>
-                        <span className="text-xs font-black text-emerald-600 w-10 text-right">{pct}%</span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        {ETAPAS[selectedDetailTab]?.chk.map((item, idx) => {
-                          const isChecked = activeChecklist.some(chk => chk.etapa === selectedDetailTab && chk.item_index === idx)
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() => toggleChecklist(idx, selectedDetailTab)}
-                              className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
-                                isChecked
-                                  ? 'border-emerald-100 bg-emerald-50/40 text-slate-500'
-                                  : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-800'
-                              }`}
-                            >
-                                                       <span className={`text-xs md:text-sm leading-relaxed ${isChecked ? 'line-through text-slate-400' : 'font-medium'}`}>
-                                {item}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
-
-            {/* Dossiê & Resumo do Status / Resumo Fixo */}
-            {selectedDetailTab < 6 && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                {selectedDetailTab === 0 ? (
-                  // For Triagem (E1), show Perfil and Playbook
-                  <>
+            {selectedDetailTab === 7 && (
+              <div className="space-y-6">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+                  <div>
                     <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
-                      <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
-                      Dossiê & Playbook do Perfil
+                      📊 Resumo Geral do Lead
                     </h3>
-                    
-                    <div className="space-y-4">
-                      <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 space-y-3 text-xs text-slate-700 leading-relaxed shadow-xs font-medium">
-                        <p>
-                          <b>{activeClient.nome}</b> está atualmente na <b>etapa {activeClient.etapa + 1}</b> — <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome}</span>.
-                        </p>
-                        <p>
-                          Temperatura: <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>.
-                          {activeClient.perfil ? (
-                            <span> Perfil: <b className="text-[#1F4E79]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</b>
-                              {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
-                                <> / Secundário: <b className="text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</b></>
-                              )}.
-                            </span>
-                          ) : (
-                            <span> Perfil ainda pendente de diagnóstico.</span>
-                          )}
-                        </p>
-                      </div>
+                    <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                      Consolidado das informações registradas no funil comercial.
+                    </p>
+                  </div>
 
-                      {/* Playbook se perfil mapeado */}
-                      {activeClient.perfil && (
-                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                          <h4 className="text-xs font-extrabold text-[#1F4E79] uppercase tracking-wide flex items-center gap-1.5">
-                            {PERFIS[activeClient.perfil].emo} Playbook: O que Falar com este Perfil
-                          </h4>
-                          <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
-                            {PERFIS[activeClient.perfil].estrategia.slice(0, 4).map((est, eIdx) => (
-                              <li key={eIdx} className="flex items-start gap-2">
-                                <span className="text-emerald-500 font-bold">✓</span>
-                                <span>{est}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  // For other stages (E2-E6), show the fixed summary of filled data
-                  <>
-                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
-                      <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
-                      Resumo do Perfil & Dados Salvos
-                    </h3>
-                    
-                    <div className="space-y-3 text-xs font-medium text-slate-700">
-                      <div className="grid grid-cols-2 gap-3.5 bg-slate-50 border border-slate-150 rounded-xl p-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Status & Temp Card */}
+                    <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 space-y-3 text-xs text-slate-700 leading-relaxed font-medium">
+                      <h4 className="text-xs font-extrabold text-[#33415C] uppercase tracking-wide">
+                        Etapa Atual & Temperatura
+                      </h4>
+                      <div className="space-y-2">
                         <div>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Localização Desejada</span>
-                          <span className="font-semibold text-slate-800">{activeClient.local || 'Não informada'}</span>
+                          <b>Etapa:</b> <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome} (E{activeClient.etapa + 1})</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Faixa de Preço</span>
-                          <span className="font-semibold text-slate-800">{activeClient.faixa || 'Não informada'}</span>
+                          <b>Temperatura:</b> <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-[#1F4E79] uppercase block">Orçamento (Comprador)</span>
-                          <span className="font-bold text-[#1F4E79]">{activeClient.valor ? fmtBRL(activeClient.valor) : 'Não informado'}</span>
+                          <b>Origem:</b> <span className="font-semibold text-slate-600">{activeClient.origem || 'Não informada'}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Forma de Pagamento</span>
-                          <span className="font-semibold text-slate-800">
-                            {activeClient.forma_pagamento === 'a_vista' ? 'À vista' : 
-                             activeClient.forma_pagamento === 'parcelamento' ? 'Parcelamento' :
-                             activeClient.forma_pagamento === 'permuta' ? 'Permuta' :
-                             activeClient.forma_pagamento === 'financiamento' ? 'Financiamento (Caixa)' : 'A definir'}
-                          </span>
+                          <b>Porta de Entrada:</b> <span className="font-semibold text-slate-650">{activeClient.porta === 'A' ? 'Porta A (Lais / IA)' : 'Porta B (Humano)'}</span>
                         </div>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase">Perfil do Comprador</span>
-                          <span className="text-[9.5px] bg-slate-200 px-1.5 py-0.5 rounded font-black text-slate-650 uppercase">
-                            {activeClient.perfil ? PERFIS[activeClient.perfil].nome : 'Pendente'}
-                          </span>
-                        </div>
-                        {activeClient.perfil ? (
-                          <p className="text-[10px] text-slate-500 leading-relaxed font-semibold italic">
-                            "{PERFIS[activeClient.perfil].estrategia[0]}"
-                          </p>
-                        ) : (
-                          <p className="text-[10px] text-slate-400">Diagnóstico pendente.</p>
+                        {activeClient.finalizado && (
+                          <div className="text-rose-600 font-bold border-t border-rose-100 pt-2 mt-2">
+                            🏁 Atendimento Finalizado: {activeClient.status_finalizacao === 'sucesso' ? 'Ganho / Sucesso' : 'Perdido'}
+                            {activeClient.motivo_finalizacao && <span className="block text-[10px] text-slate-500 font-medium">Motivo: {activeClient.motivo_finalizacao}</span>}
+                          </div>
                         )}
                       </div>
+                    </div>
 
-                      <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-3 text-[11px] text-slate-605 font-semibold space-y-1.5">
-                        <div>📞 <b>Contato:</b> {activeClient.contato || 'Nenhum'}</div>
-                        <div>🏷️ <b>Status E1:</b> {activeClient.etiqueta_status || 'Novo'} · 🚪 <b>Porta:</b> {activeClient.porta || 'A'}</div>
-                        {activeClient.imovel_interesse && <div>🔑 <b>Imóvel-alvo:</b> {activeClient.imovel_interesse}</div>}
-                        {activeClient.valor_pedido && <div>💰 <b>Valor Pedido (Proprietário):</b> {fmtBRL(activeClient.valor_pedido)}</div>}
-                        {activeClient.valor_fechado && <div>🏁 <b>Valor Fechado:</b> {fmtBRL(activeClient.valor_fechado)}</div>}
+                    {/* Perfil & Comportamento Card */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 text-xs text-slate-700">
+                      <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">
+                        Perfil Comportamental
+                      </h4>
+                      <div className="space-y-2 font-medium">
+                        <div>
+                          <b>Perfil Dominante:</b> {activeClient.perfil ? (
+                            <span className="font-extrabold text-[#33415C]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</span>
+                          ) : (
+                            <span className="text-slate-400">Pendente de diagnóstico</span>
+                          )}
+                        </div>
+                        {activeClient.perfil_secundario && (
+                          <div>
+                            <b>Perfil Secundário:</b> <span className="font-bold text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</span>
+                          </div>
+                        )}
+                        {activeClient.perfil && (
+                          <div className="text-[11px] text-slate-500 leading-relaxed font-semibold italic border-t border-slate-200 pt-2 mt-2">
+                            "{PERFIS[activeClient.perfil].estrategia[0]}"
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </>
-                )}
+                  </div>
+
+                  {/* Financeiro / Interesse Card */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                    <h4 className="text-xs font-extrabold text-[#33415C] uppercase tracking-wide">
+                      Dados de Interesse & Valores
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium text-slate-700">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Local Desejado</span>
+                        <span className="font-semibold text-slate-800">{activeClient.local || 'Não informado'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Faixa de Preço</span>
+                        <span className="font-semibold text-slate-800">{activeClient.faixa || 'Não informada'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-[#33415C] uppercase block">Orçamento Máximo</span>
+                        <span className="font-bold text-[#33415C]">{activeClient.valor ? fmtBRL(activeClient.valor) : 'Não informado'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Forma de Pagamento</span>
+                        <span className="font-semibold text-slate-800">
+                          {activeClient.forma_pagamento === 'a_vista' ? 'À vista' : 
+                           activeClient.forma_pagamento === 'parcelamento' ? 'Parcelamento' :
+                           activeClient.forma_pagamento === 'permuta' ? 'Permuta' :
+                           activeClient.forma_pagamento === 'financiamento' ? 'Financiamento (Caixa)' : 'A definir'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Lead Info */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 text-xs text-slate-700">
+                    <h4 className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">
+                      Informações de Contato & Imóvel
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-semibold">
+                      <div>📞 <b>Contato/WhatsApp:</b> {activeClient.contato || 'Não informado'}</div>
+                      {activeClient.email && <div>✉️ <b>E-mail:</b> {activeClient.email}</div>}
+                      {activeClient.imovel_interesse && <div className="col-span-full">🔑 <b>Imóvel de Interesse:</b> {activeClient.imovel_interesse}</div>}
+                      {activeClient.valor_pedido && <div>💰 <b>Valor Pedido (Proprietário):</b> {fmtBRL(activeClient.valor_pedido)}</div>}
+                      {activeClient.valor_fechado && <div>🏁 <b>Valor Fechado:</b> {fmtBRL(activeClient.valor_fechado)}</div>}
+                    </div>
+                  </div>
+
+                  {/* Playbook se perfil mapeado */}
+                  {activeClient.perfil && PERFIS[activeClient.perfil] && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                      <h4 className="text-xs font-extrabold text-[#33415C] uppercase tracking-wide flex items-center gap-1.5">
+                        {PERFIS[activeClient.perfil].emo} Playbook: Dicas de Abordagem para este Perfil
+                      </h4>
+                      <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
+                        {PERFIS[activeClient.perfil].estrategia.map((est, eIdx) => (
+                          <li key={eIdx} className="flex items-start gap-2">
+                            <span className="text-emerald-500 font-bold">✓</span>
+                            <span>{est}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Ações da conversa / Anotações */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                Anotações da Conversa
-              </h3>
-
-              <div className="space-y-3">
-                <textarea
-                  value={novaNotaTxt}
-                  onChange={(e) => setNovaNotaTxt(e.target.value)}
-                  placeholder="O que ficou acertado nesta conversa?"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-[#eb3238] min-h-[70px] resize-y bg-slate-50/50"
-                ></textarea>
-                
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    onClick={handleAddNota}
-                    className="bg-[#eb3238] hover:bg-[#eb3238]/90 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs"
-                  >
-                    + Adicionar Nota
-                  </button>
-                  <span className="text-[9px] text-slate-400 font-bold">
-                    Etapa: <b>{ETAPAS[activeClient.etapa]?.nome}</b>
-                  </span>
-                </div>
-              </div>
-
-              {/* Notes Feed */}
-              <div className="space-y-3 pt-2 max-h-[300px] overflow-y-auto">
-                {activeNotas.length === 0 ? (
-                  <div className="text-slate-400 text-xs italic py-2 text-center">Nenhuma nota cadastrada.</div>
-                ) : (
-                  activeNotas.slice().reverse().map(nota => (
-                    <div key={nota.id} className="flex gap-4 border-l-2 border-slate-200 pl-4 py-1 relative">
-                      <div className="absolute -left-[5px] top-2.5 w-2 h-2 rounded-full bg-[#eb3238]"></div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400">{nota.data}</span>
-                          <span className="bg-[#fbf1e3] text-[#c77d2e] text-[9px] font-bold px-2 py-0.5 rounded-full">{nota.etapa}</span>
-                        </div>
-                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{nota.texto}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
+            {/* Responsive fallbacks at the bottom of the middle column scroll view */}
+            <div className="block md:hidden border-t border-slate-200 pt-5 mt-5">
+              {renderChecklist(true)}
             </div>
+
+            <div className="block lg:hidden border-t border-slate-200 pt-5 mt-5">
+              {renderNotes(true)}
+            </div>
+
+          </div>
+
+          {/* Right Column: Notes & History (desktop) */}
+          <div className="hidden lg:flex w-[320px] bg-white border-l border-slate-200 p-5 flex-col flex-shrink-0">
+            {renderNotes(false)}
           </div>
         </div>
       </div>
@@ -2328,7 +2245,7 @@ export default function MinhaCarteira({
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-black text-[#1F4E79] text-base md:text-lg flex items-center gap-1.5">📇 Ficha do Cliente</h3>
+                <h3 className="font-black text-[#33415C] text-base md:text-lg flex items-center gap-1.5">📇 Ficha do Cliente</h3>
                 <p className="text-[11px] text-slate-400 font-medium">Altere as informações cadastrais que alimentam o Banco de Dados.</p>
               </div>
               <button
@@ -2403,10 +2320,7 @@ export default function MinhaCarteira({
                   className="w-full border border-slate-200 rounded-xl p-2.5 text-xs md:text-sm outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">—</option>
-                  <option value="Até R$ 200 mil">Até R$ 200 mil</option>
-                  <option value="R$ 200–350 mil">R$ 200–350 mil</option>
-                  <option value="R$ 350–500 mil">R$ 350–500 mil</option>
-                  <option value="Acima de R$ 500 mil">Acima de R$ 500 mil</option>
+                  {FAIXAS_VALOR.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
 
@@ -2426,13 +2340,77 @@ export default function MinhaCarteira({
               </div>
             </div>
 
+            {/* Imóvel desejado — preferências estruturadas (compacto) */}
+            <div className="space-y-2 pt-1">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">Imóvel Desejado</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block">Tipo</span>
+                  <select
+                    value={activeClient.tipo_imovel || ''}
+                    onChange={(e) => setCrmField('tipo_imovel', e.target.value || null)}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">—</option>
+                    {TIPOS_IMOVEL.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block">Quartos</span>
+                  <select
+                    value={activeClient.quartos ?? ''}
+                    onChange={(e) => setCrmField('quartos', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">—</option>
+                    {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n === 5 ? '5+' : n}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block">Suítes</span>
+                  <select
+                    value={activeClient.suites ?? ''}
+                    onChange={(e) => setCrmField('suites', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">—</option>
+                    {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n === 4 ? '4+' : n}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block">Vagas</span>
+                  <select
+                    value={activeClient.vagas ?? ''}
+                    onChange={(e) => setCrmField('vagas', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">—</option>
+                    {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n === 4 ? '4+' : n}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block">Piscina</span>
+                  <select
+                    value={activeClient.piscina || ''}
+                    onChange={(e) => setCrmField('piscina', e.target.value || null)}
+                    className="w-full border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">—</option>
+                    <option value="sim">Sim</option>
+                    <option value="nao">Não</option>
+                    <option value="indiferente">Indiferente</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">Preferência</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">Outras Preferências</label>
               <textarea
                 value={activeClient.preferencia || ''}
                 onChange={(e) => setCrmField('preferencia', e.target.value)}
-                placeholder="Características desejadas (ex: 3 quartos, varanda, área gourmet...)"
-                className="w-full border border-slate-200 rounded-xl p-3.5 text-xs md:text-sm outline-none focus:border-[#2E6CA8] min-h-[60px] resize-y"
+                placeholder="Detalhes adicionais (ex: varanda gourmet, andar alto, pet friendly, mobiliado...)"
+                className="w-full border border-slate-200 rounded-xl p-3.5 text-xs md:text-sm outline-none focus:border-[#47587A] min-h-[60px] resize-y"
               ></textarea>
             </div>
 
@@ -2455,7 +2433,7 @@ export default function MinhaCarteira({
                     })
                   setFichaOpen(false)
                 }}
-                className="flex-1 bg-[#1F4E79] hover:bg-[#2E6CA8] text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm flex items-center justify-center gap-1.5"
+                className="flex-1 bg-[#33415C] hover:bg-[#47587A] text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm flex items-center justify-center gap-1.5"
               >
                 <Smartphone size={15} />
                 Enviar p/ Cliente Preencher
@@ -2469,309 +2447,33 @@ export default function MinhaCarteira({
       {/* ============================================================
           MODAL: CADASTRAR NOVO CLIENTE (FUNIL)
           ============================================================ */}
-      {modalNovoOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-scaleIn space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-[#1F4E79] text-base md:text-lg">Cadastrar Novo Cliente</h3>
-              <button
-                onClick={() => setModalNovoOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1">
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Nome do Cliente</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Roberto Silva"
-                  value={formNovo.nome}
-                  onChange={(e) => setFormNovo({ ...formNovo, nome: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Telefone</label>
-                <input
-                  type="text"
-                  placeholder="Ex: (69) 9 9999-9999"
-                  value={formNovo.contato}
-                  onChange={(e) => setFormNovo({ ...formNovo, contato: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">E-mail</label>
-                <input
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  value={formNovo.email}
-                  onChange={(e) => setFormNovo({ ...formNovo, email: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Objetivo</label>
-                <select
-                  value={formNovo.objetivo}
-                  onChange={(e) => setFormNovo({ ...formNovo, objetivo: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none bg-white focus:border-[#2E6CA8] cursor-pointer font-medium"
-                >
-                  <option value="Comprar">Comprar</option>
-                  <option value="Alugar">Alugar</option>
-                  <option value="Vender">Vender</option>
-                  <option value="Deixar para alugar">Deixar para alugar</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Faixa de Valor</label>
-                <select
-                  value={formNovo.faixa}
-                  onChange={(e) => setFormNovo({ ...formNovo, faixa: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none bg-white focus:border-[#2E6CA8] cursor-pointer font-medium"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="Até R$ 200 mil">Até R$ 200 mil</option>
-                  <option value="R$ 200–350 mil">R$ 200–350 mil</option>
-                  <option value="R$ 350–500 mil">R$ 350–500 mil</option>
-                  <option value="Acima de R$ 500 mil">Acima de R$ 500 mil</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Localização Desejada</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Bairro / Cidade"
-                  value={formNovo.local}
-                  onChange={(e) => setFormNovo({ ...formNovo, local: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Origem do Lead</label>
-                <select
-                  value={formNovo.origem}
-                  onChange={(e) => setFormNovo({ ...formNovo, origem: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none bg-white focus:border-[#2E6CA8] cursor-pointer font-medium"
-                >
-                  <option value="Portal (ZAP / VivaReal / OLX)">Portal (ZAP / VivaReal / OLX)</option>
-                  <option value="Instagram / Facebook">Instagram / Facebook</option>
-                  <option value="Indicação">Indicação</option>
-                  <option value="Placa / Loja física">Placa / Loja física</option>
-                  <option value="Site / Google">Site / Google</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Corretor Responsável</label>
-                <select
-                  value={user?.role === 'vendas' ? (corretores.find(co => co.user_id === user?.id)?.id || '') : formNovo.corretor_id}
-                  onChange={(e) => setFormNovo({ ...formNovo, corretor_id: e.target.value })}
-                  disabled={user?.role === 'vendas'}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed focus:border-[#2E6CA8] cursor-pointer font-medium"
-                >
-                  <option value="">Não Distribuído (Sem Corretor)</option>
-                  {corretores.map(c => (
-                    <option key={c.id} value={c.id}>{c.nome}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3 border-t border-slate-100">
-              <button
-                onClick={() => setModalNovoOpen(false)}
-                className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold py-2.5 rounded-xl text-xs md:text-sm transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCriarCliente}
-                className="flex-1 bg-[#1F4E79] hover:bg-[#2E6CA8] text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm"
-              >
-                Cadastrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NovoClienteModal
+        open={modalNovoOpen}
+        onClose={() => setModalNovoOpen(false)}
+        onSubmit={handleCriarCliente}
+        formNovo={formNovo}
+        setFormNovo={setFormNovo}
+        corretores={corretores}
+        user={user}
+      />
 
       {/* ============================================================
           MODAL: FINALIZAR PROCESSO
           ============================================================ */}
-      {finalizarModalOpen && activeClient && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-scaleIn space-y-4 max-h-[90vh] overflow-y-auto">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-black text-[#1F4E79] text-base md:text-lg flex items-center gap-1.5">🏁 Finalizar Processo</h3>
-                <p className="text-[11px] text-slate-400 font-medium">Finalize o processo de {activeClient.nome} no funil.</p>
-              </div>
-              <button
-                onClick={() => setFinalizarModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Resultado do Processo</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFinalizarStatus('sucesso')
-                      setFinalizarMotivo('')
-                    }}
-                    className={`py-2 px-1.5 rounded-xl border text-[10px] md:text-xs font-bold transition-all ${
-                      finalizarStatus === 'sucesso'
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-extrabold shadow-xs'
-                        : 'border-slate-100 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    🎉 Ganho
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFinalizarStatus('perdido')
-                      setFinalizarMotivo('')
-                      setCustomMotivo('')
-                    }}
-                    className={`py-2 px-1.5 rounded-xl border text-[10px] md:text-xs font-bold transition-all ${
-                      finalizarStatus === 'perdido'
-                        ? 'border-rose-500 bg-rose-50 text-rose-700 font-extrabold shadow-xs'
-                        : 'border-slate-100 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    ❌ Perdido
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFinalizarStatus('interessado')
-                      setFinalizarMotivo('')
-                      setCustomMotivo('')
-                    }}
-                    className={`py-2 px-1.5 rounded-xl border text-[10px] md:text-xs font-bold transition-all ${
-                      finalizarStatus === 'interessado'
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-extrabold shadow-xs'
-                        : 'border-slate-100 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    📥 Interessado
-                  </button>
-                </div>
-              </div>
-
-              {/* DYNAMIC FORM IF SUCCESS & COMPRAR */}
-              {finalizarStatus === 'sucesso' && activeClient.objetivo === 'Comprar' && (
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 space-y-3">
-                  <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider block">Valores da Transação (Venda)</span>
-                  
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 tracking-wider block">Valor Fechado (R$)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 340000"
-                      value={valFechado}
-                      onChange={(e) => setValFechado(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white font-bold text-slate-800"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* DYNAMIC FORM IF LOST */}
-              {finalizarStatus === 'perdido' && (
-                <div className="space-y-3 bg-rose-50/30 border border-rose-100 rounded-xl p-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider block">Motivo do Insucesso</label>
-                    <select
-                      value={finalizarMotivo}
-                      onChange={(e) => {
-                        setFinalizarMotivo(e.target.value)
-                        if (e.target.value !== 'Outro') setCustomMotivo('')
-                      }}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-white cursor-pointer font-medium"
-                    >
-                      <option value="">Selecione o motivo da perda...</option>
-                      {(activeClient.etapa === 9 || activeClient.etapa === 8) ? (
-                        <>
-                          <option value="Proposta recusada pelo vendedor">Proposta recusada pelo proprietário/vendedor</option>
-                          <option value="Proposta recusada pelo comprador">Proposta recusada pelo comprador</option>
-                          <option value="Sem acordo de valores (desconto insuficiente)">Sem acordo de valores (desconto insuficiente)</option>
-                          <option value="Financiamento negado na negociação">Financiamento bancário reprovado</option>
-                          <option value="Condições de pagamento inviabilizadas">Condições de pagamento inviabilizadas</option>
-                          <option value="Outro">Outro motivo customizado...</option>
-                        </>
-                      ) : (activeClient.objetivo === 'Vender' || activeClient.objetivo === 'Deixar para alugar') ? (
-                        <>
-                          <option value="Proprietário fechou com outra imobiliária">Proprietário fechou com outra imobiliária</option>
-                          <option value="Proprietário desistiu de anunciar">Proprietário desistiu de anunciar</option>
-                          <option value="Comissão acima do aceito pelo cliente">Comissão cobrada acima do aceito</option>
-                          <option value="Imóvel fora de perfil/padrão">Imóvel fora de perfil/padrão</option>
-                          <option value="Outro">Outro motivo customizado...</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="Comprou com concorrência">Comprou com concorrência</option>
-                          <option value="Desistiu de comprar/alugar">Desistiu de comprar / alugar</option>
-                          <option value="Orçamento incompatível com mercado">Orçamento incompatível com mercado</option>
-                          <option value="Sumido / Sem contato">Cliente sumiu (sem contato)</option>
-                          <option value="Outro">Outro motivo customizado...</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-
-                  {finalizarMotivo === 'Outro' && (
-                    <div className="space-y-1 animate-fadeIn">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Descreva o Motivo</label>
-                      <input
-                        type="text"
-                        placeholder="Digite o motivo customizado..."
-                        value={customMotivo}
-                        onChange={(e) => setCustomMotivo(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-rose-500 bg-white"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3 pt-3 border-t border-slate-100">
-              <button
-                onClick={() => setFinalizarModalOpen(false)}
-                className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold py-2.5 rounded-xl text-xs md:text-sm transition-colors"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={handleFinalizarCliente}
-                disabled={finalizarStatus === 'perdido' && !finalizarMotivo}
-                className="flex-1 bg-[#1F4E79] hover:bg-[#2E6CA8] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm"
-              >
-                Confirmar
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <FinalizarModal
+        open={finalizarModalOpen}
+        client={activeClient ?? null}
+        onClose={() => setFinalizarModalOpen(false)}
+        onConfirm={handleFinalizarCliente}
+        status={finalizarStatus}
+        setStatus={setFinalizarStatus}
+        motivo={finalizarMotivo}
+        setMotivo={setFinalizarMotivo}
+        customMotivo={customMotivo}
+        setCustomMotivo={setCustomMotivo}
+        valFechado={valFechado}
+        setValFechado={setValFechado}
+      />
 
     </div>
   )

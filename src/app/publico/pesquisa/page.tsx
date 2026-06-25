@@ -166,7 +166,7 @@ function PesquisaForm() {
   return (
     <div className="bg-white/90 backdrop-blur-md border border-slate-100 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 max-w-lg w-full animate-scaleIn">
       <div className="text-center space-y-1.5 border-b border-slate-100 pb-4">
-        <div className="inline-flex items-center gap-1.5 bg-[#EEF4FA] text-[#1F4E79] text-[10px] font-black tracking-wider px-3 py-1 rounded-full uppercase">
+        <div className="inline-flex items-center gap-1.5 bg-[#EEF4FA] text-[#33415C] text-[10px] font-black tracking-wider px-3 py-1 rounded-full uppercase">
           <Sparkles size={10} /> Porto Real Imobiliária
         </div>
         <h2 className="text-xl md:text-2xl font-black text-slate-800">Pesquisa de Satisfação</h2>
@@ -182,7 +182,7 @@ function PesquisaForm() {
             placeholder="Ex: Ana Souza"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all font-medium"
+            className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all font-medium"
           />
         </div>
 
@@ -194,7 +194,7 @@ function PesquisaForm() {
                 type="button"
                 onClick={() => setComprouConosco(true)}
                 className={`py-3 text-xs font-bold border rounded-xl transition-all ${
-                  comprouConosco === true ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]' : 'border-slate-200 text-slate-600 bg-white'
+                  comprouConosco === true ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]' : 'border-slate-200 text-slate-600 bg-white'
                 }`}
               >
                 Sim, fechei negócio
@@ -203,7 +203,7 @@ function PesquisaForm() {
                 type="button"
                 onClick={() => setComprouConosco(false)}
                 className={`py-3 text-xs font-bold border rounded-xl transition-all ${
-                  comprouConosco === false ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]' : 'border-slate-200 text-slate-600 bg-white'
+                  comprouConosco === false ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]' : 'border-slate-200 text-slate-600 bg-white'
                 }`}
               >
                 Não/Apenas avaliando
@@ -213,7 +213,7 @@ function PesquisaForm() {
         )}
 
         <div className="border-t border-slate-100 pt-4 space-y-5">
-          <span className="text-xs font-extrabold text-[#1F4E79] uppercase block tracking-wider">Perguntas de Avaliação</span>
+          <span className="text-xs font-extrabold text-[#33415C] uppercase block tracking-wider">Perguntas de Avaliação</span>
 
           {questions.map((q, idx) => (
             <div key={idx} className="space-y-2.5">
@@ -230,7 +230,7 @@ function PesquisaForm() {
                         onClick={() => handleRatingChange(idx, val)}
                         className={`w-8.5 h-8.5 text-xs font-black rounded-lg transition-all flex items-center justify-center border ${
                           isSelected 
-                            ? 'bg-[#1F4E79] border-[#1F4E79] text-white shadow-sm'
+                            ? 'bg-[#33415C] border-[#33415C] text-white shadow-sm'
                             : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                         }`}
                       >
@@ -249,7 +249,7 @@ function PesquisaForm() {
                   rows={3}
                   value={texts[idx] || ''}
                   onChange={(e) => handleTextChange(idx, e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all font-medium resize-none"
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all font-medium resize-none"
                 />
               )}
             </div>
@@ -259,7 +259,7 @@ function PesquisaForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-[#1F4E79] hover:bg-[#2E6CA8] disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5 cursor-pointer mt-4"
+          className="w-full bg-[#33415C] hover:bg-[#47587A] disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5 cursor-pointer mt-4"
         >
           <Send size={14} />
           {submitting ? 'Enviando Avaliação...' : 'Enviar Avaliação'}
@@ -271,10 +271,10 @@ function PesquisaForm() {
 
 export default function PublicoPesquisaPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-tr from-[#123658] via-[#1F4E79] to-[#2E6CA8] flex items-center justify-center p-4 py-10 font-sans">
+    <main className="min-h-screen bg-gradient-to-tr from-[#232E42] via-[#33415C] to-[#47587A] flex items-center justify-center p-4 py-10 font-sans">
       <Suspense fallback={
         <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl flex flex-col items-center justify-center space-y-3 max-w-sm w-full">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-xs font-semibold text-slate-600">Carregando formulário...</span>
         </div>
       }>

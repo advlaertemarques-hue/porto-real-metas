@@ -2,8 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createVendasCliente, getVendasCorretores } from '@/lib/api'
+import { createVendasClientePublico, getVendasCorretoresPublico } from '@/lib/api'
 import { VendasCorretor } from '@/lib/types'
+import { FAIXAS_VALOR } from '@/lib/constants'
 import { Check, Send, Sparkles } from 'lucide-react'
 
 // Sub-component that actually uses searchParams
@@ -11,7 +12,7 @@ function QualificarForm() {
   const searchParams = useSearchParams()
   const corretorId = searchParams.get('corretor')
 
-  const [corretores, setCorretores] = useState<VendasCorretor[]>([])
+  const [corretores, setCorretores] = useState<Pick<VendasCorretor, 'id' | 'nome'>[]>([])
   const [loadingCorr, setLoadingCorr] = useState(true)
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -34,7 +35,7 @@ function QualificarForm() {
   useEffect(() => {
     async function loadCorretores() {
       try {
-        const list = await getVendasCorretores()
+        const list = await getVendasCorretoresPublico()
         setCorretores(list)
       } catch (err) {
         console.error(err)
@@ -103,7 +104,7 @@ function QualificarForm() {
     setSubmitting(true)
 
     try {
-      const res = await createVendasCliente({
+      const res = await createVendasClientePublico({
         nome: form.nome.trim(),
         contato: form.contato.trim() || '—',
         email: form.email.trim() || '—',
@@ -148,8 +149,8 @@ function QualificarForm() {
           </p>
         </div>
         {currentCorretor && (
-          <div className="bg-[#EEF4FA] border border-[#D6E4F0] rounded-2xl p-4 text-xs font-semibold text-[#1F4E79] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#1F4E79] text-white flex items-center justify-center font-bold uppercase">
+          <div className="bg-[#EEF4FA] border border-[#D6E4F0] rounded-2xl p-4 text-xs font-semibold text-[#33415C] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#33415C] text-white flex items-center justify-center font-bold uppercase">
               {currentCorretor.nome.charAt(0)}
             </div>
             <div className="text-left">
@@ -165,7 +166,7 @@ function QualificarForm() {
   return (
     <div className="bg-white/90 backdrop-blur-md border border-slate-100 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 max-w-lg w-full animate-scaleIn">
       <div className="text-center space-y-1.5 border-b border-slate-100 pb-4">
-        <div className="inline-flex items-center gap-1.5 bg-[#EEF4FA] text-[#1F4E79] text-[10px] font-black tracking-wider px-3 py-1 rounded-full uppercase">
+        <div className="inline-flex items-center gap-1.5 bg-[#EEF4FA] text-[#33415C] text-[10px] font-black tracking-wider px-3 py-1 rounded-full uppercase">
           <Sparkles size={10} /> Porto Real Imobiliária
         </div>
         <h2 className="text-xl md:text-2xl font-black text-slate-800">Encontre Seu Imóvel Ideal</h2>
@@ -174,7 +175,7 @@ function QualificarForm() {
 
       {currentCorretor && (
         <div className="bg-[#EEF4FA]/70 border border-[#D6E4F0] rounded-2xl p-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#1F4E79] text-white flex items-center justify-center font-black uppercase text-sm">
+          <div className="w-9 h-9 rounded-lg bg-[#33415C] text-white flex items-center justify-center font-black uppercase text-sm">
             {currentCorretor.nome.charAt(0)}
           </div>
           <div className="text-left text-xs">
@@ -193,7 +194,7 @@ function QualificarForm() {
             placeholder="Ex: Roberto Silva"
             value={form.nome}
             onChange={(e) => setForm({ ...form, nome: e.target.value })}
-            className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all"
+            className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all"
           />
         </div>
 
@@ -205,7 +206,7 @@ function QualificarForm() {
               placeholder="Ex: (69) 99999-9999"
               value={form.contato}
               onChange={(e) => setForm({ ...form, contato: e.target.value })}
-              className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all"
+              className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all"
             />
           </div>
 
@@ -216,13 +217,13 @@ function QualificarForm() {
               placeholder="Ex: email@exemplo.com"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all"
+              className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all"
             />
           </div>
         </div>
 
         <div className="border-t border-slate-100 pt-4 space-y-4">
-          <span className="text-xs font-extrabold text-[#1F4E79] uppercase block tracking-wider">O que você procura? 🏠</span>
+          <span className="text-xs font-extrabold text-[#33415C] uppercase block tracking-wider">O que você procura? 🏠</span>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -247,10 +248,7 @@ function QualificarForm() {
                 className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none bg-white cursor-pointer font-semibold"
               >
                 <option value="">Selecione...</option>
-                <option value="Até R$ 200 mil">Até R$ 200 mil</option>
-                <option value="R$ 200–350 mil">R$ 200–350 mil</option>
-                <option value="R$ 350–500 mil">R$ 350–500 mil</option>
-                <option value="Acima de R$ 500 mil">Acima de R$ 500 mil</option>
+                {FAIXAS_VALOR.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
           </div>
@@ -265,7 +263,7 @@ function QualificarForm() {
                     type="button"
                     onClick={() => setForm({ ...form, tipoImovel: v })}
                     className={`py-2 text-xs font-bold border rounded-xl transition-all ${
-                      form.tipoImovel === v ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]' : 'border-slate-200 text-slate-600 bg-white'
+                      form.tipoImovel === v ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]' : 'border-slate-200 text-slate-600 bg-white'
                     }`}
                   >
                     {v}
@@ -283,7 +281,7 @@ function QualificarForm() {
                     type="button"
                     onClick={() => setForm({ ...form, quartos: v })}
                     className={`py-2 text-xs font-bold border rounded-xl transition-all ${
-                      form.quartos === v ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]' : 'border-slate-200 text-slate-600 bg-white'
+                      form.quartos === v ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]' : 'border-slate-200 text-slate-600 bg-white'
                     }`}
                   >
                     {v}
@@ -301,7 +299,7 @@ function QualificarForm() {
                 placeholder="Ex: Centro, Jardim das Oliveiras"
                 value={form.local}
                 onChange={(e) => setForm({ ...form, local: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#2E6CA8] bg-white transition-all"
+                className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm outline-none focus:border-[#47587A] bg-white transition-all"
               />
             </div>
 
@@ -314,7 +312,7 @@ function QualificarForm() {
                     type="button"
                     onClick={() => setForm({ ...form, pgto: v })}
                     className={`py-2 text-[10px] md:text-xs font-bold border rounded-xl transition-all ${
-                      form.pgto === v ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79]' : 'border-slate-200 text-slate-600 bg-white'
+                      form.pgto === v ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C]' : 'border-slate-200 text-slate-600 bg-white'
                     }`}
                   >
                     {v}
@@ -326,7 +324,7 @@ function QualificarForm() {
         </div>
 
         <div className="border-t border-slate-100 pt-4 space-y-4">
-          <span className="text-xs font-extrabold text-[#1F4E79] uppercase block tracking-wider">Para te atendermos melhor 💬</span>
+          <span className="text-xs font-extrabold text-[#33415C] uppercase block tracking-wider">Para te atendermos melhor 💬</span>
           
           <div className="space-y-4">
             {PERFIL_QS.map((pq, idx) => {
@@ -342,7 +340,7 @@ function QualificarForm() {
                         type="button"
                         onClick={() => setForm({ ...form, [pKey]: o.k })}
                         className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs leading-snug transition-all ${
-                          selVal === o.k ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79] font-bold' : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300'
+                          selVal === o.k ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C] font-bold' : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300'
                         }`}
                       >
                         {o.t}
@@ -362,7 +360,7 @@ function QualificarForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-[#1F4E79] hover:bg-[#2E6CA8] disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full bg-[#33415C] hover:bg-[#47587A] disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Send size={14} />
           {submitting ? 'Enviando...' : 'Enviar Preferências'}
@@ -374,10 +372,10 @@ function QualificarForm() {
 
 export default function PublicoQualificarPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-tr from-[#123658] via-[#1F4E79] to-[#2E6CA8] flex items-center justify-center p-4 py-10 font-sans">
+    <main className="min-h-screen bg-gradient-to-tr from-[#232E42] via-[#33415C] to-[#47587A] flex items-center justify-center p-4 py-10 font-sans">
       <Suspense fallback={
         <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl flex flex-col items-center justify-center space-y-3 max-w-sm w-full">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-xs font-semibold text-slate-600">Carregando formulário...</span>
         </div>
       }>

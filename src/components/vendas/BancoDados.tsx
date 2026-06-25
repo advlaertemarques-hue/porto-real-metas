@@ -94,7 +94,7 @@ export default function BancoDados() {
     return (
       <div className="flex h-[85vh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1F4E79] border-t-transparent"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#33415C] border-t-transparent"></div>
           <span className="text-sm font-semibold text-slate-600">Carregando Banco de Dados...</span>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function BancoDados() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-md">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-[#1F4E79] tracking-tight flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-black text-[#33415C] tracking-tight flex items-center gap-2">
             <Database className="text-[#eb3238]" size={24} />
             Banco de Dados Geral
           </h2>
@@ -123,7 +123,7 @@ export default function BancoDados() {
             }}
             className={`px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all ${
               activeTab === 'leads'
-                ? 'bg-white text-[#1F4E79] shadow-xs'
+                ? 'bg-white text-[#33415C] shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -136,7 +136,7 @@ export default function BancoDados() {
             }}
             className={`px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all ${
               activeTab === 'pesquisas'
-                ? 'bg-white text-[#1F4E79] shadow-xs'
+                ? 'bg-white text-[#33415C] shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -157,7 +157,7 @@ export default function BancoDados() {
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-1">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Média Corretores</span>
-          <div className="flex items-baseline gap-1 text-[#1F4E79] font-black text-2xl">
+          <div className="flex items-baseline gap-1 text-[#33415C] font-black text-2xl">
             {avgCorretor} <span className="text-xs font-bold text-slate-400">/ 10</span>
           </div>
           <span className="text-[9px] text-slate-400 block font-semibold">Performance de consultoria</span>
@@ -185,7 +185,7 @@ export default function BancoDados() {
         {/* Controls & Search */}
         <div className="flex flex-col md:flex-row justify-between gap-4 items-stretch md:items-center">
           {/* Search bar */}
-          <div className="relative flex-1 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden px-4 flex items-center gap-2 focus-within:border-[#1F4E79] transition-all">
+          <div className="relative flex-1 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden px-4 flex items-center gap-2 focus-within:border-[#33415C] transition-all">
             <Search className="text-slate-400" size={16} />
             <input
               type="text"
@@ -211,7 +211,7 @@ export default function BancoDados() {
                   onClick={() => setFilterTipo(opt.k)}
                   className={`px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all border whitespace-nowrap shadow-xs ${
                     filterTipo === opt.k
-                      ? 'bg-[#1F4E79] border-[#1F4E79] text-white'
+                      ? 'bg-[#33415C] border-[#33415C] text-white'
                       : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -226,7 +226,7 @@ export default function BancoDados() {
         {activeTab === 'leads' && (
           <div className="space-y-4">
             <div className="bg-slate-100 rounded-xl px-4 py-3.5 border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <span className="text-xs font-black text-[#1F4E79] uppercase tracking-wider">
+              <span className="text-xs font-black text-[#33415C] uppercase tracking-wider">
                 Leads Qualificados Cadastrados ({filteredLeads.length})
               </span>
               <p className="text-[10px] text-slate-500 font-semibold leading-none">
@@ -247,7 +247,7 @@ export default function BancoDados() {
                   return (
                     <div
                       key={c.id}
-                      className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-[#1F4E79]/40 transition-colors duration-200 flex flex-col justify-between gap-4"
+                      className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-[#33415C]/40 transition-colors duration-200 flex flex-col justify-between gap-4"
                     >
                       <div className="space-y-2.5">
                         {/* Title & tags */}
@@ -262,7 +262,7 @@ export default function BancoDados() {
                                 {perfilInfo.emo} {perfilInfo.nome}
                               </span>
                             )}
-                            <span className="text-[9px] font-extrabold uppercase tracking-wide bg-[#EEF4FA] text-[#1F4E79] px-2 py-0.5 rounded-md border border-slate-200/50">
+                            <span className="text-[9px] font-extrabold uppercase tracking-wide bg-[#EEF4FA] text-[#33415C] px-2 py-0.5 rounded-md border border-slate-200/50">
                               {etapaNome}
                             </span>
                             {c.expressa && (
@@ -334,7 +334,7 @@ export default function BancoDados() {
             {sortedMotivos.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-[#1F4E79] flex items-center gap-1.5">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[#33415C] flex items-center gap-1.5">
                     <ThumbsDown size={14} className="text-[#eb3238]" />
                     Motivos mais citados para não comprar
                   </h3>
@@ -366,7 +366,7 @@ export default function BancoDados() {
             {/* List */}
             <div className="space-y-4">
               <div className="bg-slate-100 rounded-xl px-4 py-3.5 border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                <span className="text-xs font-black text-[#1F4E79] uppercase tracking-wider">
+                <span className="text-xs font-black text-[#33415C] uppercase tracking-wider">
                   Opiniões e Respostas Registradas ({filteredSurveys.length})
                 </span>
                 <p className="text-[10px] text-slate-500 font-semibold leading-none">
@@ -387,7 +387,7 @@ export default function BancoDados() {
                     return (
                       <div
                         key={p.id || idx}
-                        className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-[#1F4E79]/40 transition-all duration-200 space-y-4"
+                        className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-[#33415C]/40 transition-all duration-200 space-y-4"
                       >
                         {/* Top row */}
                         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-50">

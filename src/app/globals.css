@@ -408,3 +408,71 @@ input[type='number'] {
 .heading-premium {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
+
+/* ============================================================
+   GLASS UI — MODO EXPERIMENTAL (glassmorphism)
+   Ativado por .glass-ui no wrapper do dashboard. Reversível:
+   basta remover a classe .glass-ui para voltar ao visual sólido.
+   Transforma "quadros" (cards brancos arredondados) e botões em
+   vidro fosco, sem alterar nenhum JSX dos componentes.
+   ============================================================ */
+.glass-ui {
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-blur: 16px;
+  --glass-shadow:
+    0 4px 24px rgba(51, 65, 92, 0.10),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* ── QUADROS: cards brancos arredondados viram vidro ───────── */
+.glass-ui .bg-white.rounded-xl,
+.glass-ui .bg-white.rounded-2xl,
+.glass-ui .bg-white.rounded-3xl {
+  background-color: var(--glass-bg) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-shadow);
+}
+
+/* Painéis de tom claro (chips/seções azul-claro) translúcidos.
+   NÃO inclui #FAF9F7: é a cor de BASE (fundo do app e superfície de modais),
+   e deixá-la translúcida sobre fundos escuros a transformava em cinza. */
+.glass-ui .bg-\[\#EEF4FA\],
+.glass-ui .bg-\[\#D6E4F0\] {
+  background-color: rgba(255, 255, 255, 0.38) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+}
+
+/* ── BOTÕES: vidro translúcido mantendo a cor da marca ─────── */
+.glass-ui .bg-\[\#33415C\],
+.glass-ui .bg-\[\#47587A\],
+.glass-ui .bg-\[\#232E42\] {
+  background-color: rgba(51, 65, 92, 0.82) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 6px 18px rgba(51, 65, 92, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.glass-ui .bg-\[\#eb3238\],
+.glass-ui .bg-\[\#c6282e\] {
+  background-color: rgba(235, 50, 56, 0.82) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 6px 18px rgba(235, 50, 56, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+/* Barra de contexto branca (topbar da página) em vidro */
+.glass-ui .page-topbar {
+  background: rgba(255, 255, 255, 0.55) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+}

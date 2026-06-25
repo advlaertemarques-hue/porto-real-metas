@@ -833,6 +833,23 @@ export async function getVendasCorretores(): Promise<VendasCorretor[]> {
   return data || []
 }
 
+// Leitura pública (formulário anônimo "qualificar"): só id + nome, o suficiente
+// para preencher o seletor de corretor. Sob RLS o papel `anon` recebe SELECT
+// apenas nessas colunas, então mesmo que vendas_corretores ganhe dados internos
+// no futuro eles não vazam para o formulário público.
+export async function getVendasCorretoresPublico(): Promise<Pick<VendasCorretor, 'id' | 'nome'>[]> {
+  const { data, error } = await supabase
+    .from('vendas_corretores')
+    .select('id, nome')
+    .order('nome', { ascending: true })
+
+  if (error) {
+    console.error('Erro ao buscar corretores (público):', error)
+    return []
+  }
+  return data || []
+}
+
 export async function getVendasClientes(): Promise<VendasCliente[]> {
   const { data, error } = await supabase
     .from('vendas_clientes')
@@ -858,6 +875,22 @@ export async function createVendasCliente(cliente: Omit<VendasCliente, 'id'>): P
     return null
   }
   return data
+}
+
+// Insert público (formulário anônimo "qualificar"). Diferente de
+// createVendasCliente, NÃO usa .select(): sob RLS o papel `anon` tem apenas
+// INSERT em vendas_clientes (nunca SELECT), o que evita que o público leia
+// leads de terceiros. Retorna só sucesso/falha — o formulário não precisa do id.
+export async function createVendasClientePublico(cliente: Omit<VendasCliente, 'id'>): Promise<boolean> {
+  const { error } = await supabase
+    .from('vendas_clientes')
+    .insert([cliente])
+
+  if (error) {
+    console.error('Erro ao criar cliente vendas (público):', error)
+    return false
+  }
+  return true
 }
 
 export async function updateVendasCliente(id: string, campos: Partial<VendasCliente>): Promise<VendasCliente | null> {
@@ -974,18 +1007,20 @@ export async function getVendasPesquisas(): Promise<VendasPesquisa[]> {
   return data || []
 }
 
-export async function createVendasPesquisa(pesquisa: Omit<VendasPesquisa, 'id'>): Promise<VendasPesquisa | null> {
-  const { data, error } = await supabase
+// Insert público (formulário anônimo de pesquisa). Não usa .select() de
+// propósito: sob RLS o papel `anon` recebe apenas INSERT, nunca SELECT, então
+// ler a linha de volta falharia e — mais importante — manter SELECT fechado
+// impede que o público liste pesquisas de terceiros.
+export async function createVendasPesquisa(pesquisa: Omit<VendasPesquisa, 'id'>): Promise<boolean> {
+  const { error } = await supabase
     .from('vendas_pesquisas')
     .insert([pesquisa])
-    .select()
-    .single()
 
   if (error) {
     console.error('Erro ao criar pesquisa vendas:', error)
-    return null
+    return false
   }
-  return data
+  return true
 }
 
 export async function deleteVendasPesquisa(id: string): Promise<boolean> {

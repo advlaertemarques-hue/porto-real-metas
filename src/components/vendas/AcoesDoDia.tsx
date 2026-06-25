@@ -40,7 +40,7 @@ export default function AcoesDoDia({
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-fadeIn">
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-md">
-        <h2 className="text-xl md:text-2xl font-black text-[#1F4E79] tracking-tight flex items-center gap-2">
+        <h2 className="text-xl md:text-2xl font-black text-[#33415C] tracking-tight flex items-center gap-2">
           <ClipboardList className="text-[#eb3238]" size={24} />
           Ações de Hoje
         </h2>
@@ -112,7 +112,7 @@ export default function AcoesDoDia({
                     setActiveId(c.id)
                     setActiveView('funil')
                   }}
-                  className="bg-[#1F4E79] hover:bg-[#123658] text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-all whitespace-nowrap self-stretch md:self-auto text-center cursor-pointer"
+                  className="bg-[#33415C] hover:bg-[#232E42] text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-all whitespace-nowrap self-stretch md:self-auto text-center cursor-pointer"
                 >
                   Abrir no Funil
                 </button>

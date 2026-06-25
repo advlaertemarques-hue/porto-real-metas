@@ -137,7 +137,7 @@ export default function GestaoUsuarios({
       {/* Header section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-md">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-[#1F4E79] tracking-tight flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-black text-[#33415C] tracking-tight flex items-center gap-2">
             <Users className="text-[#eb3238]" size={24} />
             Controle de Usuários
           </h2>
@@ -162,7 +162,7 @@ export default function GestaoUsuarios({
       {/* List Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden">
         <div className="border-b border-slate-100 bg-slate-50/50 p-4">
-          <span className="text-xs font-black text-[#1F4E79] uppercase tracking-wider">
+          <span className="text-xs font-black text-[#33415C] uppercase tracking-wider">
             Logins Ativos ({systemUsers.length})
           </span>
         </div>
@@ -196,7 +196,7 @@ export default function GestaoUsuarios({
                       <td className="py-4 px-6 text-slate-600 font-semibold">{u.email}</td>
                       <td className="py-4 px-6">
                         {u.role === 'superadmin' && (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-[#1F4E79]/10 text-[#1F4E79] border border-[#1F4E79]/20 uppercase">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-[#33415C]/10 text-[#33415C] border border-[#33415C]/20 uppercase">
                             Administrativo
                           </span>
                         )}
@@ -214,7 +214,7 @@ export default function GestaoUsuarios({
                       <td className="py-4 px-6 text-slate-600 font-semibold">
                         {corr ? (
                           <div className="space-y-0.5">
-                            {corr.creci && <div><span className="text-[10px] text-slate-400 font-bold uppercase">CRECI:</span> <span className="font-extrabold text-[#1F4E79]">{corr.creci}</span></div>}
+                            {corr.creci && <div><span className="text-[10px] text-slate-400 font-bold uppercase">CRECI:</span> <span className="font-extrabold text-[#33415C]">{corr.creci}</span></div>}
                             {corr.telefone && <div><span className="text-[10px] text-slate-400 font-bold uppercase">Tel:</span> <span className="font-bold text-slate-700">{corr.telefone}</span></div>}
                             {!corr.creci && !corr.telefone && <span className="text-slate-400 italic">—</span>}
                           </div>
@@ -267,7 +267,7 @@ export default function GestaoUsuarios({
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-black text-[#1F4E79] text-base md:text-lg flex items-center gap-1.5">🔑 Novo Login</h3>
+                <h3 className="font-black text-[#33415C] text-base md:text-lg flex items-center gap-1.5">🔑 Novo Login</h3>
                 <p className="text-[11px] text-slate-400 font-medium">Cadastre um novo login para acessar o sistema.</p>
               </div>
               <button
@@ -293,7 +293,7 @@ export default function GestaoUsuarios({
                   placeholder="Nome do Corretor ou Administrador"
                   value={formUsuario.nome}
                   onChange={(e) => setFormUsuario(prev => ({ ...prev, nome: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export default function GestaoUsuarios({
                   placeholder="exemplo@portoreal.com.br"
                   value={formUsuario.email}
                   onChange={(e) => setFormUsuario(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
                 />
               </div>
 
@@ -317,7 +317,7 @@ export default function GestaoUsuarios({
                   placeholder="Mínimo 6 caracteres"
                   value={formUsuario.senha}
                   onChange={(e) => setFormUsuario(prev => ({ ...prev, senha: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700 font-mono"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 font-mono"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default function GestaoUsuarios({
                 <select
                   value={formUsuario.role}
                   onChange={(e) => setFormUsuario(prev => ({ ...prev, role: e.target.value as any }))}
-                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700 cursor-pointer font-semibold"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 cursor-pointer font-semibold"
                 >
                   <option value="vendas">Corretor (Vendas)</option>
                   <option value="aluguel">Corretor (Aluguel)</option>
@@ -344,7 +344,7 @@ export default function GestaoUsuarios({
                         placeholder="(11) 99999-9999"
                         value={formUsuario.telefone}
                         onChange={(e) => setFormUsuario(prev => ({ ...prev, telefone: e.target.value }))}
-                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700"
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
                       />
                     </div>
 
@@ -355,7 +355,7 @@ export default function GestaoUsuarios({
                         placeholder="Ex: 12345-F"
                         value={formUsuario.creci}
                         onChange={(e) => setFormUsuario(prev => ({ ...prev, creci: e.target.value }))}
-                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700"
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
                       />
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function GestaoUsuarios({
                     <select
                       value={formUsuario.equipe_id}
                       onChange={(e) => setFormUsuario(prev => ({ ...prev, equipe_id: e.target.value }))}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#1F4E79] bg-white text-slate-700 cursor-pointer font-semibold"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 cursor-pointer font-semibold"
                     >
                       <option value="">Nenhuma Equipe</option>
                       {equipes.map(eq => (
@@ -387,7 +387,7 @@ export default function GestaoUsuarios({
                 <button
                   type="submit"
                   disabled={usuarioSalvando}
-                  className="flex-1 bg-[#1F4E79] hover:bg-[#2E6CA8] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-[#33415C] hover:bg-[#47587A] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm flex items-center justify-center gap-1.5"
                 >
                   {usuarioSalvando ? "Salvando..." : "Salvar Acesso"}
                 </button>

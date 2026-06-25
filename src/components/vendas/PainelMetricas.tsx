@@ -76,7 +76,7 @@ export default function PainelMetricas({
     <div className="p-6 max-w-6xl mx-auto space-y-6 animate-fadeIn">
       {/* Header section */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-md">
-        <h2 className="text-xl md:text-2xl font-black text-[#1F4E79] tracking-tight flex items-center gap-2">
+        <h2 className="text-xl md:text-2xl font-black text-[#33415C] tracking-tight flex items-center gap-2">
           <Activity className="text-[#eb3238]" size={24} />
           Métricas Avançadas &amp; Diagnóstico (V5)
         </h2>
@@ -99,7 +99,7 @@ export default function PainelMetricas({
             </div>
             <div className="py-2 flex justify-between items-center">
               <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">🏠 Corretor (Porta B)</span>
-              <span className="font-extrabold text-sm text-[#1F4E79]">
+              <span className="font-extrabold text-sm text-[#33415C]">
                 {formatInterval(metricsTempo.find(t => t.porta === 'B' && t.dono_tipo === 'humano')?.tempo_medio || null)}
               </span>
             </div>
@@ -135,7 +135,7 @@ export default function PainelMetricas({
                 <span className="font-bold text-slate-600 truncate max-w-[170px]" title={h.tipo}>
                   {h.tipo === 'qualificador_corretor' ? '👉 Qualif. para Corretor' : h.tipo === 'lais_humano' ? '🤖 Lais para Humano' : h.tipo}
                 </span>
-                <span className="font-extrabold text-[#1F4E79]">{formatInterval(h.tempo_morto_medio)}</span>
+                <span className="font-extrabold text-[#33415C]">{formatInterval(h.tempo_morto_medio)}</span>
               </div>
             ))}
             {metricsHandoff.length === 0 && (
@@ -151,7 +151,7 @@ export default function PainelMetricas({
         {/* Funnel Conversão V5 */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">Conversão do Funil de Vendas V5</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Conversão do Funil de Vendas V5</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Histórico acumulado de leads que passaram por cada uma das 12 etapas.</p>
           </div>
 
@@ -162,7 +162,7 @@ export default function PainelMetricas({
                 <div key={idx} className="space-y-1 text-xs">
                   <div className="flex justify-between items-center font-bold text-slate-700">
                     <span className="flex items-center gap-1.5">
-                      <span className="bg-slate-100 text-[#1F4E79] px-2 py-0.5 rounded text-[10px] font-black">{etapa.codigo}</span>
+                      <span className="bg-slate-100 text-[#33415C] px-2 py-0.5 rounded text-[10px] font-black">{etapa.codigo}</span>
                       {etapa.nome}
                     </span>
                     <span className="text-slate-500">{etapa.taxa_avanco_pct}% conv.</span>
@@ -190,7 +190,7 @@ export default function PainelMetricas({
         {/* Onde treinar */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">Diagnóstico de Gargalos ("Onde Treinar")</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Diagnóstico de Gargalos ("Onde Treinar")</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Etapas críticas do funil ordenadas por urgência de atenção.</p>
           </div>
 
@@ -213,7 +213,7 @@ export default function PainelMetricas({
                 <div key={idx} className="bg-slate-50/50 border border-slate-200/70 p-3 rounded-xl space-y-2.5 text-xs font-semibold">
                   <div className="flex justify-between items-center">
                     <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                      <span className="bg-[#1F4E79] text-white px-1.5 py-0.5 rounded text-[9px] font-black">{t.codigo}</span>
+                      <span className="bg-[#33415C] text-white px-1.5 py-0.5 rounded text-[9px] font-black">{t.codigo}</span>
                       {t.nome}
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${badgeBg}`}>
@@ -255,7 +255,7 @@ export default function PainelMetricas({
         {/* Ciclo de Vendas */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">⏱️ Ciclo de Venda Médio (E1 a E9)</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">⏱️ Ciclo de Venda Médio (E1 a E9)</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Tempo médio acumulado do primeiro contato até a assinatura do contrato (Sucesso).</p>
           </div>
 
@@ -264,7 +264,7 @@ export default function PainelMetricas({
               <>
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">Duração Média Geral</span>
-                  <span className="text-3xl font-black text-[#1F4E79] block mt-1">
+                  <span className="text-3xl font-black text-[#33415C] block mt-1">
                     {(() => {
                       const days = metricsCiclo.map(c => {
                         if (!c.ciclo_total) return 0
@@ -308,7 +308,7 @@ export default function PainelMetricas({
         {/* Lais vs Humano */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">🤖 Comparativo Lais × Humano (Agendamentos)</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">🤖 Comparativo Lais × Humano (Agendamentos)</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Comparativo da taxa de agendamento de visita (E3) por canal de atendimento.</p>
           </div>
 
@@ -328,7 +328,7 @@ export default function PainelMetricas({
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className={`text-sm font-black block ${isLais ? 'text-emerald-600' : 'text-[#1F4E79]'}`}>
+                        <span className={`text-sm font-black block ${isLais ? 'text-emerald-600' : 'text-[#33415C]'}`}>
                           {m.taxa_agendamento_pct}%
                         </span>
                         <span className="text-[8px] text-slate-400 font-extrabold uppercase tracking-wider">
@@ -350,7 +350,7 @@ export default function PainelMetricas({
         {/* Travas e Gargalos de Pagamento */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#1F4E79]">🔒 Travas de Formalização (E6)</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">🔒 Travas de Formalização (E6)</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Fatores burocráticos que mais geram gargalo no fechamento de contratos.</p>
           </div>
 

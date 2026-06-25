@@ -20,7 +20,7 @@ export default function PesquisasLeads({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-[#1F4E79]">Pesquisas &amp; Captação de Leads</h1>
+          <h1 className="text-xl md:text-2xl font-black text-[#33415C]">Pesquisas &amp; Captação de Leads</h1>
           <p className="text-xs text-slate-500 mt-1">Gere pesquisas de satisfação para clientes ou simule o quiz de interesse que identifica perfis de leads.</p>
         </div>
 
@@ -29,8 +29,8 @@ export default function PesquisasLeads({
             onClick={() => setPesqTab('gerar')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
               pesqTab === 'gerar'
-                ? 'bg-[#1F4E79] text-white shadow-sm'
-                : 'text-slate-500 hover:text-[#1F4E79]'
+                ? 'bg-[#33415C] text-white shadow-sm'
+                : 'text-slate-500 hover:text-[#33415C]'
             }`}
           >
             Gerar Pesquisa
@@ -39,8 +39,8 @@ export default function PesquisasLeads({
             onClick={() => setPesqTab('formulario')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
               pesqTab === 'formulario'
-                ? 'bg-[#1F4E79] text-white shadow-sm'
-                : 'text-slate-500 hover:text-[#1F4E79]'
+                ? 'bg-[#33415C] text-white shadow-sm'
+                : 'text-slate-500 hover:text-[#33415C]'
             }`}
           >
             Formulário de Interesse (Simulação)
@@ -64,7 +64,7 @@ export default function PesquisasLeads({
                     setPesqQs(prev => ({ ...prev, [val]: QS_PUBLICO[val as keyof typeof QS_PUBLICO].map((_, i) => i) }))
                   }
                 }}
-                className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm font-semibold outline-none focus:border-[#2E6CA8] bg-white cursor-pointer"
+                className="w-full border border-slate-200 rounded-xl p-3 text-xs md:text-sm font-semibold outline-none focus:border-[#47587A] bg-white cursor-pointer"
               >
                 <option value="">Selecione o público alvo...</option>
                 {Object.keys(PUB_LABEL).map(key => (
@@ -92,12 +92,12 @@ export default function PesquisasLeads({
                         }}
                         className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
                           on
-                            ? 'border-[#1F4E79] bg-[#EEF4FA] text-[#1F4E79] font-bold'
+                            ? 'border-[#33415C] bg-[#EEF4FA] text-[#33415C] font-bold'
                             : 'border-slate-100 hover:border-slate-200 bg-white text-slate-600'
                         }`}
                       >
                         <span className={`w-4.5 h-4.5 rounded border flex items-center justify-center text-[10px] ${
-                          on ? 'bg-[#1F4E79] border-[#1F4E79] text-white' : 'border-slate-300'
+                          on ? 'bg-[#33415C] border-[#33415C] text-white' : 'border-slate-300'
                         }`}>
                           {on && '✓'}
                         </span>
@@ -109,7 +109,7 @@ export default function PesquisasLeads({
 
                 <button
                   onClick={() => setLinkGerado(true)}
-                  className="w-full bg-[#1F4E79] hover:bg-[#2E6CA8] text-white text-xs font-bold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-3"
+                  className="w-full bg-[#33415C] hover:bg-[#47587A] text-white text-xs font-bold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-3"
                 >
                   Gerar link da pesquisa
                 </button>
@@ -117,7 +117,7 @@ export default function PesquisasLeads({
             )}
 
             {linkGerado && (
-              <div className="bg-[#EEF4FA] border border-dashed border-[#2E6CA8] rounded-xl p-4 text-xs font-semibold text-[#1F4E79] break-all flex flex-col gap-1.5 animate-fadeIn">
+              <div className="bg-[#EEF4FA] border border-dashed border-[#47587A] rounded-xl p-4 text-xs font-semibold text-[#33415C] break-all flex flex-col gap-1.5 animate-fadeIn">
                 <span>🔗 Link gerado com sucesso:</span>
                 <span className="font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-100 mt-1 select-all">
                   {typeof window !== 'undefined' ? window.location.origin + '/publico/pesquisa?tipo=' + pesqPublico + (pesqQs[pesqPublico] ? '&q=' + pesqQs[pesqPublico].join(',') : '') : ''}
@@ -184,7 +184,7 @@ export default function PesquisasLeads({
           <p className="text-xs text-slate-500">
             Você pode copiar o link público para enviar aos seus clientes ou realizar uma simulação rápida no link abaixo:
           </p>
-          <div className="bg-[#EEF4FA] border border-dashed border-[#2E6CA8] rounded-xl p-4 text-xs font-semibold text-[#1F4E79] break-all flex flex-col gap-1.5">
+          <div className="bg-[#EEF4FA] border border-dashed border-[#47587A] rounded-xl p-4 text-xs font-semibold text-[#33415C] break-all flex flex-col gap-1.5">
             <span>🔗 Link do Formulário Público de Interesse:</span>
             <span className="font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-100 mt-1 select-all">
               {typeof window !== 'undefined' ? window.location.origin + '/publico/qualificar' : ''}

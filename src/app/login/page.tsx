@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import Logo from '@/components/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -34,9 +35,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-porto-navy flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-10">
-          <h1 className="text-white text-3xl font-bold tracking-tight">Porto Real</h1>
-          <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest">
+        <div className="flex flex-col items-center mb-10">
+          <Logo iconSize={40} fontSize="text-4xl" textClassName="text-white" />
+          <p className="text-gray-500 text-sm mt-3 uppercase tracking-widest">
             Sistema de Metas
           </p>
         </div>

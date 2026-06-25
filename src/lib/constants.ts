@@ -78,9 +78,9 @@ export const RESP = [
 ]
 
 export const RESP_COR: Record<string, string> = {
-  "Andressa": "#1F4E79",
+  "Andressa": "#33415C",
   "Corretor": "#1f9d6b",
-  "Andressa + Corretor": "#2E6CA8",
+  "Andressa + Corretor": "#47587A",
   "Corretor + Andressa": "#5b21b6"
 }
 
@@ -100,7 +100,7 @@ export const TEMP_CFG = {
 export const TIPO_CFG = {
   comprou: { l: "Comprou", bg: "#e6f5ee", c: "#1f9d6b" },
   naocomprou: { l: "Não comprou", bg: "#fdeceb", c: "#d6453d" },
-  proprietario: { l: "Proprietário", bg: "#D6E4F0", c: "#1F4E79" },
+  proprietario: { l: "Proprietário", bg: "#D6E4F0", c: "#33415C" },
   visitante: { l: "Visitante", bg: "#EEF4FA", c: "#475569" }
 }
 
@@ -382,3 +382,19 @@ export const PERFIL_QS = [
 ]
 
 export const fmtBRL = (n: number) => "R$ " + n.toLocaleString('pt-BR')
+
+// Faixas de valor do imóvel — usadas na Ficha, no cadastro e no formulário público.
+// Centralizado aqui para manter os mesmos rótulos em todos os lugares.
+export const FAIXAS_VALOR = [
+  'Até R$ 200 mil',
+  'R$ 200–350 mil',
+  'R$ 350–500 mil',
+  'R$ 500–750 mil',
+  'R$ 750 mil – 1 milhão',
+  'R$ 1 – 1,5 milhão',
+  'R$ 1,5 – 2 milhões',
+  'R$ 2 – 3 milhões',
+  'Acima de R$ 3 milhões',
+]
+
+export const TIPOS_IMOVEL = ['Casa', 'Apartamento', 'Terreno', 'Comercial', 'Chácara/Sítio']
