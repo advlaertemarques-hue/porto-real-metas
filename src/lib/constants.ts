@@ -17,92 +17,49 @@ export const ETAPAS = [
   {
     nome: "Triagem",
     chk: [
-      "Origem do lead registrada",
-      "Primeira resposta enviada (< 1h)",
-      "Nome e contato salvos",
-      "Origem registrada",
-      "Etiqueta de status aplicada"
+      "O lead foi respondido em menos de 1h?",
+      "A origem foi registrada?",
+      "O que o cliente já trouxe (valor, região, tipo, imóvel escolhido) está anotado?",
+      "É caso de via expressa?"
     ]
   },
   {
     nome: "Atendimento & Match",
     chk: [
-      "Rapport feito (a pessoa antes do imóvel)",
-      "Canal de atendimento definido",
-      "Cliente engajado na conversa",
-      "Perguntas SPIN feitas",
-      "Necessidade real mapeada",
-      "Perfil dominante identificado",
-      "Sondagem: orçamento e forma de pagamento",
-      "Plano por perfil definido",
-      "Cadência de contato definida",
-      "Roteiro de apresentação ajustado",
-      "Imóveis cruzados com o perfil",
-      "Imóveis estudados antes de oferecer",
-      "Quantidade certa selecionada",
-      "Apresentação adaptada ao perfil",
-      "Fotos / vídeo enviados",
-      "Interesse despertado"
+      "A necessidade real foi mapeada (não só o imóvel)?",
+      "Ofereci no máximo 3 imóveis, estudados antes?",
+      "Registrei a intenção de pagamento?",
+      "Tem próxima ação com data?"
     ]
   },
   {
     nome: "Visita",
     chk: [
-      "Checklist de preparação feito",
-      "Visita conduzida pelos 5 momentos",
-      "Pontos de atenção apresentados",
-      "Leitura de interesse feita"
+      "Registrei a visita agendada e a realizada?",
+      "Confirmei o perfil do cliente?",
+      "Mapeei as objeções por categoria?",
+      "Deixei a próxima ação com data?"
     ]
   },
   {
     nome: "Proposta",
     chk: [
-      "As 4 perguntas antes da proposta",
-      "Qualificação financeira concluída",
-      "Proposta registrada"
+      "Imóvel-alvo, valor e forma de pagamento estão registrados?"
     ]
   },
   {
     nome: "Negociação",
     chk: [
-      "Interesses (não posições) mapeados",
-      "Ancoragem e concessões planejadas",
-      "Objeções tratadas",
-      "Acordo entre as partes"
+      "Mapeei os interesses dos dois lados?",
+      "Planejei a ancoragem e as concessões antes?",
+      "Registrei o valor fechado ao acordar?"
     ]
   },
   {
     nome: "Fechamento",
     chk: [
-      "Documentos do comprador",
-      "Documentos do vendedor / imóvel",
-      "Financiamento encaminhado",
-      "Aprovação acompanhada",
-      "Conferência pré-assinatura",
-      "Contrato assinado",
-      "Comissão acordada",
-      "Chaves entregues"
-    ]
-  },
-  {
-    nome: "Pós-venda",
-    chk: [
-      "Contato pós-fechamento feito",
-      "Satisfação verificada"
-    ]
-  },
-  {
-    nome: "Depoimento",
-    chk: [
-      "Depoimento solicitado",
-      "Depoimento publicado"
-    ]
-  },
-  {
-    nome: "Indicação",
-    chk: [
-      "Indicação solicitada",
-      "Indicação registrada como novo lead"
+      "Registrei as condições fechadas e o valor fechado?",
+      "A venda foi lançada como ganha?"
     ]
   }
 ]
@@ -112,29 +69,26 @@ export const I_PROPOSTA = 3
 export const I_FECHAMENTO = 5
 
 export const RESP = [
-  "Andressa",          // 0 Triagem
-  "Andressa + Corretor",// 1 Atendimento & Match
-  "Corretor",           // 2 Visita
-  "Corretor",           // 3 Proposta
-  "Corretor",           // 4 Negociação
-  "Andressa + Corretor",// 5 Fechamento
-  "Pós-venda",          // 6 Pós-venda
-  "Pós-venda",          // 7 Depoimento
-  "Pós-venda"           // 8 Indicação
+  "Andressa",            // 0 Triagem
+  "Andressa + Corretor",  // 1 Atendimento & Match
+  "Corretor",             // 2 Visita
+  "Corretor",             // 3 Proposta
+  "Corretor + Andressa",  // 4 Negociação
+  "Andressa + Corretor"   // 5 Fechamento
 ]
 
 export const RESP_COR: Record<string, string> = {
   "Andressa": "#1F4E79",
   "Corretor": "#1f9d6b",
   "Andressa + Corretor": "#2E6CA8",
-  "Pós-venda": "#c77d2e"
+  "Corretor + Andressa": "#5b21b6"
 }
 
 export const RESP_EMO: Record<string, string> = {
   "Andressa": "⭐",
   "Corretor": "🏠",
   "Andressa + Corretor": "⭐🏠",
-  "Pós-venda": "💬"
+  "Corretor + Andressa": "🏠⭐"
 }
 
 export const TEMP_CFG = {

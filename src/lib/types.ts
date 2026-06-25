@@ -274,6 +274,7 @@ export interface VendasCliente {
   faixa: string | null
   local: string | null
   preferencia: string | null
+  imovel_interesse?: string | null
   perfil_quiz: Record<string, string> // qi -> perfil
   finalizado?: boolean
   status_finalizacao?: 'sucesso' | 'perdido' | 'interessado' | null
@@ -289,6 +290,9 @@ export interface VendasCliente {
   visita_realizada_em?: string | null
   status_financiamento?: 'n/a' | 'em_andamento' | 'aprovado' | 'reprovado' | null
   em_captacao?: boolean
+  porta?: 'A' | 'B'
+  etiqueta_status?: 'Novo' | 'Em atendimento' | 'Aguardando cliente' | 'Sem resposta' | 'Via expressa' | 'Descartado'
+  forma_pagamento?: 'a_vista' | 'parcelamento' | 'permuta' | 'financiamento' | 'a_definir'
   created_at?: string
   updated_at?: string
 }

@@ -47,7 +47,7 @@ export default function Topbar() {
         items.push({ href: '/banco-dados', label: 'Banco de Dados' })
         items.push({ href: '/corretores', label: 'Controle de Usuários' })
         items.push({ href: '/vendas-vgv', label: 'VGV e Alertas' })
-        items.push({ href: '/treinamentos', label: 'Treinamentos' })
+        items.push({ href: '/treinamentos', label: 'Prioridades de Captação' })
         items.push({ href: '/auditoria', label: 'Auditoria' })
       }
       return items

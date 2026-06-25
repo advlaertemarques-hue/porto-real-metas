@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import AcoesDoDia from '@/components/vendas/AcoesDoDia'
 import MinhaCarteira from '@/components/vendas/MinhaCarteira'
 import Dashboard from '@/components/vendas/Dashboard'
+import GuiasDeApoio from '@/components/vendas/GuiasDeApoio'
 import {
   getVendasClientes,
   getVendasCorretores,
@@ -17,7 +18,8 @@ import {
   Users,
   TrendingUp,
   LogOut,
-  ClipboardList
+  ClipboardList,
+  BookOpen
 } from 'lucide-react'
 
 function getInitials(nome: string) {
@@ -31,7 +33,7 @@ function VendasMockupContent() {
   const { user, logout } = useAuth()
   const searchParams = useSearchParams()
 
-  const [activeView, setActiveView] = useState<'acoes' | 'funil' | 'dashboard'>('acoes')
+  const [activeView, setActiveView] = useState<'acoes' | 'funil' | 'dashboard' | 'guias'>('acoes')
   const [clientes, setClientes] = useState<VendasCliente[]>([])
   const [corretores, setCorretores] = useState<VendasCorretor[]>([])
   const [equipes, setEquipes] = useState<VendasEquipe[]>([])
@@ -41,8 +43,8 @@ function VendasMockupContent() {
   // Sync activeView with query param 'view'
   useEffect(() => {
     const view = searchParams?.get('view')
-    if (view && ['acoes', 'funil', 'dashboard'].includes(view)) {
-      if (user?.role === 'vendas' && !['acoes', 'funil'].includes(view)) {
+    if (view && ['acoes', 'funil', 'dashboard', 'guias'].includes(view)) {
+      if (user?.role === 'vendas' && !['acoes', 'funil', 'guias'].includes(view)) {
         setActiveView('acoes')
       } else {
         setActiveView(view as any)
@@ -52,7 +54,7 @@ function VendasMockupContent() {
 
   // Block brokers from trying to access general dashboard view
   useEffect(() => {
-    if (user?.role === 'vendas' && !['acoes', 'funil'].includes(activeView)) {
+    if (user?.role === 'vendas' && !['acoes', 'funil', 'guias'].includes(activeView)) {
       setActiveView('acoes')
     }
   }, [activeView, user])
@@ -100,10 +102,12 @@ function VendasMockupContent() {
   const navigationTabs = user?.role === 'superadmin' ? [
     { id: 'acoes', label: 'Ações de Hoje', icon: <ClipboardList size={15} /> },
     { id: 'funil', label: 'Funil / Minha Carteira', icon: <Target size={15} /> },
-    { id: 'dashboard', label: 'Dashboard Geral', icon: <TrendingUp size={15} /> }
+    { id: 'dashboard', label: 'Dashboard Geral', icon: <TrendingUp size={15} /> },
+    { id: 'guias', label: 'Guias', icon: <BookOpen size={15} /> }
   ] : [
     { id: 'acoes', label: 'Ações de Hoje', icon: <ClipboardList size={15} /> },
-    { id: 'funil', label: 'Minha Carteira', icon: <Target size={15} /> }
+    { id: 'funil', label: 'Minha Carteira', icon: <Target size={15} /> },
+    { id: 'guias', label: 'Guias', icon: <BookOpen size={15} /> }
   ]
 
   return (
@@ -156,6 +160,10 @@ function VendasMockupContent() {
             setActiveId={setActiveId}
             setActiveView={setActiveView}
           />
+        )}
+
+        {activeView === 'guias' && (
+          <GuiasDeApoio />
         )}
       </div>
     </div>

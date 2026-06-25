@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { VendasCliente, VendasCorretor, VendasEquipe, User, VendasClienteNota, VendasClienteChecklist } from '@/lib/types'
+import GuiasDeApoio from './GuiasDeApoio'
 import {
   getVendasClienteNotas,
   getVendasClienteChecklist,
@@ -92,9 +93,31 @@ export default function MinhaCarteira({
   const [fichaOpen, setFichaOpen] = useState(false)
   const [novaNotaTxt, setNovaNotaTxt] = useState('')
   const [checklistExpanded, setChecklistExpanded] = useState(true)
+  const [selectedDetailTab, setSelectedDetailTab] = useState<number>(0)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [copiedText, setCopiedText] = useState<string | null>(null)
+
+  const handleCopyText = (text: string, key: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedText(key)
+    setTimeout(() => {
+      setCopiedText(null)
+    }, 1500)
+  }
+
+  // Filters for Interessados tab
+  const [filterLocal, setFilterLocal] = useState('')
+  const [filterPreco, setFilterPreco] = useState('')
+  const [filterPref, setFilterPref] = useState('')
 
   const activeClient = clientes.find(c => c.id === activeId)
+
+  // Sync selectedDetailTab when activeClient changes or its actual stage changes
+  useEffect(() => {
+    if (activeClient) {
+      setSelectedDetailTab(Math.min(activeClient.etapa, 5))
+    }
+  }, [activeClient?.id, activeClient?.etapa])
 
   // Load Active Client Details on ID Change
   useEffect(() => {
@@ -157,10 +180,11 @@ export default function MinhaCarteira({
     }
   }
 
-  const toggleChecklist = async (itemIndex: number) => {
+  const toggleChecklist = async (itemIndex: number, overrideEtapa?: number) => {
     if (!activeId || !activeClient) return
-    const isChecked = activeChecklist.some(chk => chk.etapa === activeClient.etapa && chk.item_index === itemIndex)
-    const success = await toggleVendasChecklistItem(activeId, activeClient.etapa, itemIndex, !isChecked)
+    const targetEtapa = overrideEtapa !== undefined ? overrideEtapa : activeClient.etapa
+    const isChecked = activeChecklist.some(chk => chk.etapa === targetEtapa && chk.item_index === itemIndex)
+    const success = await toggleVendasChecklistItem(activeId, targetEtapa, itemIndex, !isChecked)
     if (success) {
       const updatedChks = await getVendasClienteChecklist(activeId)
       setActiveChecklist(updatedChks)
@@ -389,10 +413,7 @@ export default function MinhaCarteira({
     }
 
     if (finalizarStatus === 'sucesso' && activeClient.objetivo === 'Comprar') {
-      if (valProcurado) params.valor = Number(valProcurado)
       params.valor_fechado = Number(valFechado) || 0
-      params.valor_pedido = Number(valPedido) || 0
-      params.valor_vendido = Number(valVendido) || 0
     }
 
     const updated = await updateVendasCliente(activeId, params)
@@ -457,6 +478,17 @@ export default function MinhaCarteira({
       if (c.finalizado || c.status_finalizacao === 'interessado') return false
     } else if (sidebarView === 'interessados') {
       if (c.status_finalizacao !== 'interessado') return false
+      
+      // Apply filters for Interessados criteria
+      if (filterLocal && !c.local?.toLowerCase().includes(filterLocal.toLowerCase())) {
+        return false
+      }
+      if (filterPreco && c.faixa !== filterPreco) {
+        return false
+      }
+      if (filterPref && !c.preferencia?.toLowerCase().includes(filterPref.toLowerCase())) {
+        return false
+      }
     } else if (sidebarView === 'finalizados') {
       if (!c.finalizado || c.status_finalizacao === 'interessado') return false
     }
@@ -520,7 +552,7 @@ export default function MinhaCarteira({
         {/* Toggle between Kanban and grids */}
         <div className="flex bg-slate-200/50 p-1.5 rounded-2xl gap-1 self-start border border-slate-350/20 shadow-xs">
           <button
-            onClick={() => { setSidebarView('ativos'); setActiveId(null); }}
+            onClick={() => { setSidebarView('ativos'); setActiveId(null); setFilterLocal(''); setFilterPreco(''); setFilterPref(''); }}
             className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'ativos'
                 ? 'bg-[#eb3238] text-white shadow-md'
@@ -530,7 +562,7 @@ export default function MinhaCarteira({
             💼 Funil Ativo
           </button>
           <button
-            onClick={() => { setSidebarView('interessados'); setActiveId(null); }}
+            onClick={() => { setSidebarView('interessados'); setActiveId(null); setFilterLocal(''); setFilterPreco(''); setFilterPref(''); }}
             className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'interessados'
                 ? 'bg-[#eb3238] text-white shadow-md'
@@ -540,7 +572,7 @@ export default function MinhaCarteira({
             ⭐ Interessados
           </button>
           <button
-            onClick={() => { setSidebarView('finalizados'); setActiveId(null); }}
+            onClick={() => { setSidebarView('finalizados'); setActiveId(null); setFilterLocal(''); setFilterPreco(''); setFilterPref(''); }}
             className={`px-4.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
               sidebarView === 'finalizados'
                 ? 'bg-[#eb3238] text-white shadow-md'
@@ -670,71 +702,124 @@ export default function MinhaCarteira({
           </div>
         ) : (
           /* INTERESTED AND ARCHIVED GRIDS */
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {myClientsFiltered.length === 0 ? (
-              <div className="col-span-full border border-dashed border-slate-200 rounded-2xl p-12 text-center text-xs text-slate-400 font-semibold bg-white/40">
-                Nenhum lead nesta lista
-              </div>
-            ) : (
-              myClientsFiltered.map(c => {
-                const isSelected = c.id === activeId
-                const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
-                const perf = c.perfil ? PERFIS[c.perfil] : null
-
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => selectClient(c.id)}
-                    className={`p-4 border rounded-xl bg-white shadow-xs cursor-pointer hover:border-slate-300 transition-all ${
-                      isSelected 
-                        ? 'ring-2 ring-[#eb3238] border-transparent' 
-                        : 'border-slate-200/80'
-                    }`}
+          <div className="space-y-4 w-full">
+            {sidebarView === 'interessados' && (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row gap-4 items-end mb-2 w-full">
+                <div className="flex-1 space-y-1 w-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">📍 Localização / Bairro</label>
+                  <input
+                    type="text"
+                    value={filterLocal}
+                    onChange={(e) => setFilterLocal(e.target.value)}
+                    placeholder="Filtrar por bairro ou cidade..."
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm outline-none bg-slate-50/30 focus:bg-white focus:border-[#eb3238] font-semibold transition-all text-slate-800"
+                  />
+                </div>
+                <div className="flex-1 space-y-1 w-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">💰 Faixa de Preço</label>
+                  <select
+                    value={filterPreco}
+                    onChange={(e) => setFilterPreco(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm outline-none bg-white cursor-pointer focus:border-[#eb3238] font-semibold transition-all text-slate-800 h-[38px]"
                   >
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <span className="font-extrabold text-xs text-slate-800 line-clamp-1 heading-premium">
-                        {c.nome}
-                      </span>
-                      {c.finalizado && (
-                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0 ${
-                          c.status_finalizacao === 'sucesso' 
-                            ? 'bg-emerald-50 text-emerald-600' 
-                            : 'bg-rose-50 text-[#eb3238]'
-                        }`}>
-                          {c.status_finalizacao === 'sucesso' ? 'Ganho' : 'Perdido'}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      {c.contato} · Etapa: {ETAPAS[c.etapa]?.nome}
-                    </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
-                        {tc.rotulo}
-                      </span>
-                      {perf && (
-                        <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black">
-                          {perf.emo} {perf.nome}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Specific details for Interessados */}
-                    {sidebarView === 'interessados' && (
-                      <div className="mt-3.5 space-y-1 text-[9px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 font-medium">
-                        {c.local && <div>📍 <b>Local:</b> {c.local}</div>}
-                        {c.faixa && <div>💰 <b>Faixa:</b> {c.faixa}</div>}
-                        {c.preferencia && <div className="line-clamp-1">🔑 <b>Pref:</b> {c.preferencia}</div>}
-                      </div>
-                    )}
-                  </div>
-                )
-              })
+                    <option value="">Todas as faixas</option>
+                    <option value="Até R$ 200 mil">Até R$ 200 mil</option>
+                    <option value="R$ 200–350 mil">R$ 200–350 mil</option>
+                    <option value="R$ 350–500 mil">R$ 350–500 mil</option>
+                    <option value="Acima de R$ 500 mil">Acima de R$ 500 mil</option>
+                  </select>
+                </div>
+                <div className="flex-1 space-y-1 w-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide block">🔑 Preferências / Tipo</label>
+                  <input
+                    type="text"
+                    value={filterPref}
+                    onChange={(e) => setFilterPref(e.target.value)}
+                    placeholder="Ex: 3 quartos, suíte, vaga..."
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs md:text-sm outline-none bg-slate-50/30 focus:bg-white focus:border-[#eb3238] font-semibold transition-all text-slate-800"
+                  />
+                </div>
+                {(filterLocal || filterPreco || filterPref) && (
+                  <button
+                    onClick={() => {
+                      setFilterLocal('');
+                      setFilterPreco('');
+                      setFilterPref('');
+                    }}
+                    className="bg-slate-100 hover:bg-slate-250 border border-slate-200 text-slate-600 px-4 py-2 text-xs font-black transition-all w-full md:w-auto h-[38px] rounded-xl cursor-pointer"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
             )}
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
+              {myClientsFiltered.length === 0 ? (
+                <div className="col-span-full border border-dashed border-slate-200 rounded-2xl p-12 text-center text-xs text-slate-400 font-semibold bg-white/40">
+                  Nenhum lead nesta lista
+                </div>
+              ) : (
+                myClientsFiltered.map(c => {
+                  const isSelected = c.id === activeId
+                  const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
+                  const perf = c.perfil ? PERFIS[c.perfil] : null
+
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => selectClient(c.id)}
+                      className={`p-4 border rounded-xl bg-white shadow-xs cursor-pointer hover:border-slate-300 transition-all ${
+                        isSelected 
+                          ? 'ring-2 ring-[#eb3238] border-transparent' 
+                          : 'border-slate-200/80'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <span className="font-extrabold text-xs text-slate-800 line-clamp-1 heading-premium">
+                          {c.nome}
+                        </span>
+                        {c.finalizado && (
+                          <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase flex-shrink-0 ${
+                            c.status_finalizacao === 'sucesso' 
+                              ? 'bg-emerald-50 text-emerald-600' 
+                              : 'bg-rose-50 text-[#eb3238]'
+                          }`}>
+                            {c.status_finalizacao === 'sucesso' ? 'Ganho' : 'Perdido'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-[10px] text-slate-500 font-semibold mb-2">
+                        {c.contato} · Etapa: {ETAPAS[c.etapa]?.nome}
+                      </div>
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
+                          {tc.rotulo}
+                        </span>
+                        {perf && (
+                          <span className="bg-[#D6E4F0]/60 text-[#1F4E79] text-[9px] px-1.5 py-0.5 rounded font-black">
+                            {perf.emo} {perf.nome}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Specific details for Interessados */}
+                      {sidebarView === 'interessados' && (
+                        <div className="mt-3.5 space-y-1 text-[9px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2 font-medium">
+                          {c.local && <div>📍 <b>Local:</b> {c.local}</div>}
+                          {c.faixa && <div>💰 <b>Faixa:</b> {c.faixa}</div>}
+                          {c.preferencia && <div className="line-clamp-1">🔑 <b>Pref:</b> {c.preferencia}</div>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -834,8 +919,8 @@ export default function MinhaCarteira({
                 >
                   📇 Ficha Completa
                 </button>
-                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-slate-200">
-                  {RESP_EMO[RESP[activeClient.etapa]]} {RESP[activeClient.etapa]}
+                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-slate-200" title={`Responsabilidade da etapa selecionada (${ETAPAS[selectedDetailTab]?.nome})`}>
+                  {RESP_EMO[RESP[selectedDetailTab]]} {RESP[selectedDetailTab]}
                 </span>
               </div>
             </div>
@@ -961,7 +1046,7 @@ export default function MinhaCarteira({
                   Funil Comercial (Etapa)
                 </h3>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   {ETAPAS.slice(0, 6).map((etapa, idx) => {
                     const isDone = idx < activeClient.etapa
                     const isCurrent = idx === activeClient.etapa
@@ -994,13 +1079,13 @@ export default function MinhaCarteira({
                   })}
                 </div>
 
-                {/* Legenda de responsáveis para 9 etapas */}
+                {/* Legenda de responsáveis para 6 etapas */}
                 <div className="flex flex-col gap-1.5 pt-3 text-[9px] text-slate-400 border-t border-slate-100 font-bold">
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1F4E79' }}></span> Andressa: Triagem (E1)</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2E6CA8' }}></span> Andressa+Corretor: Atendimento (E2), Fechamento (E6)</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1f9d6b' }}></span> Corretor: Visita (E3), Proposta (E4), Negociação (E5)</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#c77d2e' }}></span> Pós-venda: Pós-venda (E7), Depoimento (E8), Indicação (E9)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1f9d6b' }}></span> Corretor: Visita (E3), Proposta (E4)</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5b21b6' }}></span> Corretor + Andressa: Negociação (E5)</span>
                   </div>
                   <span className="text-[#6b4fbb] font-black">🤖 Lais (IA) apoia o 1º contato e a via expressa</span>
                 </div>
@@ -1065,128 +1150,61 @@ export default function MinhaCarteira({
                     </button>
                   </div>
                 )}
-
-                {/* Pós-Venda (E7-E9) inside details if won */}
-                {activeClient.status_finalizacao === 'sucesso' && (
-                  <div className="pt-4 border-t border-slate-100 space-y-2.5">
-                    <div className="text-[10px] font-black text-[#c77d2e] uppercase tracking-wider">Acompanhamento de Pós-Venda (E7-E9)</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {ETAPAS.slice(6, 9).map((etapa, idx) => {
-                        const stepIdx = idx + 6
-                        const isDone = stepIdx < activeClient.etapa
-                        const isCurrent = stepIdx === activeClient.etapa
-                        const { done, total } = getEtapaProgress(stepIdx)
-
-                        let cls = 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50/50'
-                        if (isDone) cls = 'border-amber-200 bg-amber-50/40 text-amber-800 font-bold hover:bg-amber-100/40'
-                        if (isCurrent) cls = 'border-[#c77d2e] bg-amber-50/60 text-[#c77d2e] ring-2 ring-amber-100 font-black'
-
-                        return (
-                          <button
-                            key={stepIdx}
-                            onClick={() => changeEtapa(stepIdx)}
-                            className={`flex flex-col items-start gap-1 p-2 border rounded-xl text-left transition-all text-[11px] ${cls}`}
-                          >
-                            <span className="font-extrabold truncate">{etapa.nome}</span>
-                            <span className="text-[9px] font-semibold text-slate-400">
-                              {done} de {total}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Card 4: SPIN Quiz & Sinais (Helper de Perfil) */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
-                  Identificar o Perfil do Comprador
-                </h3>
-                
-                <div className="bg-slate-50 rounded-xl p-3.5 text-[11px] text-slate-500 leading-relaxed border border-slate-100">
-                  Responda observando o cliente — cada resposta aponta para um estilo. Ao final, o sistema indica o perfil mais compatível.
-                </div>
+              {/* Chrome/Folder Style Tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-slate-200/80 pt-2 flex-shrink-0">
+                {ETAPAS.slice(0, 6).map((etapa, idx) => {
+                  const isActive = selectedDetailTab === idx
+                  const isLeadEtapa = idx === activeClient.etapa
+                  
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedDetailTab(idx)}
+                      className={`relative px-4 py-2.5 text-[11px] font-black uppercase tracking-wider transition-all rounded-t-2xl border-t-2 border-x -mb-[1px] flex-shrink-0 flex items-center gap-2 ${
+                        isActive
+                          ? 'bg-white border-t-[#1F4E79] border-x-slate-200/80 text-[#1F4E79] font-black z-10 shadow-xs'
+                          : 'bg-slate-100/50 border-t-transparent border-x-transparent text-slate-400 hover:bg-slate-150/45 hover:text-slate-600'
+                      }`}
+                      style={{
+                        borderBottomColor: isActive ? '#ffffff' : 'transparent'
+                      }}
+                    >
+                      {isLeadEtapa && (
+                        <span className="w-2 h-2 rounded-full bg-[#eb3238] flex-shrink-0 shadow-xs" title="Etapa atual no Funil" />
+                      )}
+                      <span>E{idx + 1}: {etapa.nome.split(' ')[0]}</span>
+                    </button>
+                  )
+                })}
 
-                <div className="space-y-4 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
-                  {PERFIL_QUIZ.map((pq, qi) => {
-                    const sel = activeClient.perfil_quiz?.[qi]
-                    return (
-                      <div key={qi} className="space-y-2 border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                        <span className="text-[11px] font-bold text-slate-700 block">{qi + 1}. {pq.q}</span>
-                        <div className="flex flex-col gap-1.5">
-                          {pq.opts.map(o => {
-                            const isSel = sel === o.k
-                            return (
-                              <button
-                                key={o.k}
-                                type="button"
-                                onClick={() => handleQuizAnswer(qi, o.k)}
-                                className={`w-full text-left text-[11px] px-3.5 py-2.5 rounded-xl border transition-all ${
-                                  isSel
-                                    ? 'border-[#eb3238] bg-rose-50/20 text-[#eb3238] font-bold'
-                                    : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
-                                }`}
-                              >
-                                {o.t}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Subsection: Sinais Comportamentais */}
-                <div className="pt-4 border-t border-slate-100 space-y-3">
-                  <span className="text-xs font-bold text-slate-700 block">Sinais Comportamentais Observados</span>
-                  <div className="bg-slate-50 rounded-xl p-3.5 text-[11px] text-slate-500 leading-relaxed border border-slate-100 mb-2">
-                    Marque os sinais que observou no comportamento do cliente. Eles também pesam na definição do perfil dominante e secundário.
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(() => {
-                      const list: { perfKey: string; sIdx: number; sinal: string }[] = []
-                      const keys = Object.keys(SINAIS_COMPORTAMENTAIS) as (keyof typeof SINAIS_COMPORTAMENTAIS)[]
-                      for (let i = 0; i < 5; i++) {
-                        keys.forEach(k => {
-                          list.push({
-                            perfKey: k,
-                            sIdx: i,
-                            sinal: SINAIS_COMPORTAMENTAIS[k][i]
-                          })
-                        })
-                      }
-                      return list.map(({ perfKey, sIdx, sinal }) => {
-                        const key = `s_${perfKey}_${sIdx}`
-                        const isChecked = activeClient.perfil_quiz?.[key] === 'true'
-                        return (
-                          <label key={`${perfKey}_${sIdx}`} className="flex items-start gap-2.5 text-[11px] text-slate-650 cursor-pointer select-none py-2 hover:bg-slate-50 px-2.5 rounded-xl border border-slate-200/50 bg-white transition-colors shadow-xs">
-                            <input 
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleSignalToggle(perfKey, sIdx)}
-                              className="rounded text-[#eb3238] focus:ring-[#eb3238] h-4 w-4 mt-0.5"
-                            />
-                            <span className="leading-snug">{sinal}</span>
-                          </label>
-                        )
-                      })
-                    })()}
-                  </div>
-                </div>
+                {/* 7th Tab: Perfil do Cliente */}
+                <button
+                  onClick={() => setSelectedDetailTab(6)}
+                  className={`relative px-4 py-2.5 text-[11px] font-black uppercase tracking-wider transition-all rounded-t-2xl border-t-2 border-x -mb-[1px] flex-shrink-0 flex items-center gap-2 ${
+                    selectedDetailTab === 6
+                      ? 'bg-white border-t-[#1F4E79] border-x-slate-200/80 text-[#1F4E79] font-black z-10 shadow-xs'
+                      : 'bg-slate-100/50 border-t-transparent border-x-transparent text-slate-400 hover:bg-slate-150/45 hover:text-slate-600'
+                  }`}
+                  style={{
+                    borderBottomColor: selectedDetailTab === 6 ? '#ffffff' : 'transparent'
+                  }}
+                >
+                  <span>👤 Perfil do Cliente</span>
+                </button>
               </div>
 
               {/* Grid block for actions and checklist */}
               <div className="space-y-5">
                 
                 {/* Dynamic Stage Actions */}
+                
+                {/* Embedded support guides contextually by selected stage (Rendered ABOVE the form fields) */}
+                {selectedDetailTab < 6 && <GuiasDeApoio stageIndex={selectedDetailTab} />}
 
               {/* ETAPA 0: Triagem */}
-              {activeClient.etapa === 0 && (
+              {selectedDetailTab === 0 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Dados do Lead & Triagem</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1232,6 +1250,32 @@ export default function MinhaCarteira({
                       </select>
                     </div>
                     <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Porta de Entrada</label>
+                      <select 
+                        value={activeClient.porta || 'A'}
+                        onChange={(e) => setCrmField('porta', e.target.value)}
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white font-medium text-slate-700"
+                      >
+                        <option value="A">Porta A (Lais / IA)</option>
+                        <option value="B">Porta B (Direto com Humano)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Etiqueta de Status</label>
+                      <select 
+                        value={activeClient.etiqueta_status || 'Novo'}
+                        onChange={(e) => setCrmField('etiqueta_status', e.target.value)}
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white font-medium text-slate-700"
+                      >
+                        <option value="Novo">Novo</option>
+                        <option value="Em atendimento">Em atendimento</option>
+                        <option value="Aguardando cliente">Aguardando cliente</option>
+                        <option value="Sem resposta">Sem resposta</option>
+                        <option value="Via expressa">Via expressa</option>
+                        <option value="Descartado">Descartado</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase">Finalidade da Aquisição</label>
                       <select 
                         defaultValue={activeClient.perfil_quiz?.cadastro_finalidade || 'Moradia'}
@@ -1270,13 +1314,17 @@ export default function MinhaCarteira({
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Orçamento Inicial do Cliente</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Orçamento Inicial do Cliente (R$)</label>
                       <input 
                         type="text"
                         defaultValue={activeClient.perfil_quiz?.cadastro_orcamento || ''}
-                        onBlur={(e) => setStageField('cadastro_orcamento', e.target.value)}
+                        onBlur={(e) => {
+                          setStageField('cadastro_orcamento', e.target.value);
+                          const cleanNum = Number(e.target.value.replace(/[^0-9]/g, ''));
+                          if (cleanNum > 0) setCrmField('valor', cleanNum);
+                        }}
                         placeholder="Ex: R$ 500.000"
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none font-bold text-slate-800"
                       />
                     </div>
                   </div>
@@ -1293,7 +1341,7 @@ export default function MinhaCarteira({
               )}
 
               {/* ETAPA 1: Atendimento & Match */}
-              {activeClient.etapa === 1 && (
+              {selectedDetailTab === 1 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Atendimento, Match & Qualificação</p>
                   
@@ -1329,6 +1377,25 @@ export default function MinhaCarteira({
                         <option value="WhatsApp">WhatsApp</option>
                         <option value="Ligação">Ligação Telefônica</option>
                         <option value="Presencial">Atendimento Presencial na Porto Real</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Forma de Pagamento (Intenção Inicial)</label>
+                      <select 
+                        value={activeClient.forma_pagamento || 'a_definir'}
+                        onChange={async (e) => {
+                          const updated = await updateVendasCliente(activeClient.id, { forma_pagamento: e.target.value as any })
+                          if (updated) {
+                            setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
+                          }
+                        }}
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white font-medium text-slate-700"
+                      >
+                        <option value="a_definir">A Definir</option>
+                        <option value="a_vista">À Vista</option>
+                        <option value="parcelamento">Parcelamento</option>
+                        <option value="permuta">Permuta</option>
+                        <option value="financiamento">Financiamento (Caixa)</option>
                       </select>
                     </div>
                     <div className="space-y-1">
@@ -1372,7 +1439,7 @@ export default function MinhaCarteira({
               )}
 
               {/* ETAPA 2: Visita */}
-              {activeClient.etapa === 2 && (
+              {selectedDetailTab === 2 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Agendamento & Registro de Visitas</p>
                   
@@ -1445,7 +1512,7 @@ export default function MinhaCarteira({
               )}
 
               {/* ETAPA 3: Proposta */}
-              {activeClient.etapa === 3 && (
+              {selectedDetailTab === 3 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Dados da Proposta</p>
                   
@@ -1482,29 +1549,42 @@ export default function MinhaCarteira({
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Valor Ofertado (R$)</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Valor Ofertado pelo Comprador (R$)</label>
                         <input 
                           type="text"
                           defaultValue={activeClient.perfil_quiz?.proposta_valor || ''}
                           onBlur={(e) => {
                             setStageField('proposta_valor', e.target.value);
                             const cleanNum = Number(e.target.value.replace(/[^0-9]/g, ''));
-                            if (cleanNum > 0) setCrmField('valor', cleanNum);
+                            if (cleanNum > 0) setCrmField('valor_vendido', cleanNum);
                           }}
                           placeholder="Ex: R$ 450.000"
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none font-bold"
+                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none font-bold text-slate-800"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Data de Envio</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Valor Pedido pelo Proprietário (R$)</label>
                         <input 
                           type="text"
-                          defaultValue={activeClient.perfil_quiz?.proposta_data || ''}
-                          onBlur={(e) => setStageField('proposta_data', e.target.value)}
-                          placeholder="Ex: DD/MM/AAAA"
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
+                          defaultValue={activeClient.valor_pedido ? String(activeClient.valor_pedido) : ''}
+                          onBlur={(e) => {
+                            const cleanNum = Number(e.target.value.replace(/[^0-9]/g, ''));
+                            if (cleanNum > 0) setCrmField('valor_pedido', cleanNum);
+                          }}
+                          placeholder="Ex: R$ 480.000"
+                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none font-bold text-slate-800"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Data de Envio da Proposta</label>
+                      <input 
+                        type="text"
+                        defaultValue={activeClient.perfil_quiz?.proposta_data || ''}
+                        onBlur={(e) => setStageField('proposta_data', e.target.value)}
+                        placeholder="Ex: DD/MM/AAAA"
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase">Condições de Pagamento</label>
@@ -1520,7 +1600,7 @@ export default function MinhaCarteira({
               )}
 
               {/* ETAPA 4: Negociação */}
-              {activeClient.etapa === 4 && (
+              {selectedDetailTab === 4 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Rodada de Negociação</p>
                   <div className="space-y-3">
@@ -1553,11 +1633,71 @@ export default function MinhaCarteira({
                       />
                     </div>
                   </div>
+
+                  {/* Gaps de Negociação Card */}
+                  {(() => {
+                    const X = activeClient.valor || 0;
+                    const Y = activeClient.valor_pedido || 0;
+                    const Z = activeClient.valor_fechado || activeClient.valor_vendido || 0;
+                    const isEstimate = !activeClient.valor_fechado;
+
+                    if (X === 0 && Y === 0 && Z === 0) return null;
+
+                    const gapComprador = Z > 0 && X > 0 ? (Z - X) : null;
+                    const gapProprietario = Y > 0 && Z > 0 ? (Y - Z) : null;
+
+                    return (
+                      <div className="bg-[#EEF4FA]/40 border border-[#D6E4F0] rounded-xl p-4.5 space-y-3 mt-4">
+                        <div className="flex items-center justify-between border-b border-[#D6E4F0] pb-2">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1F4E79] flex items-center gap-1.5">
+                            📊 Gaps de Negociação {isEstimate ? '(Estimativa / Proposta)' : '(Acordo Fechado)'}
+                          </span>
+                          {isEstimate && <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase px-2 py-0.5 rounded">Preview</span>}
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">Orçamento Comprador</span>
+                            <span className="text-xs font-black text-slate-700 block mt-1">{X > 0 ? fmtBRL(X) : 'Não informado'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">Valor Proprietário</span>
+                            <span className="text-xs font-black text-slate-700 block mt-1">{Y > 0 ? fmtBRL(Y) : 'Não informado'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">{isEstimate ? 'Proposta Oferta' : 'Valor Fechado'}</span>
+                            <span className="text-xs font-black text-slate-900 block mt-1">{Z > 0 ? fmtBRL(Z) : 'Não informado'}</span>
+                          </div>
+                        </div>
+
+                        {(gapComprador !== null || gapProprietario !== null) && (
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-650">
+                            {gapComprador !== null && (
+                              <div className="flex flex-col items-center p-2 rounded-lg bg-white/70 border border-slate-200">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase text-center block">Subiu da Expectativa</span>
+                                <span className={`text-[12px] font-black mt-1 ${gapComprador > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {gapComprador > 0 ? `+${fmtBRL(gapComprador)}` : gapComprador < 0 ? `-${fmtBRL(Math.abs(gapComprador))}` : 'Alinhado'}
+                                </span>
+                              </div>
+                            )}
+                            {gapProprietario !== null && (
+                              <div className="flex flex-col items-center p-2 rounded-lg bg-white/70 border border-slate-200">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase text-center block">Proprietário Cedeu</span>
+                                <span className={`text-[12px] font-black mt-1 ${gapProprietario > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  {gapProprietario > 0 ? `-${fmtBRL(gapProprietario)}` : gapProprietario < 0 ? `+${fmtBRL(Math.abs(gapProprietario))}` : 'Sem concessão'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 
               {/* ETAPA 5: Fechamento */}
-              {activeClient.etapa === 5 && (
+              {selectedDetailTab === 5 && (
                 <div className="space-y-4">
                   <p className="text-[11px] text-slate-400 font-semibold uppercase">Documentação & Fechamento</p>
                   
@@ -1687,250 +1827,444 @@ export default function MinhaCarteira({
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                  {/* Gaps de Negociação Card */}
+                  {(() => {
+                    const X = activeClient.valor || 0;
+                    const Y = activeClient.valor_pedido || 0;
+                    const Z = activeClient.valor_fechado || activeClient.valor_vendido || 0;
+                    const isEstimate = !activeClient.valor_fechado;
 
-              {/* ETAPA 6: Pós-venda */}
-              {activeClient.etapa === 6 && (
-                <div className="space-y-4">
-                  <p className="text-[11px] text-slate-400 font-semibold uppercase">Pós-Venda</p>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Data do Contato</label>
-                        <input 
-                          type="text"
-                          defaultValue={activeClient.perfil_quiz?.pos_data || ''}
-                          onBlur={(e) => setStageField('pos_data', e.target.value)}
-                          placeholder="Ex: DD/MM/AAAA"
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Satisfação (0-10)</label>
-                        <select 
-                          defaultValue={activeClient.perfil_quiz?.pos_satisfacao || '10'}
-                          onChange={(e) => setStageField('pos_satisfacao', e.target.value)}
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white font-bold text-[#1F4E79]"
-                        >
-                          <option value="10">⭐ 10 (Excelente)</option>
-                          <option value="9">⭐ 9 (Ótimo)</option>
-                          <option value="8">⭐ 8 (Bom)</option>
-                          <option value="7">⭐ 7 (Regular)</option>
-                          <option value="6">⭐ 6 ou menos (Insatisfeito)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Comentários Pós-Venda</label>
-                      <textarea 
-                        defaultValue={activeClient.perfil_quiz?.pos_obs || ''}
-                        onBlur={(e) => setStageField('pos_obs', e.target.value)}
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none min-h-[80px] resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                    if (X === 0 && Y === 0 && Z === 0) return null;
 
-              {/* ETAPA 7: Depoimento */}
-              {activeClient.etapa === 7 && (
-                <div className="space-y-4">
-                  <p className="text-[11px] text-slate-400 font-semibold uppercase">Prova Social & Depoimento</p>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Autorizado Publicar?</label>
-                        <select 
-                          defaultValue={activeClient.perfil_quiz?.depoimento_autorizado || 'Sim'}
-                          onChange={(e) => setStageField('depoimento_autorizado', e.target.value)}
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white font-medium"
-                        >
-                          <option value="Sim">Sim, autorizado</option>
-                          <option value="Não">Não, privado</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Canal de Divulgação</label>
-                        <input 
-                          type="text"
-                          defaultValue={activeClient.perfil_quiz?.depoimento_canal || ''}
-                          onBlur={(e) => setStageField('depoimento_canal', e.target.value)}
-                          placeholder="Google, site..."
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Depoimento</label>
-                      <textarea 
-                        defaultValue={activeClient.perfil_quiz?.depoimento_texto || ''}
-                        onBlur={(e) => setStageField('depoimento_texto', e.target.value)}
-                        placeholder="Transcrição do depoimento..."
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none min-h-[90px] resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                    const gapComprador = Z > 0 && X > 0 ? (Z - X) : null;
+                    const gapProprietario = Y > 0 && Z > 0 ? (Y - Z) : null;
 
-              {/* ETAPA 8: Indicação */}
-              {activeClient.etapa === 8 && (
-                <div className="space-y-4">
-                  <p className="text-[11px] text-slate-400 font-semibold uppercase">Registro de Indicações</p>
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Indicado</label>
-                      <input 
-                        type="text"
-                        defaultValue={activeClient.perfil_quiz?.indicacao_nome || ''}
-                        onBlur={(e) => setStageField('indicacao_nome', e.target.value)}
-                        placeholder="Nome..."
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Contato/WhatsApp</label>
-                        <input 
-                          type="text"
-                          defaultValue={activeClient.perfil_quiz?.indicacao_contato || ''}
-                          onBlur={(e) => setStageField('indicacao_contato', e.target.value)}
-                          placeholder="WhatsApp..."
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Interesse Principal</label>
-                        <select 
-                          defaultValue={activeClient.perfil_quiz?.indicacao_tipo || 'Comprar'}
-                          onChange={(e) => setStageField('indicacao_tipo', e.target.value)}
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none bg-white"
-                        >
-                          <option value="Comprar">Comprar Imóvel</option>
-                          <option value="Alugar">Alugar Imóvel</option>
-                          <option value="Vender">Vender Imóvel dele</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Observações da Indicação</label>
-                      <input 
-                        type="text"
-                        defaultValue={activeClient.perfil_quiz?.indicacao_obs || ''}
-                        onBlur={(e) => setStageField('indicacao_obs', e.target.value)}
-                        placeholder="Ex: Busca casa em condomínio..."
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 focus:border-[#eb3238] outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                    return (
+                      <div className="bg-[#EEF4FA]/40 border border-[#D6E4F0] rounded-xl p-4.5 space-y-3 mt-4">
+                        <div className="flex items-center justify-between border-b border-[#D6E4F0] pb-2">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1F4E79] flex items-center gap-1.5">
+                            📊 Gaps de Negociação {isEstimate ? '(Estimativa / Proposta)' : '(Acordo Fechado)'}
+                          </span>
+                          {isEstimate && <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase px-2 py-0.5 rounded">Preview</span>}
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">Orçamento Comprador</span>
+                            <span className="text-xs font-black text-slate-700 block mt-1">{X > 0 ? fmtBRL(X) : 'Não informado'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">Valor Proprietário</span>
+                            <span className="text-xs font-black text-slate-700 block mt-1">{Y > 0 ? fmtBRL(Y) : 'Não informado'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">{isEstimate ? 'Proposta Oferta' : 'Valor Fechado'}</span>
+                            <span className="text-xs font-black text-slate-900 block mt-1">{Z > 0 ? fmtBRL(Z) : 'Não informado'}</span>
+                          </div>
+                        </div>
 
-            {/* Checklist Section (Checklist da Etapa) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-              <div 
-                className="flex justify-between items-center cursor-pointer select-none" 
-                onClick={() => setChecklistExpanded(!checklistExpanded)}
-              >
-                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
-                  <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
-                  Checklist — {ETAPAS[activeClient.etapa]?.nome}
-                </h3>
-                <span className="text-xs text-slate-400 font-semibold">
-                  {checklistExpanded ? 'Recolher ▲' : 'Expandir ▼'}
-                </span>
-              </div>
-
-              {checklistExpanded && (() => {
-                const totalItens = ETAPAS[activeClient.etapa]?.chk.length || 0
-                const concluidos = activeChecklist.filter(chk => chk.etapa === activeClient.etapa).length
-                const pct = totalItens ? Math.round((concluidos / totalItens) * 100) : 0
-
-                return (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}></div>
-                      </div>
-                      <span className="text-xs font-black text-emerald-600 w-10 text-right">{pct}%</span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      {ETAPAS[activeClient.etapa]?.chk.map((item, idx) => {
-                        const isChecked = activeChecklist.some(chk => chk.etapa === activeClient.etapa && chk.item_index === idx)
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => toggleChecklist(idx)}
-                            className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
-                              isChecked
-                                ? 'border-emerald-100 bg-emerald-50/40 text-slate-500'
-                                : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-800'
-                            }`}
-                          >
-                            {isChecked ? (
-                              <CheckSquare size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                            ) : (
-                              <Square size={18} className="text-slate-300 mt-0.5 flex-shrink-0" />
+                        {(gapComprador !== null || gapProprietario !== null) && (
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-650">
+                            {gapComprador !== null && (
+                              <div className="flex flex-col items-center p-2 rounded-lg bg-white/70 border border-slate-200">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase text-center block">Subiu da Expectativa</span>
+                                <span className={`text-[12px] font-black mt-1 ${gapComprador > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {gapComprador > 0 ? `+${fmtBRL(gapComprador)}` : gapComprador < 0 ? `-${fmtBRL(Math.abs(gapComprador))}` : 'Alinhado'}
+                                </span>
+                              </div>
                             )}
-                            <span className={`text-xs md:text-sm leading-relaxed ${isChecked ? 'line-through text-slate-400' : 'font-medium'}`}>
-                              {item}
-                            </span>
+                            {gapProprietario !== null && (
+                              <div className="flex flex-col items-center p-2 rounded-lg bg-white/70 border border-slate-200">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase text-center block">Proprietário Cedeu</span>
+                                <span className={`text-[12px] font-black mt-1 ${gapProprietario > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  {gapProprietario > 0 ? `-${fmtBRL(gapProprietario)}` : gapProprietario < 0 ? `+${fmtBRL(Math.abs(gapProprietario))}` : 'Sem concessão'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {selectedDetailTab === 6 && (
+                <div className="space-y-6">
+                  {/* Part 1: Playbook do Perfil (Dossiê Estratégico) */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                      <Sparkles size={16} className="text-[#1F4E79]" />
+                      Playbook & Dossiê de Atendimento
+                    </h3>
+
+                    {activeClient.perfil && PERFIS[activeClient.perfil] ? (
+                      <div className="space-y-5">
+                        {/* Profile Header Card */}
+                        <div className="bg-gradient-to-r from-[#EEF4FA] to-slate-50 border border-[#D6E4F0] rounded-xl p-4 flex items-start gap-3.5">
+                          <span className="text-3xl p-2 bg-white rounded-xl shadow-xs border border-slate-100 flex-shrink-0">
+                            {PERFIS[activeClient.perfil].emo}
+                          </span>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-black text-[#1F4E79] uppercase tracking-wide">
+                                Perfil Dominante: {PERFIS[activeClient.perfil].nome}
+                              </h4>
+                              {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
+                                <span className="bg-slate-150/70 text-slate-650 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-250">
+                                  🥈 Secundário: {PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                              🎯 Quest Primária: <span className="text-[#1F4E79] font-bold">{PERFIS[activeClient.perfil].busca}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Como Agir / Estratégia de Atendimento */}
+                        <div className="space-y-2">
+                          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block">Como Agir (Estratégias Recomendadas)</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            {PERFIS[activeClient.perfil].estrategia.map((est, idx) => (
+                              <div key={idx} className="flex items-start gap-2.5 bg-slate-50/60 hover:bg-slate-50 border border-slate-100 p-3 rounded-xl transition-colors">
+                                <span className="text-emerald-500 font-black text-xs mt-0.5">✓</span>
+                                <span className="text-xs text-slate-700 leading-relaxed font-medium">{est}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Frases Prontas por Momento (Copiáveis) */}
+                        <div className="space-y-2">
+                          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block">Sugestões de Abordagem e Contorno</span>
+                          <div className="space-y-3">
+                            {[
+                              { label: 'Abordagem Inicial', value: PERFIS[activeClient.perfil].frase_momento.abordagem, key: 'abordagem' },
+                              { label: 'Contorno de Objeções', value: PERFIS[activeClient.perfil].frase_momento.contorno, key: 'contorno' },
+                              { label: 'Fechamento Comercial', value: PERFIS[activeClient.perfil].frase_momento.fechamento, key: 'fechamento' }
+                            ].map((item) => (
+                              <div key={item.key} className="bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl p-3.5 transition-all space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-extrabold text-[#1F4E79] uppercase tracking-wide">{item.label}</span>
+                                  <button
+                                    onClick={() => handleCopyText(item.value, item.key)}
+                                    className="flex items-center gap-1 text-[10px] font-bold text-slate-505 hover:text-[#eb3238] bg-white border border-slate-200 rounded-md px-2 py-1 transition-colors shadow-2xs cursor-pointer"
+                                  >
+                                    {copiedText === item.key ? (
+                                      <>
+                                        <Check size={10} className="text-emerald-500" />
+                                        <span className="text-emerald-600">Copiado!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy size={10} />
+                                        <span>Copiar</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <p className="text-xs text-slate-650 leading-relaxed font-semibold italic">
+                                  {item.value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* O que Evitar */}
+                        <div className="space-y-2">
+                          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block">O que Evitar (Red Flags ⚠️)</span>
+                          <div className="bg-rose-50/40 border border-rose-100 rounded-xl p-4 space-y-2">
+                            {PERFIS[activeClient.perfil].evitar.map((ev, idx) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <span className="text-rose-550 text-xs mt-0.5">⚠️</span>
+                                <span className="text-xs text-slate-700 leading-relaxed font-medium">{ev}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Reset quiz button */}
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            onClick={refazerQuiz}
+                            className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-[#eb3238] hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors uppercase tracking-wider cursor-pointer"
+                          >
+                            🔄 Refazer Diagnóstico (Limpar Quiz)
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-5 text-center space-y-2">
+                        <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                          Nenhum perfil comportamental dominante foi identificado ainda.
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Responda ao <b>Quiz do Comprador</b> ou marque os <b>Sinais Comportamentais</b> abaixo para traçar o perfil do cliente e habilitar as estratégias de abordagem e fechamento do Playbook.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Part 2: SPIN Quiz & Sinais (Helper de Perfil) */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+                    <div>
+                      <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                        <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
+                        Identificar o Perfil do Comprador (SPIN)
+                      </h3>
+                      <p className="text-[10px] text-slate-450 mt-1 font-semibold">
+                        Responda observando o cliente durante as conversas — cada resposta pesa para um estilo comportamental dominante.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {PERFIL_QUIZ.map((pq, qi) => {
+                        const sel = activeClient.perfil_quiz?.[qi]
+                        return (
+                          <div key={qi} className="space-y-2 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                            <span className="text-xs font-bold text-slate-700 block">{qi + 1}. {pq.q}</span>
+                            <div className="flex flex-col gap-1.5">
+                              {pq.opts.map(o => {
+                                const isSel = sel === o.k
+                                return (
+                                  <button
+                                    key={o.k}
+                                    type="button"
+                                    onClick={() => handleQuizAnswer(qi, o.k)}
+                                    className={`w-full text-left text-xs px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer ${
+                                      isSel
+                                        ? 'border-[#eb3238] bg-rose-50/20 text-[#eb3238] font-bold shadow-2xs'
+                                        : 'border-slate-100 hover:border-slate-250 hover:bg-slate-50/50 text-slate-655'
+                                    }`}
+                                  >
+                                    {o.t}
+                                  </button>
+                                )
+                              })}
+                            </div>
                           </div>
                         )
                       })}
                     </div>
+
+                    {/* Subsection: Sinais Comportamentais */}
+                    <div className="pt-5 border-t border-slate-150 space-y-4">
+                      <div>
+                        <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                          Sinais Comportamentais Observados
+                        </h4>
+                        <p className="text-[10px] text-slate-450 mt-1 font-semibold">
+                          Selecione os sinais práticos observados na atitude ou fala do cliente para refinar o diagnóstico.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        {(() => {
+                          const list: { perfKey: string; sIdx: number; sinal: string }[] = []
+                          const keys = Object.keys(SINAIS_COMPORTAMENTAIS) as (keyof typeof SINAIS_COMPORTAMENTAIS)[]
+                          for (let i = 0; i < 5; i++) {
+                            keys.forEach(k => {
+                              list.push({
+                                perfKey: k,
+                                sIdx: i,
+                                sinal: SINAIS_COMPORTAMENTAIS[k][i]
+                              })
+                            })
+                          }
+                          return list.map(({ perfKey, sIdx, sinal }) => {
+                            const key = `s_${perfKey}_${sIdx}`
+                            const isChecked = activeClient.perfil_quiz?.[key] === 'true'
+                            return (
+                              <label key={`${perfKey}_${sIdx}`} className={`flex items-start gap-2.5 text-xs text-slate-650 cursor-pointer select-none p-3 rounded-xl border transition-all ${
+                                isChecked 
+                                  ? 'border-[#eb3238] bg-rose-50/10 text-[#eb3238] font-bold' 
+                                  : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 bg-white'
+                              }`}>
+                                <input 
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleSignalToggle(perfKey, sIdx)}
+                                  className="rounded text-[#eb3238] focus:ring-[#eb3238] h-4 w-4 mt-0.5 cursor-pointer"
+                                />
+                                <span className="leading-snug">{sinal}</span>
+                              </label>
+                            )
+                          })
+                        })()}
+                      </div>
+                    </div>
                   </div>
-                )
-              })()}
+                </div>
+              )}
             </div>
 
-            {/* Dossiê & Resumo do Status */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
-                <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
-                Dossiê & Playbook do Perfil
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 space-y-3 text-xs text-slate-700 leading-relaxed shadow-xs font-medium">
-                  <p>
-                    <b>{activeClient.nome}</b> está atualmente na <b>etapa {activeClient.etapa + 1}</b> — <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome}</span>.
-                  </p>
-                  <p>
-                    Temperatura: <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>.
-                    {activeClient.perfil ? (
-                      <span> Perfil: <b className="text-[#1F4E79]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</b>
-                        {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
-                          <> / Secundário: <b className="text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</b></>
-                        )}.
-                      </span>
-                    ) : (
-                      <span> Perfil ainda pendente de diagnóstico.</span>
-                    )}
-                  </p>
+            {/* Checklist Section (Checklist da Etapa Selecionada) */}
+            {selectedDetailTab < 6 && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div 
+                  className="flex justify-between items-center cursor-pointer select-none" 
+                  onClick={() => setChecklistExpanded(!checklistExpanded)}
+                >
+                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#1F4E79] flex items-center gap-2">
+                    <span className="w-5 h-5 bg-[#1F4E79] text-white rounded-md flex items-center justify-center text-[10px]">2</span>
+                    Checklist — {ETAPAS[selectedDetailTab]?.nome}
+                  </h3>
+                  <span className="text-xs text-slate-400 font-semibold">
+                    {checklistExpanded ? 'Recolher ▲' : 'Expandir ▼'}
+                  </span>
                 </div>
 
-                {/* Playbook se perfil mapeado */}
-                {activeClient.perfil && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                    <h4 className="text-xs font-extrabold text-[#1F4E79] uppercase tracking-wide flex items-center gap-1.5">
-                      {PERFIS[activeClient.perfil].emo} Playbook: O que Falar com este Perfil
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
-                      {PERFIS[activeClient.perfil].estrategia.slice(0, 4).map((est, eIdx) => (
-                        <li key={eIdx} className="flex items-start gap-2">
-                          <span className="text-emerald-500 font-bold">✓</span>
-                          <span>{est}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                {checklistExpanded && (() => {
+                  const totalItens = ETAPAS[selectedDetailTab]?.chk.length || 0
+                  const concluidos = activeChecklist.filter(chk => chk.etapa === selectedDetailTab).length
+                  const pct = totalItens ? Math.round((concluidos / totalItens) * 100) : 0
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <span className="text-xs font-black text-emerald-600 w-10 text-right">{pct}%</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {ETAPAS[selectedDetailTab]?.chk.map((item, idx) => {
+                          const isChecked = activeChecklist.some(chk => chk.etapa === selectedDetailTab && chk.item_index === idx)
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => toggleChecklist(idx, selectedDetailTab)}
+                              className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
+                                isChecked
+                                  ? 'border-emerald-100 bg-emerald-50/40 text-slate-500'
+                                  : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-800'
+                              }`}
+                            >
+                                                       <span className={`text-xs md:text-sm leading-relaxed ${isChecked ? 'line-through text-slate-400' : 'font-medium'}`}>
+                                {item}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* Dossiê & Resumo do Status / Resumo Fixo */}
+            {selectedDetailTab < 6 && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                {selectedDetailTab === 0 ? (
+                  // For Triagem (E1), show Perfil and Playbook
+                  <>
+                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
+                      <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
+                      Dossiê & Playbook do Perfil
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-4 space-y-3 text-xs text-slate-700 leading-relaxed shadow-xs font-medium">
+                        <p>
+                          <b>{activeClient.nome}</b> está atualmente na <b>etapa {activeClient.etapa + 1}</b> — <span className="font-extrabold text-[#eb3238]">{ETAPAS[activeClient.etapa]?.nome}</span>.
+                        </p>
+                        <p>
+                          Temperatura: <span className="font-bold uppercase" style={{ color: (TEMP_CFG as any)[activeClient.temp]?.cor }}>{(TEMP_CFG as any)[activeClient.temp]?.rotulo}</span>.
+                          {activeClient.perfil ? (
+                            <span> Perfil: <b className="text-[#1F4E79]">{PERFIS[activeClient.perfil].nome} {PERFIS[activeClient.perfil].emo}</b>
+                              {activeClient.perfil_secundario && PERFIS[activeClient.perfil_secundario] && (
+                                <> / Secundário: <b className="text-slate-500">{PERFIS[activeClient.perfil_secundario].nome} {PERFIS[activeClient.perfil_secundario].emo}</b></>
+                              )}.
+                            </span>
+                          ) : (
+                            <span> Perfil ainda pendente de diagnóstico.</span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Playbook se perfil mapeado */}
+                      {activeClient.perfil && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                          <h4 className="text-xs font-extrabold text-[#1F4E79] uppercase tracking-wide flex items-center gap-1.5">
+                            {PERFIS[activeClient.perfil].emo} Playbook: O que Falar com este Perfil
+                          </h4>
+                          <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
+                            {PERFIS[activeClient.perfil].estrategia.slice(0, 4).map((est, eIdx) => (
+                              <li key={eIdx} className="flex items-start gap-2">
+                                <span className="text-emerald-500 font-bold">✓</span>
+                                <span>{est}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  // For other stages (E2-E6), show the fixed summary of filled data
+                  <>
+                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#eb3238] flex items-center gap-2">
+                      <span className="w-5 h-5 bg-[#eb3238] text-white rounded-md flex items-center justify-center text-[10px]">3</span>
+                      Resumo do Perfil & Dados Salvos
+                    </h3>
+                    
+                    <div className="space-y-3 text-xs font-medium text-slate-700">
+                      <div className="grid grid-cols-2 gap-3.5 bg-slate-50 border border-slate-150 rounded-xl p-3">
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Localização Desejada</span>
+                          <span className="font-semibold text-slate-800">{activeClient.local || 'Não informada'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Faixa de Preço</span>
+                          <span className="font-semibold text-slate-800">{activeClient.faixa || 'Não informada'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-[#1F4E79] uppercase block">Orçamento (Comprador)</span>
+                          <span className="font-bold text-[#1F4E79]">{activeClient.valor ? fmtBRL(activeClient.valor) : 'Não informado'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase block">Forma de Pagamento</span>
+                          <span className="font-semibold text-slate-800">
+                            {activeClient.forma_pagamento === 'a_vista' ? 'À vista' : 
+                             activeClient.forma_pagamento === 'parcelamento' ? 'Parcelamento' :
+                             activeClient.forma_pagamento === 'permuta' ? 'Permuta' :
+                             activeClient.forma_pagamento === 'financiamento' ? 'Financiamento (Caixa)' : 'A definir'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase">Perfil do Comprador</span>
+                          <span className="text-[9.5px] bg-slate-200 px-1.5 py-0.5 rounded font-black text-slate-650 uppercase">
+                            {activeClient.perfil ? PERFIS[activeClient.perfil].nome : 'Pendente'}
+                          </span>
+                        </div>
+                        {activeClient.perfil ? (
+                          <p className="text-[10px] text-slate-500 leading-relaxed font-semibold italic">
+                            "{PERFIS[activeClient.perfil].estrategia[0]}"
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-slate-400">Diagnóstico pendente.</p>
+                        )}
+                      </div>
+
+                      <div className="bg-[#EEF4FA]/50 border border-[#D6E4F0] rounded-xl p-3 text-[11px] text-slate-605 font-semibold space-y-1.5">
+                        <div>📞 <b>Contato:</b> {activeClient.contato || 'Nenhum'}</div>
+                        <div>🏷️ <b>Status E1:</b> {activeClient.etiqueta_status || 'Novo'} · 🚪 <b>Porta:</b> {activeClient.porta || 'A'}</div>
+                        {activeClient.imovel_interesse && <div>🔑 <b>Imóvel-alvo:</b> {activeClient.imovel_interesse}</div>}
+                        {activeClient.valor_pedido && <div>💰 <b>Valor Pedido (Proprietário):</b> {fmtBRL(activeClient.valor_pedido)}</div>}
+                        {activeClient.valor_fechado && <div>🏁 <b>Valor Fechado:</b> {fmtBRL(activeClient.valor_fechado)}</div>}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-            </div>
+            )}
 
             {/* Ações da conversa / Anotações */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
@@ -2348,46 +2682,13 @@ export default function MinhaCarteira({
                   <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider block">Valores da Transação (Venda)</span>
                   
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Valor Procurado (Orçamento do Cliente)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 350000"
-                      value={valProcurado}
-                      onChange={(e) => setValProcurado(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Valor Fechado (Valor Final da Compra)</label>
+                    <label className="text-[10px] font-bold text-slate-500 tracking-wider block">Valor Fechado (R$)</label>
                     <input
                       type="number"
                       placeholder="Ex: 340000"
                       value={valFechado}
                       onChange={(e) => setValFechado(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Valor Pedido (Original do Proprietário)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 360000"
-                      value={valPedido}
-                      onChange={(e) => setValPedido(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Valor Vendido (Real Aceito pelo Proprietário)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 340000"
-                      value={valVendido}
-                      onChange={(e) => setValVendido(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white"
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-emerald-500 bg-white font-bold text-slate-800"
                     />
                   </div>
                 </div>

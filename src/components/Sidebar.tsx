@@ -38,7 +38,7 @@ const VENDAS_NAV: NavSection[] = [
   {
     label: 'Análise',
     items: [
-      { href: '/treinamentos', label: 'Treinamentos', icon: '🎓' },
+      { href: '/treinamentos', label: 'Prioridades de Captação', icon: '🎯' },
     ],
   },
   {
