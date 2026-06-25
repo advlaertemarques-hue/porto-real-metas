@@ -36,6 +36,23 @@ export default function AcoesDoDia({
     return new Date(a.proxima_acao_data).getTime() - new Date(b.proxima_acao_data).getTime()
   })
 
+  // Status por DIA (hoje continua "Hoje" mesmo se o horário já passou — mais
+  // justo com o corretor do que gritar "atrasada" às 10h por algo das 9h).
+  const dayStatus = (dataStr?: string | null): 'atrasado' | 'hoje' | 'futuro' | 'semdata' => {
+    if (!dataStr) return 'semdata'
+    const due = new Date(dataStr)
+    if (isNaN(due.getTime())) return 'semdata'
+    const now = new Date()
+    const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const d0 = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime()
+    if (d0 < t0) return 'atrasado'
+    if (d0 === t0) return 'hoje'
+    return 'futuro'
+  }
+
+  const counts = { atrasado: 0, hoje: 0, futuro: 0, semdata: 0 }
+  sortedClients.forEach(c => { counts[dayStatus(c.proxima_acao_data)]++ })
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-fadeIn">
       {/* Header */}
@@ -45,8 +62,27 @@ export default function AcoesDoDia({
           Ações de Hoje
         </h2>
         <p className="text-xs text-slate-500 font-semibold mt-1">
-          Aqui estão as próximas tarefas agendadas para os seus clientes. Mantenha os contatos em dia para não esfriar o funil!
+          {counts.atrasado > 0
+            ? `Você tem ${counts.atrasado} ${counts.atrasado === 1 ? 'ação atrasada' : 'ações atrasadas'} — priorize esses contatos para não esfriar o funil.`
+            : 'Aqui estão as próximas tarefas agendadas para os seus clientes. Mantenha os contatos em dia!'}
         </p>
+
+        {sortedClients.length > 0 && (
+          <div className="grid grid-cols-3 gap-2.5 mt-4">
+            <div className="rounded-xl border border-rose-100 bg-rose-50/60 p-3 text-center">
+              <div className="text-2xl font-black text-[#eb3238] leading-none">{counts.atrasado}</div>
+              <div className="text-[10px] font-extrabold text-rose-700/80 uppercase tracking-wide mt-1">⏰ Atrasadas</div>
+            </div>
+            <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-center">
+              <div className="text-2xl font-black text-amber-600 leading-none">{counts.hoje}</div>
+              <div className="text-[10px] font-extrabold text-amber-700/80 uppercase tracking-wide mt-1">📌 Para hoje</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+              <div className="text-2xl font-black text-slate-600 leading-none">{counts.futuro}</div>
+              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wide mt-1">📅 Próximas</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* List of actions */}
@@ -62,21 +98,12 @@ export default function AcoesDoDia({
         ) : (
           sortedClients.map(c => {
             const actDate = c.proxima_acao_data ? new Date(c.proxima_acao_data) : null
-            const isOverdue = actDate ? actDate.getTime() < Date.now() : false
-            const isToday = actDate ? actDate.toDateString() === new Date().toDateString() : false
-
-            let badgeColor = "bg-slate-100 text-slate-700 border-slate-200"
-            let badgeText = "Futura"
-            if (!actDate) {
-              badgeColor = "bg-slate-100 text-slate-500 border-slate-200"
-              badgeText = "Sem data"
-            } else if (isOverdue) {
-              badgeColor = "bg-rose-50 text-rose-700 border-rose-100 animate-pulse"
-              badgeText = "Atrasada"
-            } else if (isToday) {
-              badgeColor = "bg-amber-50 text-amber-700 border-amber-100"
-              badgeText = "Hoje"
-            }
+            const { color: badgeColor, text: badgeText } = {
+              atrasado: { color: 'bg-rose-50 text-rose-700 border-rose-100 animate-pulse', text: 'Atrasada' },
+              hoje: { color: 'bg-amber-50 text-amber-700 border-amber-100', text: 'Hoje' },
+              futuro: { color: 'bg-slate-100 text-slate-700 border-slate-200', text: 'Futura' },
+              semdata: { color: 'bg-slate-100 text-slate-500 border-slate-200', text: 'Sem data' },
+            }[dayStatus(c.proxima_acao_data)]
 
             const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
 

@@ -44,6 +44,30 @@ import {
   ArrowLeft
 } from 'lucide-react'
 
+// Status da próxima ação a partir da data agendada: o corretor precisa ver,
+// num relance, o que está atrasado e o que é pra hoje — é o que faz ele voltar
+// ao sistema todo dia.
+type AcaoTone = 'atrasado' | 'hoje' | 'futuro' | 'semdata'
+
+function acaoDueStatus(dataStr?: string | null): { tone: AcaoTone; label: string } {
+  if (!dataStr) return { tone: 'semdata', label: '' }
+  const due = new Date(dataStr)
+  if (isNaN(due.getTime())) return { tone: 'semdata', label: '' }
+  const now = new Date()
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime()
+  if (startDue < startToday) return { tone: 'atrasado', label: 'Atrasada' }
+  if (startDue === startToday) return { tone: 'hoje', label: 'Hoje' }
+  return { tone: 'futuro', label: due.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) }
+}
+
+const ACAO_TONE: Record<AcaoTone, { row: string; icon: string; chip: string }> = {
+  atrasado: { row: 'text-[#eb3238]', icon: '⏰', chip: 'bg-rose-100 text-[#eb3238]' },
+  hoje: { row: 'text-amber-700', icon: '📌', chip: 'bg-amber-100 text-amber-700' },
+  futuro: { row: 'text-slate-500', icon: '📅', chip: 'bg-slate-100 text-slate-600' },
+  semdata: { row: 'text-slate-500', icon: '📅', chip: '' },
+}
+
 interface MinhaCarteiraProps {
   clientes: VendasCliente[]
   setClientes: React.Dispatch<React.SetStateAction<VendasCliente[]>>
@@ -115,6 +139,7 @@ export default function MinhaCarteira({
   const [filterPref, setFilterPref] = useState('')
 
   const activeClient = clientes.find(c => c.id === activeId)
+  const fichaAcao = activeClient?.proxima_acao ? acaoDueStatus(activeClient.proxima_acao_data) : null
 
   // Inicializa a aba na etapa do cliente APENAS ao abrir um cliente diferente.
   // As abas de baixo são independentes do funil/kanban: clicar nos botões de
@@ -766,6 +791,7 @@ export default function MinhaCarteira({
                         const isSelected = c.id === activeId
                         const tc = TEMP_CFG[c.temp as keyof typeof TEMP_CFG] || TEMP_CFG.quente
                         const perf = c.perfil ? PERFIS[c.perfil] : null
+                        const acaoSt = c.proxima_acao ? acaoDueStatus(c.proxima_acao_data) : null
 
                         return (
                           <div
@@ -807,11 +833,16 @@ export default function MinhaCarteira({
                               )}
                             </div>
 
-                            {/* Proxima Acao */}
-                            {c.proxima_acao && (
-                              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-start gap-1 text-[9px] text-slate-500">
-                                <span className="text-slate-400 mt-0.5">📅</span>
-                                <span className="line-clamp-1 font-medium">{c.proxima_acao}</span>
+                            {/* Próxima Ação com sinalização de prazo */}
+                            {c.proxima_acao && acaoSt && (
+                              <div className={`mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[9px] font-semibold ${ACAO_TONE[acaoSt.tone].row}`}>
+                                <span>{ACAO_TONE[acaoSt.tone].icon}</span>
+                                <span className="line-clamp-1 flex-1">{c.proxima_acao}</span>
+                                {acaoSt.label && (
+                                  <span className={`px-1.5 py-0.5 rounded font-black tracking-wide flex-shrink-0 ${ACAO_TONE[acaoSt.tone].chip}`}>
+                                    {acaoSt.label}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1033,10 +1064,21 @@ export default function MinhaCarteira({
               <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin">
                 
                 {/* Card 2: Lembrete / Próxima Ação */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className={`bg-white border rounded-2xl p-5 shadow-xs space-y-4 ${
+                  fichaAcao?.tone === 'atrasado'
+                    ? 'border-rose-300 ring-1 ring-rose-100'
+                    : fichaAcao?.tone === 'hoje'
+                    ? 'border-amber-300 ring-1 ring-amber-100'
+                    : 'border-slate-200'
+                }`}>
                   <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#33415C] flex items-center gap-2">
                     <ClipboardList size={16} className="text-[#33415C]" />
                     Próxima Ação / Lembrete
+                    {fichaAcao && (fichaAcao.tone === 'atrasado' || fichaAcao.tone === 'hoje') && (
+                      <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide ${ACAO_TONE[fichaAcao.tone].chip}`}>
+                        {ACAO_TONE[fichaAcao.tone].icon} {fichaAcao.label}
+                      </span>
+                    )}
                   </h3>
                 <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-4">
                   <div className="space-y-1">
