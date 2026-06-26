@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useModule } from '@/contexts/ModuleContext'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth, canAccessModule } from '@/contexts/AuthContext'
 import { usePresence } from '@/contexts/PresenceContext'
-import { LogOut } from 'lucide-react'
+import { LogOut, KeyRound } from 'lucide-react'
 import Logo from '@/components/Logo'
+import TrocarSenhaModal from '@/components/TrocarSenhaModal'
 
 function getInitials(nome: string) {
   const parts = nome.trim().split(' ')
@@ -20,6 +22,7 @@ export default function Topbar() {
   const { onlineUsers } = usePresence()
   const pathname = usePathname()
   const router = useRouter()
+  const [senhaOpen, setSenhaOpen] = useState(false)
 
   if (!user) return null
 
@@ -130,6 +133,13 @@ export default function Topbar() {
           </span>
           <div className="h-4 w-[1px] bg-white/10 mx-1.5 hidden md:block" />
           <button
+            onClick={() => setSenhaOpen(true)}
+            className="p-1 text-slate-300 hover:text-white rounded transition-colors"
+            title="Trocar senha"
+          >
+            <KeyRound size={14} />
+          </button>
+          <button
             onClick={() => {
               logout()
               router.push('/login')
@@ -141,6 +151,8 @@ export default function Topbar() {
           </button>
         </div>
       </div>
+
+      <TrocarSenhaModal open={senhaOpen} onClose={() => setSenhaOpen(false)} />
     </header>
   )
 }
