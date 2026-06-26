@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase'
+import { ETAPAS, I_VISITA } from '@/lib/constants'
 import {
   Corretor,
   MetaGlobal,
@@ -1200,6 +1201,280 @@ export async function resolveVendasAlerta(id: string): Promise<boolean> {
     return false
   }
   return true
+}
+
+// ============================================================
+// EVENTOS DO FUNIL (Caminho A — "operar é medir")
+// Gravados a cada mudança de etapa / finalização do cliente.
+// São a fonte das métricas avançadas (getMetricasAvancadas).
+// ============================================================
+
+export interface ClienteEvento {
+  id: string
+  cliente_id: string
+  etapa: number
+  entrou_em: string
+  saiu_em: string | null
+  dono_tipo: 'lais' | 'humano' | null
+  resultado: 'avancou' | 'perdido' | 'retrocedeu' | null
+  motivo: string | null
+}
+
+function donoTipoEtapa(etapa: number, porta: 'A' | 'B' | null | undefined): 'lais' | 'humano' {
+  return (porta ?? 'A') === 'A' && etapa <= 1 ? 'lais' : 'humano'
+}
+
+// Fecha o evento aberto do cliente e abre um novo na nova etapa.
+// Best-effort: nunca lança — uma falha de medição não pode travar o CRM.
+export async function registrarMudancaEtapa(
+  clienteId: string,
+  novaEtapa: number,
+  porta: 'A' | 'B' | null | undefined,
+  resultado: 'avancou' | 'retrocedeu'
+): Promise<void> {
+  try {
+    await supabase
+      .from('vendas_cliente_eventos')
+      .update({ saiu_em: new Date().toISOString(), resultado })
+      .eq('cliente_id', clienteId)
+      .is('saiu_em', null)
+
+    await supabase
+      .from('vendas_cliente_eventos')
+      .insert([{ cliente_id: clienteId, etapa: novaEtapa, dono_tipo: donoTipoEtapa(novaEtapa, porta) }])
+  } catch (e) {
+    console.error('Erro ao registrar mudança de etapa:', e)
+  }
+}
+
+// Fecha o evento aberto ao finalizar (ganho/perdido). 'interessado' não finaliza.
+export async function registrarFinalizacao(
+  clienteId: string,
+  status: 'sucesso' | 'perdido' | 'interessado',
+  motivo?: string | null
+): Promise<void> {
+  if (status === 'interessado') return
+  try {
+    await supabase
+      .from('vendas_cliente_eventos')
+      .update({
+        saiu_em: new Date().toISOString(),
+        resultado: status === 'sucesso' ? 'avancou' : 'perdido',
+        motivo: motivo ?? null,
+      })
+      .eq('cliente_id', clienteId)
+      .is('saiu_em', null)
+  } catch (e) {
+    console.error('Erro ao registrar finalização:', e)
+  }
+}
+
+// Reabre um evento (ex.: usuário desfez a finalização). Só abre se não houver
+// um evento já aberto, para não duplicar.
+export async function reabrirEventoCliente(
+  clienteId: string,
+  etapa: number,
+  porta: 'A' | 'B' | null | undefined
+): Promise<void> {
+  try {
+    const { data } = await supabase
+      .from('vendas_cliente_eventos')
+      .select('id')
+      .eq('cliente_id', clienteId)
+      .is('saiu_em', null)
+      .limit(1)
+    if (data && data.length > 0) return
+    await supabase
+      .from('vendas_cliente_eventos')
+      .insert([{ cliente_id: clienteId, etapa, dono_tipo: donoTipoEtapa(etapa, porta) }])
+  } catch (e) {
+    console.error('Erro ao reabrir evento do cliente:', e)
+  }
+}
+
+export async function getClienteEventos(): Promise<ClienteEvento[]> {
+  const { data, error } = await supabase.from('vendas_cliente_eventos').select('*')
+  if (error) {
+    console.error('Erro ao buscar eventos de cliente:', error)
+    return []
+  }
+  return (data || []) as ClienteEvento[]
+}
+
+// ============================================================
+// MÉTRICAS AVANÇADAS — calculadas no funil REAL (6 etapas) a partir de
+// vendas_clientes + vendas_cliente_eventos. Substitui as views órfãs.
+// ============================================================
+
+export interface MetricasAvancadas {
+  tempo: VendasMTempoResposta[]
+  funil: VendasMFunil[]
+  noShow: VendasMNoShow[]
+  handoff: VendasMHandoff[]
+  treinar: VendasMOndeTreinar[]
+  laisVsHumano: VendasMLaisVsHumano[]
+  travas: VendasMTravasPagamento[]
+  ciclo: VendasMCicloTotal[]
+}
+
+// Formata ms como "H:MM:SS" (H pode passar de 24h) — compatível com o
+// formatInterval do PainelMetricas, que entende esse formato e o converte.
+function msParaHMS(ms: number): string {
+  if (!isFinite(ms) || ms <= 0) return '0:00:00'
+  const totS = Math.round(ms / 1000)
+  const h = Math.floor(totS / 3600)
+  const m = Math.floor((totS % 3600) / 60)
+  const s = totS % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${h}:${pad(m)}:${pad(s)}`
+}
+
+function mediana(nums: number[]): number | null {
+  if (!nums.length) return null
+  const a = [...nums].sort((x, y) => x - y)
+  const mid = Math.floor(a.length / 2)
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2
+}
+
+export async function getMetricasAvancadas(): Promise<MetricasAvancadas> {
+  const [clientes, eventos] = await Promise.all([getVendasClientes(), getClienteEventos()])
+
+  const portaDe = new Map<string, 'A' | 'B'>()
+  clientes.forEach((c) => portaDe.set(c.id, (c.porta as 'A' | 'B') || 'A'))
+
+  const dur = (e: ClienteEvento) =>
+    e.saiu_em ? new Date(e.saiu_em).getTime() - new Date(e.entrou_em).getTime() : 0
+  const nEtapas = ETAPAS.length
+
+  // ---- Funil por etapa (0..nEtapas-1) ----
+  const funil: VendasMFunil[] = ETAPAS.map((et, idx) => {
+    const evs = eventos.filter((e) => e.etapa === idx)
+    const setOf = (pred: (e: ClienteEvento) => boolean) =>
+      new Set(evs.filter(pred).map((e) => e.cliente_id)).size
+    const entraram = new Set(evs.map((e) => e.cliente_id)).size
+    const avancaram = setOf((e) => e.resultado === 'avancou')
+    const perderam = setOf((e) => e.resultado === 'perdido')
+    return {
+      ordem: idx + 1,
+      codigo: String(idx + 1),
+      nome: et.nome,
+      entraram,
+      avancaram,
+      perderam,
+      taxa_avanco_pct: entraram ? Math.round((avancaram / entraram) * 1000) / 10 : 0,
+    }
+  })
+
+  // ---- Tempo de resposta (etapa 0 fechada) por porta + dono ----
+  const e0 = eventos.filter((e) => e.etapa === 0 && e.saiu_em)
+  const grupos = new Map<string, { porta: string; dono: string; durs: number[] }>()
+  e0.forEach((e) => {
+    const porta = portaDe.get(e.cliente_id) || 'A'
+    const dono = e.dono_tipo || 'humano'
+    const key = `${porta}|${dono}`
+    const g = grupos.get(key) || { porta, dono, durs: [] }
+    g.durs.push(dur(e))
+    grupos.set(key, g)
+  })
+  const tempo: VendasMTempoResposta[] = Array.from(grupos.values()).map((g) => ({
+    porta: g.porta,
+    dono_tipo: g.dono,
+    leads: g.durs.length,
+    tempo_medio: msParaHMS(g.durs.reduce((a, b) => a + b, 0) / g.durs.length),
+    mediana_seg: mediana(g.durs.map((d) => d / 1000)),
+  }))
+
+  // ---- No-show (visita agendada x realizada) — de vendas_clientes ----
+  const agendadas = clientes.filter((c) => !!c.visita_agendada_em).length
+  const realizadas = clientes.filter((c) => !!c.visita_agendada_em && !!c.visita_realizada_em).length
+  const noShow: VendasMNoShow[] = [{
+    agendadas,
+    realizadas,
+    taxa_no_show_pct: agendadas ? Math.round((1 - realizadas / agendadas) * 1000) / 10 : 0,
+  }]
+
+  // ---- Handoff (Andressa/Lais → Corretor na E3): tempo morto da passagem ----
+  const comHandoff = clientes.filter((c) => c.handoff_iniciado_em)
+  const assumidos = comHandoff.filter((c) => c.handoff_assumido_em)
+  const temposHandoff = assumidos.map(
+    (c) => new Date(c.handoff_assumido_em!).getTime() - new Date(c.handoff_iniciado_em!).getTime()
+  )
+  const handoff: VendasMHandoff[] = comHandoff.length
+    ? [{
+        tipo: 'qualificador_corretor',
+        total: comHandoff.length,
+        pendentes: comHandoff.length - assumidos.length,
+        tempo_morto_medio: temposHandoff.length
+          ? msParaHMS(temposHandoff.reduce((a, b) => a + b, 0) / temposHandoff.length)
+          : null,
+        pacote_incompleto: 0,
+      }]
+    : []
+
+  // ---- Onde treinar: tempo médio na etapa × taxa de queda ----
+  const treinar: VendasMOndeTreinar[] = ETAPAS.map((et, idx) => {
+    const evs = eventos.filter((e) => e.etapa === idx && e.saiu_em)
+    if (!evs.length) {
+      return { ordem: idx + 1, codigo: String(idx + 1), nome: et.nome, tempo_medio: null, taxa_queda_pct: 0, indice_atencao: 0 }
+    }
+    const tempos = evs.map(dur)
+    const avgMs = tempos.reduce((a, b) => a + b, 0) / tempos.length
+    const quedas = evs.filter((e) => e.resultado === 'perdido').length
+    const taxa = Math.round((quedas / evs.length) * 1000) / 10
+    const indice = Math.round((avgMs / 3_600_000) * (quedas / evs.length) * 100) / 100
+    return { ordem: idx + 1, codigo: String(idx + 1), nome: et.nome, tempo_medio: msParaHMS(avgMs), taxa_queda_pct: taxa, indice_atencao: indice }
+  }).sort((a, b) => b.indice_atencao - a.indice_atencao)
+
+  // ---- Lais (porta A) × Humano (porta B): taxa de agendamento de visita ----
+  const laisVsHumano: VendasMLaisVsHumano[] = (['A', 'B'] as const).map((porta) => {
+    const grupo = clientes.filter((c) => ((c.porta as 'A' | 'B') || 'A') === porta)
+    const agendaram = grupo.filter((c) => !!c.visita_agendada_em || c.etapa >= I_VISITA).length
+    return {
+      porta,
+      leads: grupo.length,
+      agendaram_visita: agendaram,
+      taxa_agendamento_pct: grupo.length ? Math.round((agendaram / grupo.length) * 1000) / 10 : 0,
+    }
+  })
+
+  // ---- Travas de pagamento (derivado de status_financiamento) ----
+  const bloqueados = clientes.filter(
+    (c) => c.status_financiamento === 'em_andamento' || c.status_financiamento === 'reprovado'
+  )
+  const travasMap = new Map<string, VendasMTravasPagamento>()
+  bloqueados.forEach((c) => {
+    const ramo = c.forma_pagamento || 'a_definir'
+    const tipo_bloqueio = c.status_financiamento === 'reprovado' ? 'credito_reprovado' : 'analise_credito'
+    const key = `${ramo}|${tipo_bloqueio}`
+    const cur = travasMap.get(key) || { ramo, tipo_bloqueio, ocorrencias: 0, abertos: 0, tempo_medio_aberto: null }
+    cur.ocorrencias += 1
+    if (c.status_financiamento === 'em_andamento') cur.abertos += 1
+    travasMap.set(key, cur)
+  })
+  const travas = Array.from(travasMap.values()).sort((a, b) => b.ocorrencias - a.ocorrencias)
+
+  // ---- Ciclo total dos ganhos (entrada → finalização) ----
+  const inicioDe = new Map<string, number>()
+  eventos.forEach((e) => {
+    const t = new Date(e.entrou_em).getTime()
+    const cur = inicioDe.get(e.cliente_id)
+    if (cur === undefined || t < cur) inicioDe.set(e.cliente_id, t)
+  })
+  const ciclo: VendasMCicloTotal[] = clientes
+    .filter((c) => c.finalizado && c.status_finalizacao === 'sucesso')
+    .map((c) => {
+      const inicio = inicioDe.get(c.id) ?? (c.created_at ? new Date(c.created_at).getTime() : Date.now())
+      const fim = c.updated_at ? new Date(c.updated_at).getTime() : Date.now()
+      return {
+        lead_id: c.id,
+        nome: c.nome,
+        inicio: new Date(inicio).toISOString(),
+        fechamento: new Date(fim).toISOString(),
+        ciclo_total: msParaHMS(fim - inicio),
+      }
+    })
+
+  return { tempo, funil, noShow, handoff, treinar, laisVsHumano, travas, ciclo }
 }
 
 

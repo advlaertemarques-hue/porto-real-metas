@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { UserRole, SystemModule } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
@@ -32,6 +32,11 @@ const supabase = createClient()
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  // Guarda o id do usuário atual para ignorar eventos de auth que NÃO mudam
+  // quem está logado (ex.: TOKEN_REFRESHED disparado pelo Supabase ao focar a
+  // aba). Sem isso, cada foco recriava o objeto `user` e recarregava todas as
+  // páginas (todos os useEffect([user]) re-executavam).
+  const currentUserId = useRef<string | null>(null)
 
   // Busca o profile com metas_role do Supabase
   const loadProfile = async (supabaseUser: SupabaseUser) => {
@@ -77,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Checa sessão existente no Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        currentUserId.current = session.user.id
         loadProfile(session.user).finally(() => setLoading(false))
       } else {
         setLoading(false)
@@ -87,6 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextId = session?.user?.id ?? null
+      // Mesmo usuário (renovação de token ao focar a aba) → não faz nada.
+      // Evita recarregar o profile e, por consequência, todas as páginas.
+      if (nextId === currentUserId.current) return
+      currentUserId.current = nextId
       if (session?.user) {
         loadProfile(session.user)
       } else {

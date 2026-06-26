@@ -11,7 +11,10 @@ import {
   updateVendasCliente,
   toggleVendasChecklistItem,
   createVendasClienteNota,
-  createVendasCliente
+  createVendasCliente,
+  registrarMudancaEtapa,
+  registrarFinalizacao,
+  reabrirEventoCliente
 } from '@/lib/api'
 import {
   ETAPAS,
@@ -176,13 +179,22 @@ export default function MinhaCarteira({
 
   const changeEtapa = async (etapaIndex: number) => {
     if (!activeId) return
+    const etapaAnterior = activeClient?.etapa ?? 0
     const params: Partial<VendasCliente> = { etapa: etapaIndex }
     if (activeClient?.status_finalizacao === 'interessado') {
       params.status_finalizacao = null
     }
+    // Handoff: ao entrar na Visita (E3, índice 2), inicia a passagem de bastão.
+    if (etapaIndex >= 2 && !activeClient?.handoff_iniciado_em) {
+      params.handoff_iniciado_em = new Date().toISOString()
+    }
     const updated = await updateVendasCliente(activeId, params)
     if (updated) {
       setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+      // Medição: registra a transição de etapa (não bloqueia a UI).
+      if (etapaIndex !== etapaAnterior) {
+        registrarMudancaEtapa(activeId, etapaIndex, activeClient?.porta, etapaIndex > etapaAnterior ? 'avancou' : 'retrocedeu')
+      }
     }
   }
 
@@ -200,12 +212,20 @@ export default function MinhaCarteira({
     if (client.status_finalizacao === 'interessado') {
       params.status_finalizacao = null
     }
+    // Handoff: ao entrar na Visita (E3, índice 2), inicia a passagem de bastão.
+    if (newEtapa >= 2 && !client.handoff_iniciado_em) {
+      params.handoff_iniciado_em = new Date().toISOString()
+    }
     try {
       const updated = await updateVendasCliente(clientId, params)
       if (!updated) {
         setClientes(prev => prev.map(c => c.id === clientId ? { ...c, etapa: originalEtapa, status_finalizacao: originalStatusFin } : c))
       } else {
         setClientes(prev => prev.map(c => c.id === clientId ? updated : c))
+        // Medição: registra a transição de etapa (não bloqueia a UI).
+        if (newEtapa !== originalEtapa) {
+          registrarMudancaEtapa(clientId, newEtapa, client.porta, newEtapa > originalEtapa ? 'avancou' : 'retrocedeu')
+        }
       }
     } catch (err) {
       setClientes(prev => prev.map(c => c.id === clientId ? { ...c, etapa: originalEtapa, status_finalizacao: originalStatusFin } : c))
@@ -313,6 +333,18 @@ export default function MinhaCarteira({
   const setClientTemp = async (temp: 'quente' | 'morno' | 'frio') => {
     if (!activeId) return
     const updated = await updateVendasCliente(activeId, { temp })
+    if (updated) {
+      setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+    }
+  }
+
+  // Handoff: o corretor assume o atendimento (fecha o tempo morto da passagem).
+  const assumirHandoff = async () => {
+    if (!activeId || !activeClient) return
+    const now = new Date().toISOString()
+    const params: Partial<VendasCliente> = { handoff_assumido_em: now }
+    if (!activeClient.handoff_iniciado_em) params.handoff_iniciado_em = now
+    const updated = await updateVendasCliente(activeId, params)
     if (updated) {
       setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
     }
@@ -452,6 +484,8 @@ export default function MinhaCarteira({
     if (updated) {
       setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
       setFinalizarModalOpen(false)
+      // Medição: fecha o evento aberto como ganho/perdido (não bloqueia a UI).
+      registrarFinalizacao(activeId, finalizarStatus, finalizarStatus === 'sucesso' ? null : motivo)
     }
   }
 
@@ -1157,6 +1191,8 @@ export default function MinhaCarteira({
                         })
                         if (updated) {
                           setClientes(prev => prev.map(c => c.id === activeId ? updated : c))
+                          // Medição: reabre o evento na etapa atual (desfez a finalização).
+                          reabrirEventoCliente(activeId, updated.etapa ?? activeClient.etapa, activeClient.porta)
                         }
                       }}
                       className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold rounded-lg text-[10px] uppercase tracking-wide transition-colors"
@@ -1474,6 +1510,37 @@ export default function MinhaCarteira({
                     💡 <b>Lembrete Pós-Visita:</b> Não se esqueça de confirmar e atualizar o <b>Perfil do Cliente</b> (🧠/⚡/❤️/🚀) no seletor do cabeçalho com base nas observações feitas na visita!
                   </div>
 
+                  {/* Passagem de bastão (handoff Andressa/Lais → Corretor) */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#EEF4FA] text-[#33415C] flex items-center justify-center text-base flex-shrink-0">🤝</div>
+                      <div>
+                        <div className="text-xs font-extrabold text-slate-800">Passagem de bastão (Andressa/Lais → Corretor)</div>
+                        <div className="text-[10px] text-slate-500 font-semibold">
+                          {activeClient.handoff_assumido_em ? (() => {
+                            const ini = activeClient.handoff_iniciado_em ? new Date(activeClient.handoff_iniciado_em).getTime() : null
+                            const ass = new Date(activeClient.handoff_assumido_em).getTime()
+                            const delta = ini ? Math.max(0, Math.round((ass - ini) / 60000)) : null
+                            const fmt = (m: number) => m >= 1440 ? `${Math.floor(m / 1440)}d` : m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`
+                            return `Atendimento assumido${delta !== null ? ` · ${fmt(delta)} após a passagem` : ''}.`
+                          })() : activeClient.handoff_iniciado_em
+                            ? 'Passagem iniciada — aguardando o corretor assumir o atendimento.'
+                            : 'Agende a visita ou avance para a Visita para iniciar a passagem de bastão.'}
+                        </div>
+                      </div>
+                    </div>
+                    {activeClient.handoff_assumido_em ? (
+                      <span className="text-[10px] font-black uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg flex-shrink-0">✓ Assumido</span>
+                    ) : activeClient.handoff_iniciado_em ? (
+                      <button
+                        onClick={assumirHandoff}
+                        className="flex-shrink-0 flex items-center gap-1.5 bg-[#eb3238] hover:bg-[#c6282e] text-white px-3.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-colors shadow-sm"
+                      >
+                        ✋ Assumir atendimento
+                      </button>
+                    ) : null}
+                  </div>
+
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="space-y-1">
@@ -1482,7 +1549,11 @@ export default function MinhaCarteira({
                           type="datetime-local"
                           defaultValue={activeClient.visita_agendada_em ? new Date(new Date(activeClient.visita_agendada_em).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
                           onChange={async (e) => {
-                            const updated = await updateVendasCliente(activeClient.id, { visita_agendada_em: e.target.value || null })
+                            const val = e.target.value || null
+                            const params: Partial<VendasCliente> = { visita_agendada_em: val }
+                            // Agendar a visita = passagem de bastão (manual). Inicia o handoff.
+                            if (val && !activeClient.handoff_iniciado_em) params.handoff_iniciado_em = new Date().toISOString()
+                            const updated = await updateVendasCliente(activeClient.id, params)
                             if (updated) {
                               setClientes(prev => prev.map(c => c.id === activeClient.id ? updated : c))
                             }

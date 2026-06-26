@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-  getVendasClientes, 
-  getVendasAlertas, 
-  resolveVendasAlerta, 
-  getVendasMetasDefinicoes 
+import {
+  getVendasClientes,
+  getVendasAlertas,
+  resolveVendasAlerta,
+  getVendasMetasDefinicoes,
+  getVendasCorretores,
+  getVendasEquipes
 } from '@/lib/api'
-import { VendasCliente, VendasAlerta, VendasMetasDefinicao } from '@/lib/types'
+import { VendasCliente, VendasAlerta, VendasMetasDefinicao, VendasCorretor, VendasEquipe } from '@/lib/types'
 import { fmtBRL, ETAPAS } from '@/lib/constants'
 import { 
   DollarSign, 
@@ -28,10 +30,16 @@ export default function VendasVgvPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   
-  const [clientes, setClientes] = useState<VendasCliente[]>([])
+  const [clientesAll, setClientesAll] = useState<VendasCliente[]>([])
   const [alertas, setAlertas] = useState<VendasAlerta[]>([])
   const [metas, setMetas] = useState<VendasMetasDefinicao[]>([])
-  
+  const [corretores, setCorretores] = useState<VendasCorretor[]>([])
+  const [equipes, setEquipes] = useState<VendasEquipe[]>([])
+
+  // Escopo da meta/painel: todos | uma equipe | um vendedor
+  const [escopoTipo, setEscopoTipo] = useState<'todos' | 'equipe' | 'vendedor'>('todos')
+  const [escopoId, setEscopoId] = useState<string>('')
+
   const [dataLoading, setDataLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [resolvingId, setResolvingId] = useState<string | null>(null)
@@ -41,14 +49,18 @@ export default function VendasVgvPage() {
 
   const loadData = async () => {
     try {
-      const [cls, alts, mts] = await Promise.all([
+      const [cls, alts, mts, corrs, eqps] = await Promise.all([
         getVendasClientes(),
         getVendasAlertas(),
-        getVendasMetasDefinicoes()
+        getVendasMetasDefinicoes(),
+        getVendasCorretores(),
+        getVendasEquipes()
       ])
-      setClientes(cls)
+      setClientesAll(cls)
       setAlertas(alts.filter(a => !a.resolvido)) // only unresolved alerts
       setMetas(mts)
+      setCorretores(corrs)
+      setEquipes(eqps)
     } catch (err) {
       console.error("Erro ao carregar dados do painel VGV:", err)
     }
@@ -102,6 +114,40 @@ export default function VendasVgvPage() {
 
   if (user?.role !== 'superadmin') return null
 
+  // --- ESCOPO (todos | equipe | vendedor) -------------------------------
+  const equipeDoCorretor = (cid?: string | null) =>
+    corretores.find(c => c.id === cid)?.equipe_id || null
+
+  const clientes = escopoTipo === 'todos'
+    ? clientesAll
+    : escopoTipo === 'vendedor'
+      ? clientesAll.filter(c => c.corretor_id === escopoId)
+      : clientesAll.filter(c => equipeDoCorretor(c.corretor_id) === escopoId)
+
+  // Meta-alvo conforme o escopo selecionado
+  const somaMetas = metas.reduce((s, m) => s + Number(m.vgv_anual_movel || 0), 0)
+  const metaDaEquipe = (eqId: string) =>
+    Number(metas.find(m => m.equipe_id === eqId)?.vgv_anual_movel || 0)
+
+  let targetMetaVgv = 0
+  if (escopoTipo === 'todos') {
+    targetMetaVgv = somaMetas > 0 ? somaMetas : 5000000
+  } else if (escopoTipo === 'equipe') {
+    targetMetaVgv = metaDaEquipe(escopoId)
+  } else {
+    // vendedor → parte proporcional da meta da equipe dele
+    const eq = equipeDoCorretor(escopoId)
+    const metaEq = eq ? metaDaEquipe(eq) : 0
+    const nVend = eq ? corretores.filter(c => c.equipe_id === eq).length : 0
+    targetMetaVgv = nVend > 0 ? metaEq / nVend : 0
+  }
+
+  const escopoLabel = escopoTipo === 'todos'
+    ? 'Soma das metas de todas as equipes'
+    : escopoTipo === 'equipe'
+      ? `Equipe: ${equipes.find(e => e.id === escopoId)?.nome || '—'}`
+      : `Vendedor: ${corretores.find(c => c.id === escopoId)?.nome || '—'} (cota proporcional)`
+
   // --- METRICS CALCULATION ---
   // 1. Total VGV Closed (Sucesso finalizado)
   const vgvClosed = clientes
@@ -114,28 +160,25 @@ export default function VendasVgvPage() {
     .reduce((sum, c) => sum + (c.valor || 0), 0)
 
   // 3. Projected weighted VGV (multiplying each deal by its stage conversion rate)
+  //    Calibrado para o funil REAL de 6 etapas (constants.ts → vendas_clientes.etapa 0..5),
+  //    não para o modelo E1-E9 (que não é o que o CRM grava).
   const getStageProbability = (etapa: number) => {
-    // Basic conversion probabilities for sales steps (E1-E9)
-    if (etapa <= 2) return 0.05  // Qualificação leve
-    if (etapa === 3) return 0.10 // Oferta / Match
-    if (etapa === 4) return 0.20 // Visita agendada
-    if (etapa === 5) return 0.35 // Visita realizada
-    if (etapa === 6) return 0.60 // Proposta
-    if (etapa === 7) return 0.75 // Negociação
-    if (etapa === 8) return 0.90 // Formalização
-    if (etapa >= 9) return 1.0   // Fechamento
-    return 0.1
+    switch (etapa) {
+      case 0: return 0.05 // Triagem
+      case 1: return 0.10 // Atendimento & Match
+      case 2: return 0.25 // Visita
+      case 3: return 0.50 // Proposta
+      case 4: return 0.75 // Negociação
+      case 5: return 0.90 // Fechamento
+      default: return 0.05
+    }
   }
 
   const vgvProjectedWeighted = clientes
     .filter(c => !c.finalizado)
     .reduce((sum, c) => sum + (c.valor * getStageProbability(c.etapa)), 0)
 
-  // 4. Annual Meta VGV from db
-  // Default to 5.0M if none defined
-  const targetMetaVgv = metas.length > 0 
-    ? Number(metas[0].vgv_anual_movel) 
-    : 5000000
+  // (targetMetaVgv já calculado acima conforme o escopo)
 
   // Target percent achievement
   const metaPercentage = targetMetaVgv > 0 ? (vgvClosed / targetMetaVgv) * 100 : 0
@@ -225,7 +268,45 @@ export default function VendasVgvPage() {
           <p className="text-xs text-slate-500 mt-1">Consolidado analítico de fechamentos de contratos, projeções financeiras e alertas em tempo real.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Escopo da meta: todos | equipe | vendedor */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Meta:</span>
+            <select
+              value={escopoTipo}
+              onChange={(e) => {
+                const t = e.target.value as 'todos' | 'equipe' | 'vendedor'
+                setEscopoTipo(t)
+                setEscopoId(t === 'equipe' ? (equipes[0]?.id || '') : t === 'vendedor' ? (corretores[0]?.id || '') : '')
+              }}
+              className="border-none rounded-lg p-1 text-xs font-semibold bg-white cursor-pointer outline-none focus:ring-0 text-slate-700"
+            >
+              <option value="todos">Todos</option>
+              <option value="equipe">Por equipe</option>
+              <option value="vendedor">Por vendedor</option>
+            </select>
+            {escopoTipo === 'equipe' && (
+              <select
+                value={escopoId}
+                onChange={(e) => setEscopoId(e.target.value)}
+                className="border-l border-slate-200 pl-2 rounded-lg p-1 text-xs font-semibold bg-white cursor-pointer outline-none focus:ring-0 text-slate-700 max-w-[160px]"
+              >
+                {equipes.length === 0 && <option value="">Sem equipes</option>}
+                {equipes.map((eq) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+              </select>
+            )}
+            {escopoTipo === 'vendedor' && (
+              <select
+                value={escopoId}
+                onChange={(e) => setEscopoId(e.target.value)}
+                className="border-l border-slate-200 pl-2 rounded-lg p-1 text-xs font-semibold bg-white cursor-pointer outline-none focus:ring-0 text-slate-700 max-w-[160px]"
+              >
+                {corretores.length === 0 && <option value="">Sem vendedores</option>}
+                {corretores.map((co) => <option key={co.id} value={co.id}>{co.nome}</option>)}
+              </select>
+            )}
+          </div>
+
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -296,7 +377,7 @@ export default function VendasVgvPage() {
           </div>
           <h3 className="text-2xl font-black text-slate-800 tracking-tight">{fmtBRL(targetMetaVgv)}</h3>
           <p className="text-[10px] text-slate-500 font-medium">
-            Definido na parametrização de metas
+            {escopoLabel}
           </p>
         </div>
       </div>
@@ -447,10 +528,12 @@ export default function VendasVgvPage() {
 
           <div className="space-y-3.5">
             {[
-              { label: 'Qualificação (E1-E4)', color: 'bg-blue-500', value: clientes.filter(c => !c.finalizado && c.etapa <= 4).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa <= 4).length },
-              { label: 'Visitas (E5)', color: 'bg-amber-500', value: clientes.filter(c => !c.finalizado && c.etapa === 5).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa === 5).length },
-              { label: 'Fechamento (E6-E9)', color: 'bg-emerald-500', value: clientes.filter(c => !c.finalizado && c.etapa >= 6 && c.etapa <= 9).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa >= 6 && c.etapa <= 9).length },
-              { label: 'Pós-Venda (E10-E12)', color: 'bg-purple-500', value: clientes.filter(c => !c.finalizado && c.etapa >= 10).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa >= 10).length },
+              // Fases agregadas sobre o funil real de 6 etapas (0..5) — antes usava
+              // faixas E1-E12 que não existem nos dados (baldes ficavam vazios/trocados).
+              { label: 'Qualificação (Triagem + Match)', color: 'bg-blue-500', value: clientes.filter(c => !c.finalizado && c.etapa <= 1).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa <= 1).length },
+              { label: 'Visita', color: 'bg-amber-500', value: clientes.filter(c => !c.finalizado && c.etapa === 2).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa === 2).length },
+              { label: 'Proposta + Negociação', color: 'bg-indigo-500', value: clientes.filter(c => !c.finalizado && c.etapa >= 3 && c.etapa <= 4).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa >= 3 && c.etapa <= 4).length },
+              { label: 'Fechamento', color: 'bg-emerald-500', value: clientes.filter(c => !c.finalizado && c.etapa >= 5).reduce((sum, c) => sum + (c.valor || 0), 0), count: clientes.filter(c => !c.finalizado && c.etapa >= 5).length },
             ].map((f, i) => {
               const pct = vgvActive > 0 ? (f.value / vgvActive) * 100 : 0
               return (

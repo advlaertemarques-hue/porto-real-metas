@@ -151,8 +151,8 @@ export default function PainelMetricas({
         {/* Funnel Conversão V5 */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Conversão do Funil de Vendas V5</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Histórico acumulado de leads que passaram por cada uma das 12 etapas.</p>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">Conversão do Funil de Vendas</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Leads que passaram por cada etapa do funil (entraram × avançaram).</p>
           </div>
 
           <div className="space-y-3.5 pr-2 max-h-[580px] overflow-y-auto">
@@ -255,7 +255,7 @@ export default function PainelMetricas({
         {/* Ciclo de Vendas */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">⏱️ Ciclo de Venda Médio (E1 a E9)</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">⏱️ Ciclo de Venda Médio (entrada → fechamento)</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Tempo médio acumulado do primeiro contato até a assinatura do contrato (Sucesso).</p>
           </div>
 
@@ -332,7 +332,7 @@ export default function PainelMetricas({
                           {m.taxa_agendamento_pct}%
                         </span>
                         <span className="text-[8px] text-slate-400 font-extrabold uppercase tracking-wider">
-                          conversão E3
+                          agendou visita
                         </span>
                       </div>
                     </div>
@@ -350,7 +350,7 @@ export default function PainelMetricas({
         {/* Travas e Gargalos de Pagamento */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">🔒 Travas de Formalização (E6)</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">🔒 Travas de Pagamento / Financiamento</h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Fatores burocráticos que mais geram gargalo no fechamento de contratos.</p>
           </div>
 

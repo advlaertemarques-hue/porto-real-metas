@@ -297,6 +297,8 @@ export interface VendasCliente {
   status_financiamento?: 'n/a' | 'em_andamento' | 'aprovado' | 'reprovado' | null
   em_captacao?: boolean
   porta?: 'A' | 'B'
+  handoff_iniciado_em?: string | null
+  handoff_assumido_em?: string | null
   etiqueta_status?: 'Novo' | 'Em atendimento' | 'Aguardando cliente' | 'Sem resposta' | 'Via expressa' | 'Descartado'
   forma_pagamento?: 'a_vista' | 'parcelamento' | 'permuta' | 'financiamento' | 'a_definir'
   created_at?: string

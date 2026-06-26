@@ -3,16 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import {
-  getMetricsTempoResposta,
-  getMetricsFunil,
-  getMetricsNoShow,
-  getMetricsHandoff,
-  getMetricsOndeTreinar,
-  getMetricsLaisVsHumano,
-  getMetricsTravasPagamento,
-  getMetricsCicloTotal
-} from '@/lib/api'
+import { getMetricasAvancadas } from '@/lib/api'
 import {
   VendasMTempoResposta,
   VendasMFunil,
@@ -52,24 +43,15 @@ export default function AuditoriaPage() {
 
     async function loadData() {
       try {
-        const [mTempo, mFunil, mNoShow, mHandoff, mTreinar, mLaisVsHumano, mTravas, mCiclo] = await Promise.all([
-          getMetricsTempoResposta(),
-          getMetricsFunil(),
-          getMetricsNoShow(),
-          getMetricsHandoff(),
-          getMetricsOndeTreinar(),
-          getMetricsLaisVsHumano(),
-          getMetricsTravasPagamento(),
-          getMetricsCicloTotal()
-        ])
-        setMetricsTempo(mTempo)
-        setMetricsFunil(mFunil)
-        setMetricsNoShow(mNoShow)
-        setMetricsHandoff(mHandoff)
-        setMetricsTreinar(mTreinar)
-        setMetricsLaisVsHumano(mLaisVsHumano)
-        setMetricsTravas(mTravas)
-        setMetricsCiclo(mCiclo)
+        const m = await getMetricasAvancadas()
+        setMetricsTempo(m.tempo)
+        setMetricsFunil(m.funil)
+        setMetricsNoShow(m.noShow)
+        setMetricsHandoff(m.handoff)
+        setMetricsTreinar(m.treinar)
+        setMetricsLaisVsHumano(m.laisVsHumano)
+        setMetricsTravas(m.travas)
+        setMetricsCiclo(m.ciclo)
       } catch (err) {
         console.error("Erro ao carregar dados de auditoria/métricas:", err)
       } finally {

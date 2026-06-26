@@ -174,7 +174,7 @@ export default function Dashboard({
                         <th className="py-2.5">Cliente</th>
                         <th className="py-2.5">Objetivo</th>
                         <th className="py-2.5">Valor / Orçamento</th>
-                        <th className="py-2.5 min-w-[280px]">Linha de Processo (Etapas 1-9)</th>
+                        <th className="py-2.5 min-w-[280px]">Linha de Processo (Etapas 1-6)</th>
                         <th className="py-2.5 text-right">Ação</th>
                       </tr>
                     </thead>
@@ -307,7 +307,7 @@ export default function Dashboard({
                   <tr className="border-b border-slate-200/40 text-[10px] text-slate-400 font-black uppercase tracking-wider">
                     <th className="py-2.5">Cliente</th>
                     <th className="py-2.5">Objetivo</th>
-                    <th className="py-2.5">Linha de Processo (Etapas 1-9)</th>
+                    <th className="py-2.5">Linha de Processo (Etapas 1-6)</th>
                     <th className="py-2.5 text-right">Ação</th>
                   </tr>
                 </thead>
