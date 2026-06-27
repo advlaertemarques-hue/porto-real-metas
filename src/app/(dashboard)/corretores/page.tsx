@@ -1,50 +1,67 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { getSystemUsers, getVendasCorretores, getVendasEquipes } from '@/lib/api'
-import { SystemUser, VendasCorretor, VendasEquipe } from '@/lib/types'
-import GestaoUsuarios from '@/components/vendas/GestaoUsuarios'
+import { getAppUsuarios, AppUsuario } from '@/lib/api'
+import { Users, ShieldCheck, Briefcase, KeyRound, Info, Mail, Clock } from 'lucide-react'
+
+const ROLE: Record<string, { label: string; cls: string; icon: any }> = {
+  superadmin: { label: 'Gestor', cls: 'bg-[#EEF4FA] text-[#33415C] border-[#D6E4F0]', icon: ShieldCheck },
+  vendas: { label: 'Corretor', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Briefcase },
+  aluguel: { label: 'Aluguel', cls: 'bg-amber-50 text-amber-700 border-amber-200', icon: Briefcase },
+}
+
+function papel(role: string | null) {
+  return (role && ROLE[role]) || { label: '— sem papel', cls: 'bg-slate-50 text-slate-500 border-slate-200', icon: Users }
+}
+
+function getInitials(nome: string) {
+  if (!nome) return '?'
+  const p = nome.trim().split(/\s+/)
+  return (p.length === 1 ? p[0].slice(0, 2) : p[0][0] + p[p.length - 1][0]).toUpperCase()
+}
+
+function fmtData(s: string | null) {
+  if (!s) return 'nunca acessou'
+  const d = new Date(s)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+    ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
 
 export default function CorretoresPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([])
-  const [corretores, setCorretores] = useState<VendasCorretor[]>([])
-  const [equipes, setEquipes] = useState<VendasEquipe[]>([])
+  const [usuarios, setUsuarios] = useState<AppUsuario[]>([])
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
     if (authLoading) return
-    if (!user) {
-      router.replace('/login')
-      return
-    }
-
-    if (user.role === 'vendas') {
-      router.replace('/gestao-geral')
-      return
-    }
-
-    async function loadData() {
+    if (!user) { router.replace('/login'); return }
+    if (user.role === 'vendas') { router.replace('/gestao-geral'); return }
+    async function load() {
       try {
-        const [sysUsers, corrs, eqps] = await Promise.all([
-          getSystemUsers(),
-          getVendasCorretores(),
-          getVendasEquipes()
-        ])
-        setSystemUsers(sysUsers)
-        setCorretores(corrs)
-        setEquipes(eqps)
+        setUsuarios(await getAppUsuarios())
       } catch (err) {
-        console.error("Erro ao carregar dados de usuários:", err)
+        console.error('Erro ao carregar usuários:', err)
       } finally {
         setDataLoading(false)
       }
     }
-    loadData()
+    load()
   }, [user, authLoading, router])
+
+  const ordenados = useMemo(() => {
+    const peso = (r: string | null) => (r === 'superadmin' ? 0 : r === 'vendas' ? 1 : r === 'aluguel' ? 2 : 3)
+    return [...usuarios].sort((a, b) => peso(a.role) - peso(b.role) || a.nome.localeCompare(b.nome))
+  }, [usuarios])
+
+  const stats = useMemo(() => ({
+    total: usuarios.length,
+    gestores: usuarios.filter((u) => u.role === 'superadmin').length,
+    corretores: usuarios.filter((u) => u.role === 'vendas').length,
+    outros: usuarios.filter((u) => u.role !== 'superadmin' && u.role !== 'vendas').length,
+  }), [usuarios])
 
   if (authLoading || dataLoading) {
     return (
@@ -56,19 +73,109 @@ export default function CorretoresPage() {
       </div>
     )
   }
-
   if (user?.role !== 'superadmin') return null
 
   return (
-    <div className="bg-slate-50 min-h-screen">
-      <GestaoUsuarios
-        systemUsers={systemUsers}
-        setSystemUsers={setSystemUsers}
-        corretores={corretores}
-        setCorretores={setCorretores}
-        equipes={equipes}
-        user={user}
-      />
+    <div className="bg-slate-50 min-h-screen p-4 md:p-6 space-y-5">
+      {/* Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-black text-[#33415C] flex items-center gap-2">
+            <Users className="text-[#eb3238]" size={22} /> Controle de Usuários
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            Quem realmente acessa o sistema (login). Os corretores veem só a própria carteira; os gestores veem tudo.
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Chip n={stats.total} label="Total" />
+          <Chip n={stats.gestores} label="Gestores" tone="navy" />
+          <Chip n={stats.corretores} label="Corretores" tone="green" />
+          {stats.outros > 0 && <Chip n={stats.outros} label="Outros" tone="slate" />}
+        </div>
+      </div>
+
+      {/* Aviso sobre criação de acessos */}
+      <div className="flex items-start gap-2.5 bg-[#EEF4FA] border border-[#D6E4F0] rounded-xl p-3.5 text-[12px] text-[#33415C] font-medium">
+        <Info size={16} className="flex-shrink-0 mt-0.5 text-[#33415C]" />
+        <span>
+          Esta lista reflete os <b>logins reais</b> (Supabase Auth). Para <b>adicionar ou remover</b> um acesso com
+          segurança, peça ao administrador — a criação de login não é feita por aqui (exige chave de serviço).
+          Cada pessoa pode trocar a própria senha pelo botão <KeyRound size={11} className="inline -mt-0.5" /> no topo.
+        </span>
+      </div>
+
+      {/* Tabela */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-100">
+          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Logins ativos ({ordenados.length})</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="text-[10px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100">
+                <th className="py-3 px-5">Nome</th>
+                <th className="py-3 px-3">E-mail</th>
+                <th className="py-3 px-3">Papel</th>
+                <th className="py-3 px-3">Equipe</th>
+                <th className="py-3 px-3">CRECI / Tel</th>
+                <th className="py-3 px-5">Último acesso</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {ordenados.map((u) => {
+                const pp = papel(u.role)
+                const Icon = pp.icon
+                return (
+                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#33415C] text-white font-black text-[10px] flex items-center justify-center flex-shrink-0">
+                          {getInitials(u.nome)}
+                        </div>
+                        <span className="font-bold text-slate-800">{u.nome}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="flex items-center gap-1.5 text-slate-600 text-[13px]">
+                        <Mail size={13} className="text-slate-300" /> {u.email}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-1 rounded-lg border ${pp.cls}`}>
+                        <Icon size={11} /> {pp.label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-slate-500 text-[13px]">{u.equipe || '—'}</td>
+                    <td className="py-3 px-3 text-slate-500 text-[12px]">
+                      {u.creci ? `CRECI ${u.creci}` : ''}{u.creci && u.telefone ? ' · ' : ''}{u.telefone || (!u.creci ? '—' : '')}
+                    </td>
+                    <td className="py-3 px-5 text-slate-400 text-[12px]">
+                      <span className="flex items-center gap-1.5"><Clock size={12} /> {fmtData(u.last_sign_in_at)}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {ordenados.length === 0 && (
+                <tr><td colSpan={6} className="py-10 text-center text-slate-400 text-sm font-semibold">Nenhum usuário encontrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Chip({ n, label, tone }: { n: number; label: string; tone?: 'navy' | 'green' | 'slate' }) {
+  const cls = tone === 'navy' ? 'bg-[#EEF4FA] text-[#33415C]'
+    : tone === 'green' ? 'bg-emerald-50 text-emerald-700'
+    : tone === 'slate' ? 'bg-slate-100 text-slate-600'
+    : 'bg-slate-800 text-white'
+  return (
+    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${cls}`}>
+      <span className="text-base font-black leading-none">{n}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide">{label}</span>
     </div>
   )
 }

@@ -1477,4 +1477,29 @@ export async function getMetricasAvancadas(): Promise<MetricasAvancadas> {
   return { tempo, funil, noShow, handoff, treinar, laisVsHumano, travas, ciclo }
 }
 
+// ============================================================
+// USUÁRIOS REAIS (login) — lê a view segura app_usuarios.
+// Só superadmin recebe linhas (gate no SQL por auth.uid()).
+// ============================================================
+export interface AppUsuario {
+  id: string
+  nome: string
+  email: string
+  role: 'superadmin' | 'vendas' | 'aluguel' | null
+  creci: string | null
+  telefone: string | null
+  equipe: string | null
+  created_at: string | null
+  last_sign_in_at: string | null
+}
+
+export async function getAppUsuarios(): Promise<AppUsuario[]> {
+  const { data, error } = await supabase.from('app_usuarios').select('*')
+  if (error) {
+    console.error('Erro ao buscar usuários reais (app_usuarios):', error)
+    return []
+  }
+  return (data || []) as AppUsuario[]
+}
+
 
