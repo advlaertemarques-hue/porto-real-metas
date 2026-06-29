@@ -1502,4 +1502,60 @@ export async function getAppUsuarios(): Promise<AppUsuario[]> {
   return (data || []) as AppUsuario[]
 }
 
+// ------------------------------------------------------------------
+// Criar / excluir LOGINS REAIS via rota de servidor segura (/api/usuarios).
+// O navegador nunca toca na service_role key: a rota valida o token do
+// gestor e faz a operação com a Admin API do lado do servidor.
+// ------------------------------------------------------------------
+export interface NovoAcessoInput {
+  nome: string
+  email: string
+  senha: string
+  role: 'superadmin' | 'vendas' | 'aluguel'
+  telefone?: string
+  creci?: string
+  equipe_id?: string
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+export async function createAppUsuario(input: NovoAcessoInput): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/usuarios', {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(input),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) return { ok: false, error: json.error || 'Erro ao criar acesso.' }
+    return { ok: true }
+  } catch (e) {
+    console.error('Erro ao criar acesso:', e)
+    return { ok: false, error: 'Falha de conexão ao criar o acesso.' }
+  }
+}
+
+export async function deleteAppUsuario(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/usuarios', {
+      method: 'DELETE',
+      headers: await authHeaders(),
+      body: JSON.stringify({ id }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) return { ok: false, error: json.error || 'Erro ao excluir acesso.' }
+    return { ok: true }
+  } catch (e) {
+    console.error('Erro ao excluir acesso:', e)
+    return { ok: false, error: 'Falha de conexão ao excluir o acesso.' }
+  }
+}
+
 

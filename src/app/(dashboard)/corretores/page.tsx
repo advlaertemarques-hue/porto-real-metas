@@ -3,8 +3,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { getAppUsuarios, AppUsuario } from '@/lib/api'
-import { Users, ShieldCheck, Briefcase, KeyRound, Info, Mail, Clock } from 'lucide-react'
+import {
+  getAppUsuarios,
+  AppUsuario,
+  getVendasEquipes,
+  createAppUsuario,
+  deleteAppUsuario,
+} from '@/lib/api'
+import { VendasEquipe } from '@/lib/types'
+import { Users, ShieldCheck, Briefcase, KeyRound, Info, Mail, Clock, Plus, Trash2, X } from 'lucide-react'
 
 const ROLE: Record<string, { label: string; cls: string; icon: any }> = {
   superadmin: { label: 'Gestor', cls: 'bg-[#EEF4FA] text-[#33415C] border-[#D6E4F0]', icon: ShieldCheck },
@@ -33,7 +40,24 @@ export default function CorretoresPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [usuarios, setUsuarios] = useState<AppUsuario[]>([])
+  const [equipes, setEquipes] = useState<VendasEquipe[]>([])
   const [dataLoading, setDataLoading] = useState(true)
+
+  // Estado do modal "Novo Acesso"
+  const [modalOpen, setModalOpen] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [formErro, setFormErro] = useState<string | null>(null)
+  const [excluindoId, setExcluindoId] = useState<string | null>(null)
+  const formInicial = {
+    nome: '', email: '', senha: '',
+    role: 'vendas' as 'superadmin' | 'vendas' | 'aluguel',
+    telefone: '', creci: '', equipe_id: '',
+  }
+  const [form, setForm] = useState(formInicial)
+
+  async function recarregar() {
+    setUsuarios(await getAppUsuarios())
+  }
 
   useEffect(() => {
     if (authLoading) return
@@ -41,7 +65,9 @@ export default function CorretoresPage() {
     if (user.role === 'vendas') { router.replace('/gestao-geral'); return }
     async function load() {
       try {
-        setUsuarios(await getAppUsuarios())
+        const [us, eqs] = await Promise.all([getAppUsuarios(), getVendasEquipes()])
+        setUsuarios(us)
+        setEquipes(eqs)
       } catch (err) {
         console.error('Erro ao carregar usuários:', err)
       } finally {
@@ -50,6 +76,48 @@ export default function CorretoresPage() {
     }
     load()
   }, [user, authLoading, router])
+
+  function abrirModal() {
+    setFormErro(null)
+    setForm(formInicial)
+    setModalOpen(true)
+  }
+
+  async function handleCriar(e: React.FormEvent) {
+    e.preventDefault()
+    setFormErro(null)
+    if (!form.nome.trim() || !form.email.trim() || !form.senha.trim()) {
+      setFormErro('Nome, e-mail e senha são obrigatórios.')
+      return
+    }
+    if (form.senha.length < 6) {
+      setFormErro('A senha deve ter pelo menos 6 caracteres.')
+      return
+    }
+    setSalvando(true)
+    const { ok, error } = await createAppUsuario({
+      nome: form.nome.trim(),
+      email: form.email.trim().toLowerCase(),
+      senha: form.senha.trim(),
+      role: form.role,
+      telefone: form.telefone.trim() || undefined,
+      creci: form.creci.trim() || undefined,
+      equipe_id: form.equipe_id || undefined,
+    })
+    setSalvando(false)
+    if (!ok) { setFormErro(error || 'Erro ao criar acesso.'); return }
+    setModalOpen(false)
+    await recarregar()
+  }
+
+  async function handleExcluir(u: AppUsuario) {
+    if (!confirm(`Excluir o login de "${u.nome}" (${u.email})? Essa ação remove o acesso de verdade e não pode ser desfeita.`)) return
+    setExcluindoId(u.id)
+    const { ok, error } = await deleteAppUsuario(u.id)
+    setExcluindoId(null)
+    if (!ok) { alert(error || 'Não foi possível excluir o login.'); return }
+    await recarregar()
+  }
 
   const ordenados = useMemo(() => {
     const peso = (r: string | null) => (r === 'superadmin' ? 0 : r === 'vendas' ? 1 : r === 'aluguel' ? 2 : 3)
@@ -87,11 +155,20 @@ export default function CorretoresPage() {
             Quem realmente acessa o sistema (login). Os corretores veem só a própria carteira; os gestores veem tudo.
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Chip n={stats.total} label="Total" />
-          <Chip n={stats.gestores} label="Gestores" tone="navy" />
-          <Chip n={stats.corretores} label="Corretores" tone="green" />
-          {stats.outros > 0 && <Chip n={stats.outros} label="Outros" tone="slate" />}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
+            <Chip n={stats.total} label="Total" />
+            <Chip n={stats.gestores} label="Gestores" tone="navy" />
+            <Chip n={stats.corretores} label="Corretores" tone="green" />
+            {stats.outros > 0 && <Chip n={stats.outros} label="Outros" tone="slate" />}
+          </div>
+          <button
+            onClick={abrirModal}
+            className="flex items-center gap-2 bg-[#eb3238] hover:bg-[#c6282e] text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold shadow-sm transition-all hover:scale-[1.02]"
+          >
+            <Plus size={16} />
+            Novo Acesso
+          </button>
         </div>
       </div>
 
@@ -99,9 +176,9 @@ export default function CorretoresPage() {
       <div className="flex items-start gap-2.5 bg-[#EEF4FA] border border-[#D6E4F0] rounded-xl p-3.5 text-[12px] text-[#33415C] font-medium">
         <Info size={16} className="flex-shrink-0 mt-0.5 text-[#33415C]" />
         <span>
-          Esta lista reflete os <b>logins reais</b> (Supabase Auth). Para <b>adicionar ou remover</b> um acesso com
-          segurança, peça ao administrador — a criação de login não é feita por aqui (exige chave de serviço).
-          Cada pessoa pode trocar a própria senha pelo botão <KeyRound size={11} className="inline -mt-0.5" /> no topo.
+          Esta lista reflete os <b>logins reais</b> (Supabase Auth). Como <b>gestor</b>, você pode <b>adicionar</b> e{' '}
+          <b>excluir</b> acessos por aqui — a operação roda com segurança no servidor. Cada pessoa pode trocar a
+          própria senha pelo botão <KeyRound size={11} className="inline -mt-0.5" /> no topo.
         </span>
       </div>
 
@@ -120,6 +197,7 @@ export default function CorretoresPage() {
                 <th className="py-3 px-3">Equipe</th>
                 <th className="py-3 px-3">CRECI / Tel</th>
                 <th className="py-3 px-5">Último acesso</th>
+                <th className="py-3 px-5 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -153,16 +231,156 @@ export default function CorretoresPage() {
                     <td className="py-3 px-5 text-slate-400 text-[12px]">
                       <span className="flex items-center gap-1.5"><Clock size={12} /> {fmtData(u.last_sign_in_at)}</span>
                     </td>
+                    <td className="py-3 px-5 text-center">
+                      {u.id === user?.id ? (
+                        <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded-md whitespace-nowrap">
+                          Você
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleExcluir(u)}
+                          disabled={excluindoId === u.id}
+                          className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-lg transition-all disabled:opacity-40"
+                          title="Excluir login"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 )
               })}
               {ordenados.length === 0 && (
-                <tr><td colSpan={6} className="py-10 text-center text-slate-400 text-sm font-semibold">Nenhum usuário encontrado.</td></tr>
+                <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-sm font-semibold">Nenhum usuário encontrado.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* ============================================================
+          MODAL: NOVO ACESSO (login real)
+          ============================================================ */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-black text-[#33415C] text-base md:text-lg flex items-center gap-1.5">🔑 Novo Login</h3>
+                <p className="text-[11px] text-slate-400 font-medium">Cria um acesso real ao sistema.</p>
+              </div>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCriar} className="space-y-4">
+              {formErro && (
+                <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 font-bold text-xs rounded-xl">
+                  ⚠️ {formErro}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Nome Completo</label>
+                <input
+                  type="text" required placeholder="Nome do corretor ou gestor"
+                  value={form.nome}
+                  onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">E-mail (Login)</label>
+                <input
+                  type="email" required placeholder="exemplo@portoreal.com.br"
+                  value={form.email}
+                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Senha de Acesso</label>
+                <input
+                  type="text" required placeholder="Mínimo 6 caracteres"
+                  value={form.senha}
+                  onChange={(e) => setForm((p) => ({ ...p, senha: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Perfil de Acesso</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as any }))}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 cursor-pointer font-semibold"
+                >
+                  <option value="vendas">Corretor (Vendas)</option>
+                  <option value="aluguel">Corretor (Aluguel)</option>
+                  <option value="superadmin">Gestor / Diretoria</option>
+                </select>
+              </div>
+
+              {(form.role === 'vendas' || form.role === 'aluguel') && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Telefone</label>
+                      <input
+                        type="text" placeholder="(11) 99999-9999"
+                        value={form.telefone}
+                        onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">CRECI</label>
+                      <input
+                        type="text" placeholder="Ex: 12345-F"
+                        value={form.creci}
+                        onChange={(e) => setForm((p) => ({ ...p, creci: e.target.value }))}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Equipe Associada</label>
+                    <select
+                      value={form.equipe_id}
+                      onChange={(e) => setForm((p) => ({ ...p, equipe_id: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#33415C] bg-white text-slate-700 cursor-pointer font-semibold"
+                    >
+                      <option value="">Nenhuma Equipe</option>
+                      {equipes.map((eq) => (
+                        <option key={eq.id} value={eq.id}>{eq.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button" onClick={() => setModalOpen(false)}
+                  className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold py-2.5 rounded-xl text-xs md:text-sm transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit" disabled={salvando}
+                  className="flex-1 bg-[#33415C] hover:bg-[#47587A] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs md:text-sm transition-all shadow-sm"
+                >
+                  {salvando ? 'Salvando...' : 'Criar Acesso'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
