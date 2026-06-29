@@ -21,13 +21,22 @@ export default function AcoesDoDia({
 }: AcoesDoDiaProps) {
   if (!user) return null
 
+  const isGestor = user.role === 'superadmin'
+
   // Encontra corretor correspondente ao usuário logado
   const myCorretor = corretores.find(co => co.user_id === user.id)
 
+  // Nome do corretor dono da tarefa (o gestor precisa saber de quem é cada ação).
+  const corretorNome = (id: string | null | undefined) =>
+    corretores.find(co => co.id === id)?.nome || 'Sem corretor'
+
   const brokerClients = clientes.filter(c => {
-    // Filtro por corretor logado ou admin enxerga tudo
-    const isMyClient = user.role === 'superadmin' || c.corretor_id === myCorretor?.id
-    return isMyClient && c.proxima_acao
+    // Cada corretor vê só as suas ações; o gestor enxerga as de todos.
+    const isMyClient = isGestor || c.corretor_id === myCorretor?.id
+    // Processo finalizado (ganho/perdido) ou arquivado como interessado sai do
+    // funil e some das ações — já não há próxima tarefa a cobrar.
+    const ativoNoFunil = !c.finalizado && c.status_finalizacao !== 'interessado'
+    return isMyClient && ativoNoFunil && c.proxima_acao
   })
 
   const sortedClients = [...brokerClients].sort((a, b) => {
@@ -63,8 +72,10 @@ export default function AcoesDoDia({
         </h2>
         <p className="text-xs text-slate-500 font-semibold mt-1">
           {counts.atrasado > 0
-            ? `Você tem ${counts.atrasado} ${counts.atrasado === 1 ? 'ação atrasada' : 'ações atrasadas'} — priorize esses contatos para não esfriar o funil.`
-            : 'Aqui estão as próximas tarefas agendadas para os seus clientes. Mantenha os contatos em dia!'}
+            ? `${isGestor ? 'A equipe tem' : 'Você tem'} ${counts.atrasado} ${counts.atrasado === 1 ? 'ação atrasada' : 'ações atrasadas'} — priorize esses contatos para não esfriar o funil.`
+            : isGestor
+              ? 'Próximas tarefas agendadas de toda a equipe. Acompanhe quem está com cada contato.'
+              : 'Aqui estão as próximas tarefas agendadas para os seus clientes. Mantenha os contatos em dia!'}
         </p>
 
         {sortedClients.length > 0 && (
@@ -118,6 +129,11 @@ export default function AcoesDoDia({
                       {badgeText}
                     </span>
                     <span className="font-extrabold text-sm text-slate-800">{c.nome}</span>
+                    {isGestor && (
+                      <span className="text-[10px] bg-[#EEF4FA] text-[#33415C] border border-[#D6E4F0] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                        👤 {corretorNome(c.corretor_id)}
+                      </span>
+                    )}
                     <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
                       Etapa {c.etapa + 1}: {ETAPAS[c.etapa]?.nome || 'Lead'}
                     </span>
