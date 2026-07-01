@@ -140,6 +140,10 @@ export default function Dashboard({
       <div className="space-y-6">
         {corretores.map(corr => {
           const corrClients = filteredDashboardClientes.filter(c => c.corretor_id === corr.id)
+          // A lista mostra só processos em andamento; finalizados (ganho/perdido)
+          // ou arquivados como interessado saem daqui, mas continuam contando no
+          // placar (badges e KPIs do topo).
+          const corrAtivos = corrClients.filter(c => !c.finalizado && c.status_finalizacao !== 'interessado')
           return (
             <div key={corr.id} className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-md space-y-4 hover:shadow-lg hover:border-slate-400/80 transition-all duration-300">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 bg-slate-50/70 -mx-5 -mt-5 p-5 rounded-t-2xl">
@@ -156,7 +160,7 @@ export default function Dashboard({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-[#EEF4FA] text-[#33415C] text-[10px] font-bold px-2.5 py-1 rounded-md">
-                    {corrClients.filter(c => !c.finalizado).length} Processo(s) Ativo(s)
+                    {corrAtivos.length} Processo(s) Ativo(s)
                   </span>
                   <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-md">
                     {corrClients.filter(c => c.finalizado && c.status_finalizacao === 'sucesso').length} Ganho(s)
@@ -164,7 +168,7 @@ export default function Dashboard({
                 </div>
               </div>
 
-              {corrClients.length === 0 ? (
+              {corrAtivos.length === 0 ? (
                 <p className="text-xs text-slate-400 font-medium italic">Nenhum processo em andamento para este corretor.</p>
               ) : (
                 <div className="overflow-x-auto">
@@ -179,7 +183,7 @@ export default function Dashboard({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {corrClients.map(c => {
+                      {corrAtivos.map(c => {
                         const progPct = Math.round((c.etapa / (ETAPAS.length - 1)) * 100)
                         return (
                           <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
@@ -287,7 +291,7 @@ export default function Dashboard({
         })}
 
         {/* Sem Corretor Group */}
-        {clientes.filter(c => !c.corretor_id).length > 0 && (
+        {clientes.filter(c => !c.corretor_id && !c.finalizado && c.status_finalizacao !== 'interessado').length > 0 && (
           <div className="bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-3 pb-3 border-b border-slate-200/60">
               <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 font-black text-sm flex items-center justify-center">
@@ -312,7 +316,7 @@ export default function Dashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {clientes.filter(c => !c.corretor_id).map(c => {
+                  {clientes.filter(c => !c.corretor_id && !c.finalizado && c.status_finalizacao !== 'interessado').map(c => {
                     const progPct = Math.round((c.etapa / (ETAPAS.length - 1)) * 100)
                     return (
                       <tr key={c.id} className="hover:bg-slate-100/30 transition-colors">
