@@ -9,7 +9,8 @@ import {
   VendasMOndeTreinar,
   VendasMLaisVsHumano,
   VendasMTravasPagamento,
-  VendasMCicloTotal
+  VendasMCicloTotal,
+  VendasMClienteEtapas
 } from '@/lib/types'
 
 interface PainelMetricasProps {
@@ -21,6 +22,7 @@ interface PainelMetricasProps {
   metricsLaisVsHumano: VendasMLaisVsHumano[]
   metricsTravas: VendasMTravasPagamento[]
   metricsCiclo: VendasMCicloTotal[]
+  metricsPorCliente: VendasMClienteEtapas[]
 }
 
 function formatInterval(intervalStr: any) {
@@ -70,7 +72,8 @@ export default function PainelMetricas({
   metricsTreinar,
   metricsLaisVsHumano,
   metricsTravas,
-  metricsCiclo
+  metricsCiclo,
+  metricsPorCliente
 }: PainelMetricasProps) {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6 animate-fadeIn">
@@ -385,6 +388,49 @@ export default function PainelMetricas({
           </div>
         </div>
 
+      </div>
+
+      {/* Tempo por cliente em cada etapa */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md overflow-hidden space-y-4 p-5">
+        <div>
+          <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#33415C]">⏳ Tempo por Cliente em Cada Etapa</h3>
+          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Quanto tempo cada cliente ficou (ou está) em cada etapa do funil.</p>
+        </div>
+
+        <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+          {metricsPorCliente.map((c) => (
+            <div key={c.cliente_id} className="bg-slate-50/50 border border-slate-200/70 p-3 rounded-xl space-y-2 text-xs font-semibold">
+              <div className="flex justify-between items-center gap-2">
+                <span className="font-extrabold text-slate-800 truncate">{c.nome}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[9px] text-slate-400 font-bold uppercase">{c.corretor_nome}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${
+                    c.ativo ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}>
+                    {c.ativo ? 'Ativo' : 'Finalizado'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {c.etapas.map((et, i) => (
+                  <div key={i} className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 ${
+                    et.em_andamento ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-white border-slate-100 text-slate-600'
+                  }`}>
+                    <span className="text-slate-400 font-black">{et.ordem}.</span> {et.etapa_nome}
+                    <span className="font-extrabold">{formatInterval(et.tempo)}</span>
+                    {et.em_andamento && <span className="italic">(em andamento)</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {metricsPorCliente.length === 0 && (
+            <div className="text-center italic text-slate-400 py-8 text-xs font-semibold">
+              Sem eventos de etapa registrados ainda.
+            </div>
+          )}
+        </div>
       </div>
 
     </div>

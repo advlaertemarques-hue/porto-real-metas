@@ -39,6 +39,7 @@ import {
   VendasMOndeTreinar,
   VendasMTravasPagamento,
   VendasMCicloTotal,
+  VendasMClienteEtapas,
   VendasAlerta
 } from '@/lib/types'
 
@@ -1315,6 +1316,7 @@ export interface MetricasAvancadas {
   laisVsHumano: VendasMLaisVsHumano[]
   travas: VendasMTravasPagamento[]
   ciclo: VendasMCicloTotal[]
+  porCliente: VendasMClienteEtapas[]
 }
 
 // Formata ms como "H:MM:SS" (H pode passar de 24h) — compatível com o
@@ -1337,7 +1339,11 @@ function mediana(nums: number[]): number | null {
 }
 
 export async function getMetricasAvancadas(): Promise<MetricasAvancadas> {
-  const [clientes, eventos] = await Promise.all([getVendasClientes(), getClienteEventos()])
+  const [clientes, eventos, corretores] = await Promise.all([
+    getVendasClientes(),
+    getClienteEventos(),
+    getVendasCorretores(),
+  ])
 
   const portaDe = new Map<string, 'A' | 'B'>()
   clientes.forEach((c) => portaDe.set(c.id, (c.porta as 'A' | 'B') || 'A'))
@@ -1474,7 +1480,39 @@ export async function getMetricasAvancadas(): Promise<MetricasAvancadas> {
       }
     })
 
-  return { tempo, funil, noShow, handoff, treinar, laisVsHumano, travas, ciclo }
+  // ---- Detalhe por cliente: tempo passado em cada etapa (histórico granular) ----
+  const corretorNomeDe = new Map(corretores.map((co) => [co.id, co.nome]))
+  const clienteDe = new Map(clientes.map((c) => [c.id, c]))
+  const eventosPorCliente = new Map<string, ClienteEvento[]>()
+  eventos.forEach((e) => {
+    const arr = eventosPorCliente.get(e.cliente_id) || []
+    arr.push(e)
+    eventosPorCliente.set(e.cliente_id, arr)
+  })
+  const porCliente: VendasMClienteEtapas[] = Array.from(eventosPorCliente.entries())
+    .map(([clienteId, evs]) => {
+      const c = clienteDe.get(clienteId)
+      if (!c) return null
+      const etapas = [...evs]
+        .sort((a, b) => a.etapa - b.etapa || new Date(a.entrou_em).getTime() - new Date(b.entrou_em).getTime())
+        .map((e) => ({
+          ordem: e.etapa + 1,
+          etapa_nome: ETAPAS[e.etapa]?.nome || `Etapa ${e.etapa + 1}`,
+          tempo: msParaHMS(e.saiu_em ? dur(e) : Date.now() - new Date(e.entrou_em).getTime()),
+          em_andamento: !e.saiu_em,
+        }))
+      return {
+        cliente_id: clienteId,
+        nome: c.nome,
+        corretor_nome: (c.corretor_id && corretorNomeDe.get(c.corretor_id)) || 'Sem corretor',
+        ativo: !c.finalizado && c.status_finalizacao !== 'interessado',
+        etapas,
+      }
+    })
+    .filter((x): x is VendasMClienteEtapas => x !== null)
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+
+  return { tempo, funil, noShow, handoff, treinar, laisVsHumano, travas, ciclo, porCliente }
 }
 
 // ============================================================

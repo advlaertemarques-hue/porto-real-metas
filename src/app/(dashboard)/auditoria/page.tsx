@@ -12,7 +12,8 @@ import {
   VendasMOndeTreinar,
   VendasMLaisVsHumano,
   VendasMTravasPagamento,
-  VendasMCicloTotal
+  VendasMCicloTotal,
+  VendasMClienteEtapas
 } from '@/lib/types'
 import PainelMetricas from '@/components/vendas/PainelMetricas'
 
@@ -27,6 +28,7 @@ export default function AuditoriaPage() {
   const [metricsLaisVsHumano, setMetricsLaisVsHumano] = useState<VendasMLaisVsHumano[]>([])
   const [metricsTravas, setMetricsTravas] = useState<VendasMTravasPagamento[]>([])
   const [metricsCiclo, setMetricsCiclo] = useState<VendasMCicloTotal[]>([])
+  const [metricsPorCliente, setMetricsPorCliente] = useState<VendasMClienteEtapas[]>([])
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function AuditoriaPage() {
         setMetricsLaisVsHumano(m.laisVsHumano)
         setMetricsTravas(m.travas)
         setMetricsCiclo(m.ciclo)
+        setMetricsPorCliente(m.porCliente)
       } catch (err) {
         console.error("Erro ao carregar dados de auditoria/métricas:", err)
       } finally {
@@ -85,6 +88,7 @@ export default function AuditoriaPage() {
         metricsLaisVsHumano={metricsLaisVsHumano}
         metricsTravas={metricsTravas}
         metricsCiclo={metricsCiclo}
+        metricsPorCliente={metricsPorCliente}
       />
     </div>
   )

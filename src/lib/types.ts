@@ -416,6 +416,21 @@ export interface VendasMCicloTotal {
   ciclo_total: string
 }
 
+export interface VendasMTempoEtapaCliente {
+  ordem: number
+  etapa_nome: string
+  tempo: string
+  em_andamento: boolean
+}
+
+export interface VendasMClienteEtapas {
+  cliente_id: string
+  nome: string
+  corretor_nome: string
+  ativo: boolean
+  etapas: VendasMTempoEtapaCliente[]
+}
+
 export interface VendasAlerta {
   id: string
   lead_id: string | null
