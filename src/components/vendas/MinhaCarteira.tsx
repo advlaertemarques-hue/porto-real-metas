@@ -490,7 +490,12 @@ export default function MinhaCarteira({
   }
 
   const myCorretor = corretores.find(co => co.user_id === user?.id)
-  
+
+  // O gestor enxerga a carteira inteira — precisa ver de quem é cada atendimento.
+  const isGestor = user?.role === 'superadmin'
+  const corretorNome = (id: string | null | undefined) =>
+    corretores.find(co => co.id === id)?.nome || 'Sem corretor'
+
   // KPI Owner ID
   const kpiOwnerId = user?.role === 'vendas'
     ? myCorretor?.id
@@ -850,6 +855,11 @@ export default function MinhaCarteira({
 
                             {/* Tags */}
                             <div className="flex flex-wrap items-center gap-1 mt-2">
+                              {isGestor && (
+                                <span className="bg-[#EEF4FA] text-[#33415C] border border-[#D6E4F0] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                                  👤 {corretorNome(c.corretor_id)}
+                                </span>
+                              )}
                               <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
                                 {tc.rotulo}
@@ -981,6 +991,11 @@ export default function MinhaCarteira({
 
                       {/* Tags */}
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        {isGestor && (
+                          <span className="bg-[#EEF4FA] text-[#33415C] border border-[#D6E4F0] text-[9px] px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                            👤 {corretorNome(c.corretor_id)}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tc.cor }} />
                           {tc.rotulo}
@@ -1027,6 +1042,11 @@ export default function MinhaCarteira({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg md:text-xl font-black text-slate-800 heading-premium">{activeClient.nome}</h2>
+                  {isGestor && (
+                    <span className="bg-[#EEF4FA] text-[#33415C] border border-[#D6E4F0] text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      👤 {corretorNome(activeClient.corretor_id)}
+                    </span>
+                  )}
                   {activeClient.expressa && (
                     <span className="bg-[#fbf1e3] text-[#c77d2e] text-[8.5px] font-black px-2 py-0.5 rounded tracking-wider uppercase">VIA EXPRESSA</span>
                   )}
